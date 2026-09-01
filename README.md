@@ -6,7 +6,7 @@ LaTeX notes, Quarto/reveal.js slides, companion Python notebooks, and a shared b
 
 ## Repository layout
 
-```
+```text
 .
 ├── bibliography.bib        # SHARED bibliography — single source of truth (see below)
 │
@@ -46,6 +46,7 @@ the Overleaf editor and work on them in a normal git client/IDE instead.
 3. Point Overleaf at the right document: Menu → **Settings** → **Main document** →
    `notes/main.tex`.
 4. In your local clone of this repo:
+
    ```bash
    git remote add overleaf https://git.overleaf.com/<your-project-id>
    ./scripts/sync_overleaf.sh push
@@ -79,6 +80,7 @@ relative path, e.g. `![](../notes/figures/my-figure.pdf)`, rather than duplicati
 ## Continuous integration
 
 On every push, GitHub Actions:
+
 - compiles `notes/main.tex` → `notes.pdf` (uploaded as a build artifact),
 - renders `slides/slides.qmd` → reveal.js HTML (uploaded as a build artifact, and deployed to
   GitHub Pages from `main`, see `.github/workflows/build-slides.yml`).
