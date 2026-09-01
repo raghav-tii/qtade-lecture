@@ -1,0 +1,18 @@
+project:
+  type: default
+
+format:
+  revealjs:
+    theme: default          # TODO: pick/customize a theme (or add a custom .scss)
+    slide-number: true
+    chalkboard: false
+    preview-links: auto
+    logo: ""                # TODO: path to a logo image, e.g. figures/logo.png
+    footer: "QTADE School, Bilbao — Tensor Networks for Fluid Dynamics"
+    embed-resources: true   # self-contained HTML, easy to share/host
+    bibliography: bibliography.bib
+    citations-hover: true
+
+execute:
+  echo: true                # show code cells that render inline demos, if any
+  freeze: auto               # cache execution results between renders

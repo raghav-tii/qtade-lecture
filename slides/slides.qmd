@@ -1,0 +1,48 @@
+---
+title: "Tensor Network Algorithms for Fluid Dynamics"
+subtitle: "QTADE School, Bilbao"
+author:
+  - name: "Author One"      # TODO: fill in real authors/affiliations
+  - name: "Author Two"
+date: last-modified
+---
+
+## Outline
+
+- Motivation: the curse of dimensionality in fluid dynamics
+- Tensor network basics (MPS / tensor trains, QTT)
+- Formulating fluid PDEs in tensor-network form
+- Algorithms and solvers
+- Outlook
+
+<!--
+TODO: this deck mirrors notes/sections/*.tex at a high level. Add one `##` slide section
+per subtopic. Figures used in the notes can be reused directly, e.g.:
+
+![](../notes/figures/my-figure.pdf)
+
+Citations use the shared bibliography, e.g. [@example2024], and render automatically
+from bibliography.bib (symlinked to ../notes/bibliography.bib).
+-->
+
+## Motivation
+
+- TODO
+
+## Tensor Network Basics
+
+- TODO
+
+## Fluid Dynamics in Tensor-Network Form
+
+- TODO
+
+## Algorithms
+
+- TODO
+
+## Outlook
+
+- TODO
+
+## References

@@ -1,0 +1,34 @@
+name: Build lecture notes (LaTeX)
+
+on:
+  push:
+    paths:
+      - "notes/**"
+      - ".github/workflows/build-notes.yml"
+  pull_request:
+    paths:
+      - "notes/**"
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Compile LaTeX (main.tex -> notes.pdf)
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: main.tex
+          working_directory: notes
+          latexmk_use_xelatex: false
+          # bibtex is included by default via latexmk; switch to biber if you moved
+          # notes/preamble.tex to biblatex (see the TODO comment there).
+
+      - name: Upload compiled PDF
+        uses: actions/upload-artifact@v4
+        with:
+          name: notes-pdf
+          path: notes/main.pdf
+          if-no-files-found: error

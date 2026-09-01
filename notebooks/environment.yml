@@ -1,0 +1,17 @@
+name: qtade-tn-fluids
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy
+  - scipy
+  - matplotlib
+  - jupyterlab
+  - nbstripout
+  # TODO: add the actual tensor-network / TT-SVD / QTT libraries you use, e.g.:
+  #   - quimb
+  #   - pip:
+  #     - tensorly
+  #     - tntorch
+  #     - scikit_tt
+  - pip

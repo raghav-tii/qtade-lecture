@@ -1,0 +1,39 @@
+# --- LaTeX ---
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.run.xml
+*.xdv
+*.nav
+*.snm
+*.vrb
+notes/main.pdf
+
+# --- Quarto ---
+/.quarto/
+slides/.quarto/
+slides/_site/
+slides/*_files/
+slides/*_cache/
+
+# --- Python / Jupyter ---
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+venv/
+*.egg-info/
+
+# --- OS / editor cruft ---
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/

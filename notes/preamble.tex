@@ -1,0 +1,36 @@
+% ---------------------------------------------------------------------------
+% Shared preamble for the lecture notes
+% ---------------------------------------------------------------------------
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{cleveref}
+
+% Bibliography: plain BibTeX + natbib (works out of the box on Overleaf, no biber needed).
+% main.tex uses \bibliographystyle{...} + \bibliography{bibliography} accordingly.
+% If you'd rather use biblatex/biber instead, swap this for \usepackage{biblatex} +
+% \addbibresource{bibliography.bib}, and replace \bibliography{...} in main.tex with
+% \printbibliography.
+\usepackage{natbib}
+
+\usepackage{tikz}
+\usetikzlibrary{shapes,positioning,arrows.meta}
+
+% --- Theorem-like environments -----------------------------------------
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+% --- Tensor-network notation macros (placeholders — adapt to your convention) ---
+\newcommand{\tensor}[1]{\mathsf{#1}}
+\newcommand{\rank}{\chi}
+\newcommand{\bond}{r}

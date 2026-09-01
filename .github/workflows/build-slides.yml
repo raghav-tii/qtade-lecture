@@ -1,0 +1,59 @@
+name: Build slides (Quarto reveal.js)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "slides/**"
+      - "notes/figures/**"
+      - "notes/bibliography.bib"
+      - ".github/workflows/build-slides.yml"
+  pull_request:
+    paths:
+      - "slides/**"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Render slides
+        run: quarto render slides/slides.qmd
+
+      - name: Upload rendered slides
+        uses: actions/upload-artifact@v4
+        with:
+          name: slides-html
+          path: slides/slides.html
+          if-no-files-found: error
+
+      # Optional: publish the rendered deck to GitHub Pages on pushes to main.
+      # Requires: Settings -> Pages -> Source = "GitHub Actions" (one-time, see README).
+      - name: Upload Pages artifact
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: slides
+
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: render
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

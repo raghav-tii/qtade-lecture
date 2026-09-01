@@ -1,0 +1,10 @@
+# pip alternative to environment.yml
+numpy
+scipy
+matplotlib
+jupyterlab
+nbstripout
+# TODO: add the actual tensor-network / TT-SVD / QTT libraries you use, e.g.:
+# tensorly
+# tntorch
+# scikit-tt
