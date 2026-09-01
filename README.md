@@ -8,61 +8,73 @@ LaTeX notes, Quarto/reveal.js slides, companion Python notebooks, and a shared b
 
 ```
 .
-├── notes/                 # LaTeX lecture notes — this folder is the Overleaf project
-│   ├── main.tex           # top-level document, \input's the section files
-│   ├── preamble.tex       # shared packages/macros
-│   ├── sections/          # one .tex file per section (edit here or in Overleaf)
-│   ├── figures/           # figures used in the notes (source of truth for all figures)
-│   └── bibliography.bib   # SHARED bibliography — single source of truth (see below)
+├── bibliography.bib        # SHARED bibliography — single source of truth (see below)
+│
+├── notes/                  # LaTeX lecture notes
+│   ├── main.tex            # top-level document, \input's the section files
+│   ├── preamble.tex        # shared packages/macros
+│   ├── sections/           # one .tex file per section (edit here or in Overleaf)
+│   └── figures/            # figures used in the notes
 │
 ├── slides/                 # Quarto (reveal.js) slide deck
 │   ├── slides.qmd
-│   ├── _quarto.yml
-│   └── bibliography.bib -> ../notes/bibliography.bib   # symlink, do not duplicate
+│   └── _quarto.yml
 │
-├── notebooks/              # Companion Python/Jupyter notebooks
-│   ├── environment.yml     # conda/mamba environment for reproducibility
-│   └── requirements.txt    # pip alternative
+├── notebooks/               # Companion Python/Jupyter notebooks
+│   ├── environment.yml      # conda/mamba environment for reproducibility
+│   └── requirements.txt     # pip alternative
 │
 ├── scripts/
-│   └── sync_overleaf.sh    # push/pull the notes/ subtree to/from an Overleaf project via git
+│   └── sync_overleaf.sh     # push/pull this repo to/from the linked Overleaf project
 │
-└── .github/workflows/      # CI: compile notes to PDF, render slides, (optional) Overleaf sync
+└── .github/workflows/       # CI: compile notes to PDF, render slides, (optional) Overleaf sync
 ```
 
-## Why `notes/` is its own Overleaf project (not the whole repo)
+## Overleaf setup
 
-Overleaf's Git integration clones an entire repository into an Overleaf project — it has no
-built-in "sync only this subfolder" option. To keep Overleaf's editor clean (i.e. not show
-slides, notebooks, `.github/`, etc.) we treat `notes/` as an independent unit synced via
-[`git subtree`](https://www.atlassian.com/git/tutorials/git-subtree):
+The whole repo is linked to a single Overleaf project (simplest option — one thing to sync,
+one git remote, no subtree gymnastics). The tradeoff: Overleaf's file browser will show
+`slides/`, `notebooks/`, `.github/`, etc. alongside `notes/` — you just leave those alone in
+the Overleaf editor and work on them in a normal git client/IDE instead.
 
-- Overleaf gives every project a private git URL (Project → Menu → Git).
-- We add that URL as a git remote (e.g. `overleaf`) and push/pull *only* the `notes/`
-  subdirectory to/from it with `git subtree`, without ever cloning the whole repo into
-  Overleaf.
-- `scripts/sync_overleaf.sh` wraps the exact commands so nobody has to remember the
-  `git subtree` syntax.
+**One-time setup:**
 
-This means: edit LaTeX either directly in this repo (any editor) *or* live in Overleaf —
-just remember to sync (push/pull) through the script so the two don't drift apart. See
-`notes/README.md` for the step-by-step.
+1. In Overleaf, create a new project ("Blank Project" is fine) and rename it, e.g.
+   "QTADE tensor networks — lecture".
+2. Open the project → menu (top-left) → **Git** (requires an Overleaf plan with Git access —
+   Overleaf's paid tiers, or a Pro account issued via your institution) → copy the git URL.
+3. Point Overleaf at the right document: Menu → **Settings** → **Main document** →
+   `notes/main.tex`.
+4. In your local clone of this repo:
+   ```bash
+   git remote add overleaf https://git.overleaf.com/<your-project-id>
+   ./scripts/sync_overleaf.sh push
+   ```
+
+**Day to day**, from the repo root:
+
+```bash
+./scripts/sync_overleaf.sh pull   # bring in edits made live in Overleaf
+./scripts/sync_overleaf.sh push   # send local commits (e.g. after merging a PR) to Overleaf
+```
+
+Overleaf git projects use a fixed branch name (`master`) independent of whatever your GitHub
+default branch is called — the script handles that mapping so you don't have to think about it.
+
+Treat this repo (not Overleaf) as canonical for anything merged via a pull request; use Overleaf
+mainly for live/collaborative editing sessions, then push back with the script above.
 
 ## Bibliography — single source of truth
 
-`notes/bibliography.bib` is the only real bibliography file in the repo. `slides/bibliography.bib`
-is a **symlink** to it, so citations in the slides and in the notes always stay in sync. Add new
-references to `notes/bibliography.bib` only.
-
-(Symlinks survive normal git operations and the `git subtree` push/pull used for Overleaf, since
-the symlink lives in `slides/`, which is never subtree-split. Overleaf itself only ever sees the
-real file, because it only receives the `notes/` subtree.)
+`bibliography.bib` at the repo root is the only bibliography file. `notes/main.tex` pulls it
+in as `\bibliography{../bibliography}`; `slides/_quarto.yml` as `bibliography: ../bibliography.bib`.
+Add new references only to the root file — both the notes and the slides pick them up
+automatically.
 
 ## Figures
 
-All figures live in `notes/figures/` (so they travel with the Overleaf-synced subtree and are
-available for `\includegraphics` there). Slides reference the same files via a relative path,
-e.g. `![](../notes/figures/my-figure.pdf)`, rather than duplicating images.
+Figures used in the notes live in `notes/figures/`. Slides reference the same files via a
+relative path, e.g. `![](../notes/figures/my-figure.pdf)`, rather than duplicating images.
 
 ## Continuous integration
 
@@ -79,10 +91,10 @@ settings these require.
 1. Create the GitHub repo and push this scaffold.
 2. In the repo settings, enable **GitHub Pages** → source: "GitHub Actions" (only needed if you
    want the slides auto-published to a public URL).
-3. Create an Overleaf project, get its git URL, and follow `notes/README.md` to link it.
+3. Create an Overleaf project, get its git URL, and follow "Overleaf setup" above to link it.
 4. Fill in `notebooks/environment.yml` / `requirements.txt` with the actual tensor-network /
    scientific-computing packages you use (left as placeholders here).
-5. Decide on a license (not set yet — see `LICENSE` placeholder) and author list.
+5. Decide on a license (not set yet — see `LICENSE.md` placeholder) and author list.
 
 ## Collaborators
 

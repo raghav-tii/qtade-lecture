@@ -4,10 +4,12 @@ on:
   push:
     paths:
       - "notes/**"
+      - "bibliography.bib"
       - ".github/workflows/build-notes.yml"
   pull_request:
     paths:
       - "notes/**"
+      - "bibliography.bib"
   workflow_dispatch: {}
 
 jobs:

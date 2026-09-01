@@ -5,7 +5,7 @@
 - Edit either in this repo directly, or live in Overleaf — then sync with
   `./scripts/sync_overleaf.sh push` / `pull` (see `notes/README.md`).
 - Add new sections as new files under `notes/sections/` and `\input` them from `main.tex`.
-- Add references only to `notes/bibliography.bib` (the slides symlink to it).
+- Add references only to `bibliography.bib` at the repo root (shared with the slides).
 - Put every figure used in the notes under `notes/figures/`.
 
 ## Slides (`slides/`)

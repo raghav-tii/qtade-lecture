@@ -1,14 +1,16 @@
-name: Sync notes/ with Overleaf (manual)
+name: Sync repo with Overleaf (manual)
 
-# Manual-only: pushes the notes/ subtree to Overleaf via git subtree, mirroring what
+# Manual-only: pushes this whole repo to the linked Overleaf project, mirroring what
 # scripts/sync_overleaf.sh does locally. Useful for keeping Overleaf up to date after
 # merging a PR, without anyone needing Overleaf git credentials on their own machine.
 #
 # One-time setup required before this will work:
-#   Settings -> Secrets and variables -> Actions -> New repository secret
-#     OVERLEAF_GIT_URL = https://git.overleaf.com/<your-project-id>
-#     OVERLEAF_GIT_TOKEN = <a token/password Overleaf accepts for git auth>
-# (Exact auth scheme depends on your Overleaf plan; see notes/README.md.)
+#   1. Settings -> Secrets and variables -> Actions -> New repository secret
+#        OVERLEAF_GIT_URL   = https://git.overleaf.com/<your-project-id>
+#        OVERLEAF_GIT_TOKEN = <a token/password Overleaf accepts for git auth>
+#      (Exact auth scheme depends on your Overleaf plan; see README.md "Overleaf setup".)
+#   2. Settings -> Secrets and variables -> Actions -> Variables -> New repository variable
+#        OVERLEAF_SYNC_ENABLED = true
 
 on:
   workflow_dispatch: {}
@@ -18,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ vars.OVERLEAF_SYNC_ENABLED == 'true' }}  # extra guard so this can't run before setup
     steps:
-      - name: Check out repository (full history, needed for git subtree)
+      - name: Check out repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -28,14 +30,16 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Add Overleaf remote and push notes/ subtree
+      - name: Add Overleaf remote and push
         env:
           OVERLEAF_GIT_URL: ${{ secrets.OVERLEAF_GIT_URL }}
           OVERLEAF_GIT_TOKEN: ${{ secrets.OVERLEAF_GIT_TOKEN }}
         run: |
           # Inject the token into the URL for non-interactive auth, if your Overleaf
           # plan uses token auth (adjust to whatever scheme Overleaf's Git integration
-          # gives you — see notes/README.md).
+          # gives you — see README.md "Overleaf setup").
           AUTH_URL=$(echo "$OVERLEAF_GIT_URL" | sed "s#https://#https://git:${OVERLEAF_GIT_TOKEN}@#")
           git remote add overleaf "$AUTH_URL"
-          git subtree push --prefix=notes overleaf master
+          # Overleaf git projects use a fixed branch name ("master") regardless of this
+          # repo's default branch name.
+          git push overleaf "HEAD:master"

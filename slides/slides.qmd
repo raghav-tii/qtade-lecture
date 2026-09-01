@@ -22,7 +22,7 @@ per subtopic. Figures used in the notes can be reused directly, e.g.:
 ![](../notes/figures/my-figure.pdf)
 
 Citations use the shared bibliography, e.g. [@example2024], and render automatically
-from bibliography.bib (symlinked to ../notes/bibliography.bib).
+from ../bibliography.bib (the repo-root bibliography, shared with the notes).
 -->
 
 ## Motivation

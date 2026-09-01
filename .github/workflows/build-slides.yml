@@ -6,7 +6,7 @@ on:
     paths:
       - "slides/**"
       - "notes/figures/**"
-      - "notes/bibliography.bib"
+      - "bibliography.bib"
       - ".github/workflows/build-slides.yml"
   pull_request:
     paths:

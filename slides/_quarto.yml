@@ -10,7 +10,7 @@ format:
     logo: ""                # TODO: path to a logo image, e.g. figures/logo.png
     footer: "QTADE School, Bilbao — Tensor Networks for Fluid Dynamics"
     embed-resources: true   # self-contained HTML, easy to share/host
-    bibliography: bibliography.bib
+    bibliography: ../bibliography.bib   # shared bibliography lives at the repo root
     citations-hover: true
 
 execute:

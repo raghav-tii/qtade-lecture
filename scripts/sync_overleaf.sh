@@ -1,20 +1,24 @@
 #!/usr/bin/env bash
 #
-# Sync the notes/ subfolder with an Overleaf project via git subtree, without ever
-# pulling the rest of this repo (slides/, notebooks/, CI, ...) into Overleaf.
+# Sync this whole repo with its linked Overleaf project.
 #
-# One-time setup (see notes/README.md for the full walkthrough):
+# Overleaf's git integration links a whole git repository to a whole Overleaf project, and
+# Overleaf projects default to a branch named "master" (independent of whatever your GitHub
+# default branch is called). This script just wraps push/pull against the "overleaf" remote
+# so nobody has to remember the branch-name mapping.
+#
+# One-time setup (see README.md "Overleaf setup"):
 #   git remote add overleaf https://git.overleaf.com/<your-project-id>
 #
 # Usage:
-#   ./scripts/sync_overleaf.sh push   # send local notes/ changes to Overleaf
-#   ./scripts/sync_overleaf.sh pull   # bring Overleaf edits into local notes/
+#   ./scripts/sync_overleaf.sh push   # send local commits to Overleaf
+#   ./scripts/sync_overleaf.sh pull   # bring Overleaf edits into your local branch
 #
 set -euo pipefail
 
 REMOTE="overleaf"
-BRANCH="master"   # Overleaf git projects default to "master"; adjust if yours differs
-PREFIX="notes"
+OVERLEAF_BRANCH="master"          # Overleaf's side - fixed name, don't change
+LOCAL_BRANCH="$(git symbolic-ref --short HEAD)"
 
 usage() {
   echo "Usage: $0 {push|pull}"
@@ -29,12 +33,12 @@ fi
 
 case "${1:-}" in
   push)
-    echo "Pushing local ${PREFIX}/ -> Overleaf (${REMOTE}/${BRANCH})..."
-    git subtree push --prefix="${PREFIX}" "${REMOTE}" "${BRANCH}"
+    echo "Pushing local '${LOCAL_BRANCH}' -> Overleaf (${REMOTE}/${OVERLEAF_BRANCH})..."
+    git push "${REMOTE}" "${LOCAL_BRANCH}:${OVERLEAF_BRANCH}"
     ;;
   pull)
-    echo "Pulling Overleaf (${REMOTE}/${BRANCH}) -> local ${PREFIX}/..."
-    git subtree pull --prefix="${PREFIX}" "${REMOTE}" "${BRANCH}" --squash
+    echo "Pulling Overleaf (${REMOTE}/${OVERLEAF_BRANCH}) -> local '${LOCAL_BRANCH}'..."
+    git pull "${REMOTE}" "${OVERLEAF_BRANCH}:${LOCAL_BRANCH}"
     ;;
   *)
     usage

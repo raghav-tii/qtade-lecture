@@ -10,10 +10,10 @@
 \usepackage{cleveref}
 
 % Bibliography: plain BibTeX + natbib (works out of the box on Overleaf, no biber needed).
-% main.tex uses \bibliographystyle{...} + \bibliography{bibliography} accordingly.
-% If you'd rather use biblatex/biber instead, swap this for \usepackage{biblatex} +
-% \addbibresource{bibliography.bib}, and replace \bibliography{...} in main.tex with
-% \printbibliography.
+% The .bib file lives at the repo root (shared with slides/); main.tex references it as
+% \bibliography{../bibliography}. If you'd rather use biblatex/biber instead, swap this for
+% \usepackage{biblatex} + \addbibresource{../bibliography.bib}, and replace \bibliography{...}
+% in main.tex with \printbibliography.
 \usepackage{natbib}
 
 \usepackage{tikz}
