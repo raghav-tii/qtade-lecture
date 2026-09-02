@@ -2,16 +2,16 @@ project:
   type: default
 
 format:
-  revealjs:
-    theme: default          # TODO: pick/customize a theme (or add a custom .scss)
+  clean-revealjs:          # TODO: pick/customize a theme (or add a custom .scss)
     slide-number: true
     chalkboard: false
     preview-links: auto
-    logo: ""                # TODO: path to a logo image, e.g. figures/logo.png
+    logo: "figures/logo.png"                # TODO: path to a logo image, e.g. figures/logo.png
     footer: "QTADE School, Bilbao — Tensor Networks for Fluid Dynamics"
     embed-resources: true   # self-contained HTML, easy to share/host
     bibliography: ../bibliography.bib   # shared bibliography lives at the repo root
     citations-hover: true
+    output-file: index.html
 
 execute:
   echo: true                # show code cells that render inline demos, if any

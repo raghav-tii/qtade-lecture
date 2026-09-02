@@ -1,9 +1,11 @@
 ---
 title: "Tensor Network Algorithms for Fluid Dynamics"
 subtitle: "QTADE School, Bilbao"
-author:
-  - name: "Raghavendra Dheeraj Peddinti"      # TODO: fill in real authors/affiliations
+author:      # TODO: fill in real authors/affiliations
+  - name: "Raghavendra Dheeraj Peddinti"
+    affiliations: "Technology Innovation Institute"
   - name: "Stefano Pisoni"
+    affiliations: "Technology Innovation Institute"
 date: last-modified
 ---
 
