@@ -213,10 +213,10 @@ $selection-bg: #26351c !default;
 .slide-logo {
   display: block !important;
   position: fixed !important;
-  bottom: 0 !important;
+  top: 10px !important;
   left: 10px !important;
-  max-width: 150px; // Adjust if necessary
-  max-height: 50px;
+  max-width: 250px; // Adjust if necessary
+  max-height: 200px;
   width: auto !important;
   color: $body-color !important;
 }
