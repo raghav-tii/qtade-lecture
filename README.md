@@ -32,6 +32,8 @@ LaTeX notes, Quarto/reveal.js slides, companion Python notebooks, and a shared b
 
 ## Overleaf setup
 
+[Overleaf Project](https://www.overleaf.com/8197722423jvcgthhrnbzp#da662e)
+
 The whole repo is linked to a single Overleaf project (simplest option — one thing to sync,
 one git remote, no subtree gymnastics). The tradeoff: Overleaf's file browser will show
 `slides/`, `notebooks/`, `.github/`, etc. alongside `notes/` — you just leave those alone in
