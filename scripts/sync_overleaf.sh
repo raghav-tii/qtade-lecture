@@ -17,7 +17,7 @@
 set -euo pipefail
 
 REMOTE="overleaf"
-OVERLEAF_BRANCH="master"          # Overleaf's side - fixed name, don't change
+OVERLEAF_BRANCH="main"          # Overleaf's side - fixed name, don't change
 LOCAL_BRANCH="$(git symbolic-ref --short HEAD)"
 
 usage() {
