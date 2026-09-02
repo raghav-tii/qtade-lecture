@@ -35,7 +35,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: slides-html
-          path: slides/slides.html
+          path: slides/*.html
           if-no-files-found: error
 
       # Optional: publish the rendered deck to GitHub Pages on pushes to main.

@@ -27,13 +27,16 @@ Citations use the shared bibliography, e.g. [@example2024], and render automatic
 from ../bibliography.bib (the repo-root bibliography, shared with the notes).
 -->
 
+# Part I
+
 ## Motivation
 
-- TODO
+- TODO[@knuth1984]
 
 ## Tensor Network Basics
 
 - TODO
+
 
 ## Fluid Dynamics in Tensor-Network Form
 
@@ -49,4 +52,4 @@ from ../bibliography.bib (the repo-root bibliography, shared with the notes).
 
 ## References
 
-[@knuth1984]
+
