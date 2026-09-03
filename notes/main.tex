@@ -1,19 +1,22 @@
-\documentclass[11pt]{article}
+\documentclass[english,course]{lecturenotes}
+% `lecturenotes` (notes/lecturenotes.cls, v3.2) requires LuaLaTeX --
+% compile with `latexmk -lualatex main.tex` (see notes/README.md).
 
 \input{preamble}
 
 \title{Tensor Network Algorithms for Fluid Dynamics}
-\author{%
-  % TODO: add authors / affiliations
-  Author One \and Author Two
-}
-\date{QTADE School, Bilbao \\ \today}
+\author{Raghavendra Dheeraj Peddinti, Stefano Pisoni}
+% \author is dumped raw into hyperref's pdfauthor field, so keep it plain text
+% (no \\, \thanks, or other formatting -- those break PDF-string sanitization
+% at \begin{document}); affiliation goes in \flag instead.
+\flag{Technology Innovation Institute}
+\conference{QTADE School}
+\place{Bilbao, Spain}
+\date{28}{09}{2026}
+% The class prints the title page and (for the `course` type) the table of
+% contents automatically at \begin{document} -- no \maketitle/\tableofcontents needed.
 
 \begin{document}
-
-\maketitle
-\tableofcontents
-\newpage
 
 \input{sections/01-part1-tn-representations}
 \input{sections/02-part2-linear-algebra}
@@ -21,7 +24,6 @@
 \input{sections/04-part4-inverse-problem}
 \input{sections/05-appendix}
 
-\newpage
 \bibliographystyle{unsrt} % TODO: pick the style you prefer (e.g. plain, unsrt, apalike)
 \bibliography{../bibliography} % shared bibliography lives at the repo root
 

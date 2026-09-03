@@ -1,12 +1,15 @@
 % ---------------------------------------------------------------------------
 % Shared preamble for the lecture notes
 % ---------------------------------------------------------------------------
+%
+% NOTE: main.tex uses the `lecturenotes` document class (notes/lecturenotes.cls),
+% which already loads hyperref, amsmath (intlimits), amssymb, amsthm, tikz,
+% mathtools, babel, etc., and already defines the theorem-like environments
+% theorem/lemma/proposition/corollary/definition/example/remark (plus
+% exercise/claim/conjecture/fact/problem/notation). Do not reload or redefine
+% those here. The class requires LuaLaTeX and does not support inputenc/fontenc.
 
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage{amsmath,amssymb,amsthm}
 \usepackage{graphicx}
-\usepackage{hyperref}
 \usepackage{cleveref}
 
 % Bibliography: plain BibTeX + natbib (works out of the box on Overleaf, no biber needed).
@@ -16,19 +19,7 @@
 % in main.tex with \printbibliography.
 \usepackage{natbib}
 
-\usepackage{tikz}
 \usetikzlibrary{shapes,positioning,arrows.meta}
-
-% --- Theorem-like environments -----------------------------------------
-\newtheorem{theorem}{Theorem}[section]
-\newtheorem{lemma}[theorem]{Lemma}
-\newtheorem{proposition}[theorem]{Proposition}
-\newtheorem{corollary}[theorem]{Corollary}
-\theoremstyle{definition}
-\newtheorem{definition}[theorem]{Definition}
-\newtheorem{example}[theorem]{Example}
-\theoremstyle{remark}
-\newtheorem{remark}[theorem]{Remark}
 
 % --- Tensor-network notation macros (placeholders — adapt to your convention) ---
 \newcommand{\tensor}[1]{\mathsf{#1}}
