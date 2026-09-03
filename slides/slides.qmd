@@ -8,27 +8,33 @@ author:      # TODO: fill in real authors/affiliations
   - name: "Stefano Pisoni"
     affiliations: "Technology Innovation Institute"
     orcid: "0009-0006-6723-5316"
-date: last-modified
+date: 09-28-2026
 ---
 
-## Content
+## Essentials
 
-- Part I: Tensor network representations
-- Part II: Linear algebra with TNs
-- Part III: The forward problem - Solving PDEs
-- Part IV: The inverse problem - Data-driven approach
+#### Course Content
 
-<!--
-TODO: this deck mirrors notes/sections/*.tex at a high level. Add one `##` slide section
-per subtopic. Figures used in the notes can be reused directly, e.g.:
+- [Part I: Tensor network representations](#part-i)
 
-![](../notes/figures/my-figure.pdf)
+- [Part II: Linear algebra with TNs](#part-ii)
 
-Citations use the shared bibliography, e.g. [@example2024], and render automatically
-from ../bibliography.bib (the repo-root bibliography, shared with the notes).
--->
+- [Part III: The forward problem - Solving PDEs](#part-iii)
 
-# Part I: Tensor network representations {background-color="#40666e"}
+- [Part IV: The inverse problem - Data-driven approach](#part-iv)
+
+#### GitHub repo
+
+![](figures/qr-code.png){fig-align="center"}
+
+# Part I {#part-i background-color="#40666e"}
+
+::: mini-agenda
+- [Part I: Tensor network representations](#part-i){.agenda-item .current}
+- [Part II: Linear algebra with TNs](#part-ii){.agenda-item}
+- [Part III: The forward problem - Solving PDEs](#part-iii){.agenda-item}
+- [Part IV: The inverse problem - Data-driven approach](#part-iv){.agenda-item}
+:::
 
 ## Outline
 
@@ -47,7 +53,14 @@ from ../bibliography.bib (the repo-root bibliography, shared with the notes).
 
 - TODO
 
-# Part II: Linear algebra with TNs {background-color="#40666e"}
+# Part II {#part-ii background-color="#40666e"}
+
+::: mini-agenda
+- [Part I: Tensor network representations](#part-i){.agenda-item}
+- [Part II: Linear algebra with TNs](#part-ii){.agenda-item .current}
+- [Part III: The forward problem - Solving PDEs](#part-iii){.agenda-item}
+- [Part IV: The inverse problem - Data-driven approach](#part-iv){.agenda-item}
+:::
 
 ## Outline
 
@@ -65,7 +78,14 @@ from ../bibliography.bib (the repo-root bibliography, shared with the notes).
 
 - TODO
 
-# Part III: The forward problem: Solving PDEs {background-color="#40666e"}
+# Part III {#part-iii background-color="#40666e"}
+
+::: mini-agenda
+- [Part I: Tensor network representations](#part-i){.agenda-item}
+- [Part II: Linear algebra with TNs](#part-ii){.agenda-item}
+- [Part III: The forward problem - Solving PDEs](#part-iii){.agenda-item .current}
+- [Part IV: The inverse problem - Data-driven approach](#part-iv){.agenda-item}
+:::
 
 ## Outline
 
@@ -73,29 +93,36 @@ from ../bibliography.bib (the repo-root bibliography, shared with the notes).
 - QTT frameworks for CFD
 - Why fluid dynamics?
 - Expressivity
-- Outlook 
+- Outlook
 
 ## Fluid Dynamics in Tensor-Network Form
 
 - TODO
 
-# Part IV: The inverse problem: Data-driven approaches {background-color="#40666e"}
+# Part IV {#part-iv background-color="#40666e"}
+
+::: mini-agenda
+- [Part I: Tensor network representations](#part-i){.agenda-item}
+- [Part II: Linear algebra with TNs](#part-ii){.agenda-item}
+- [Part III: The forward problem - Solving PDEs](#part-iii){.agenda-item}
+- [Part IV: The inverse problem - Data-driven approach](#part-iv){.agenda-item .current}
+:::
 
 ## Outline
 
 - Recovering physics from data (learning and prediction tasks)
 - Dynamic mode decomposition and space-time encoding
 - TNs for learning dynamical laws
-- Outlook 
+- Outlook
 
 ## MPS-DMD
 
-# Bibliography {background-color="#40666e"}
+# Appendix {background-color="#bc6c16"}
+
+## TT-Cross
+
+## DMRG
+
+# Bibliography {background-color="#bc6c16"}
 
 ## References
-
-# Backup slides {background-color="#bc6c16"}
-
-## Appendix: TT-Cross
-
-## Appendix: DMRG

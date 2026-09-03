@@ -1,0 +1,61 @@
+<img id="logo-white-src" src="figures/logo-white.png" alt="" style="display:none">
+<script>
+(function () {
+  // Reveal.js core adds the has-dark-background/has-light-background contrast
+  // class to the slide <section> element, but this Quarto build's bundled
+  // footer/slide-number/logo helpers all read it off Reveal.getSlideBackground(),
+  // a *different* element that never receives the class. Patch the getter so it
+  // syncs the class across before returning, fixing all three at once.
+  function patchSlideBackgroundContrast() {
+    if (Reveal.__contrastPatchApplied) return;
+    Reveal.__contrastPatchApplied = true;
+    var original = Reveal.getSlideBackground.bind(Reveal);
+    Reveal.getSlideBackground = function (slide) {
+      var bg = original(slide);
+      if (bg) {
+        var slideEl = typeof slide === "number" ? Reveal.getSlide(slide) : (slide || Reveal.getCurrentSlide());
+        if (slideEl) {
+          ["has-dark-background", "has-light-background"].forEach(function (cls) {
+            bg.classList.toggle(cls, slideEl.classList.contains(cls));
+          });
+        }
+      }
+      return bg;
+    };
+  }
+
+  function waitForReveal() {
+    if (window.Reveal && typeof window.Reveal.getSlideBackground === "function") {
+      patchSlideBackgroundContrast();
+    } else {
+      setTimeout(waitForReveal, 10);
+    }
+  }
+  waitForReveal();
+
+  function initLogoTheme() {
+    var whiteLogoEl = document.getElementById("logo-white-src");
+    var logo = document.querySelector(".slide-logo");
+    if (!whiteLogoEl || !logo) return;
+
+    var whiteLogoSrc = whiteLogoEl.src;
+    var defaultLogoSrc = logo.src;
+
+    function updateLogo(slide) {
+      var currentSlide = slide || Reveal.getCurrentSlide();
+      var bg = Reveal.getSlideBackground(currentSlide);
+      var dark = bg && bg.classList.contains("has-dark-background");
+      logo.src = dark ? whiteLogoSrc : defaultLogoSrc;
+    }
+
+    Reveal.on("ready", function (event) { updateLogo(event.currentSlide); });
+    Reveal.on("slidechanged", function (event) { updateLogo(event.currentSlide); });
+  }
+
+  if (window.Reveal) {
+    initLogoTheme();
+  } else {
+    document.addEventListener("DOMContentLoaded", initLogoTheme);
+  }
+})();
+</script>

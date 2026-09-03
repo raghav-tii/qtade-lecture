@@ -1,0 +1,55 @@
+/* Corner logo: a bit larger than the theme default, and swapped for a
+   white variant on dark-background slides via logo-theme.html. */
+.reveal .slide-logo {
+  max-height: 3.1rem;
+}
+
+@media screen and (max-width: 800px) {
+  .reveal .slide-logo {
+    max-height: 1.6rem;
+  }
+}
+
+/* Part title slides: hide the default big heading, the mini-agenda list
+   below stands in for it (current part highlighted). */
+#part-i h1,
+#part-ii h1,
+#part-iii h1,
+#part-iv h1 {
+  display: none;
+}
+
+.mini-agenda ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25em;
+}
+
+.mini-agenda li {
+  margin: 0;
+}
+
+.mini-agenda .agenda-item {
+  display: inline-block;
+  color: inherit;
+  text-decoration: none !important;
+  font-size: 0.55em;
+  font-weight: 400;
+  opacity: 0.5;
+  line-height: 1.3;
+  transition: opacity 0.2s ease;
+}
+
+.mini-agenda .agenda-item:hover {
+  opacity: 0.8;
+}
+
+.mini-agenda .agenda-item.current {
+  font-size: 1.6em;
+  font-weight: 600;
+  opacity: 1;
+}
