@@ -409,12 +409,10 @@
 
 \newcommand{\notes@opensection}{}
 \ifthenelse{\equal{\notes@cleardoublepage}{true}}{\renewcommand{\notes@opensection}{\cleardoublepage\thispagestyle{plain}}}{}
-\titleformat{\subsection}{\relax\centering}{\thesubsection}{1em}{\large\itshape}
-\titleformat{\subsubsection}{\relax\centering}{\thesubsubsection}{1em}{\normalsize}
+\titleformat{\section}{\normalfont\raggedright\Large\bfseries}{\thesection}{0.75em}{}
+\titleformat{\subsection}{\normalfont\raggedright\large\bfseries}{\thesubsection}{0.75em}{}
+\titleformat{\subsubsection}{\normalfont\raggedright\normalsize\bfseries}{\thesubsubsection}{0.75em}{}
 \titleformat{\paragraph}[runin]{}{}{}{\normalsize\smallcaps}
-\PassOptionsToPackage{letterspace=1000}{microtype}
-\titleformat{\section}{\relax\centering\large\lsstyle}{\small{\thesection}}{0.5em}{\scshape\MakeLowercase}
-\PassOptionsToPackage{letterspace=0}{microtype}
 
 \renewcommand{\cftsecfont}{\normalfont}%
 \renewcommand{\cftsecpagefont}{\normalfont}%
@@ -442,6 +440,12 @@
 \newcommand{\subject}[1]{\newcommand{\notes@subject}{#1}}
 \newcommand{\attn}[1]{\newcommand{\notes@attn}{#1}}
 \newcommand{\morelink}[1]{\newcommand{\notes@morelink}{#1}}
+% Multiple authors + superscript affiliations: mark each name in \author with
+% \affmark{n}, then list the matching affiliations (in order) in \affiliations,
+% e.g. \author{A. One\affmark{1}, B. Two\affmark{2}}
+%      \affiliations{\affmark{1}\,First Institute \quad \affmark{2}\,Second Institute}
+\newcommand{\affmark}[1]{\textsuperscript{#1}}
+\newcommand{\affiliations}[1]{\newcommand{\notes@affiliations}{#1}}
 
 \AtBeginDocument{%
 % Better spacing for the equation environment
@@ -513,6 +517,7 @@
   \ifthenelse{\isundefined{\notes@spemail}}{\spemail{}}{}
   %\ifthenelse{\isundefined{\notes@season}}{\season{}}{} % Commented to fix Issue #8
   \ifthenelse{\isundefined{\notes@flag}}{\flag{}}{}
+  \ifthenelse{\isundefined{\notes@affiliations}}{\affiliations{}}{}
   %\ifthenelse{\isundefined{\notes@morelink}}{\morelink{}}{}
   \ifthenelse{\isundefined{\notes@conference}}{\conference{}}{}
   \ifthenelse{\isundefined{\notes@place}}{\place{}}{}
@@ -555,73 +560,77 @@
   \begin{center}%
     \let \footnote \thanks
     \ifthenelse{\isundefined{\notes@ccode}}{}{%
-    \protect\textls[100]{\protect\MakeUppercase{\notes@ccode}} --- %
+    \notes@ccode\ --- %
     }%
-    {\large\smallcaps\protect\textls[100]{\protect\MakeUppercase{\@title}}}%
+    {\LARGE\@title}%
     \ifthenelse{\isundefined{\notes@subtitle}}{}{%
-    {\vskip 1.5ex\large\smallcaps\protect\textls[100]{\protect\MakeLowercase{\protect\scshape{\notes@subtitle}}}}%
+    {\vskip 1.5ex\large\notes@subtitle}%
     }%
     {\ifthenelse{\isundefined{\notes@speaker}}{}{%
     \ifthenelse{\equal{\notes@spemail}{}}{%
-    {\vskip 1.5ex\normalsize\protect\MakeLowercase{\smallcaps\protect\textls[75]{\protect\scshape{\notes@speaker}}}}%
+    {\vskip 1.5ex\normalsize\notes@speaker}%
     }{%
     \ifthenelse{\equal{\notes@email}{}}{%
-      {\vskip 1.5ex\normalsize\protect\MakeLowercase{\smallcaps\protect\textls[75]{\protect\scshape{\notes@speaker}}}}\footnote{\protect\href{mailto:\notes@spemail}{\notes@spemail}}%
+      {\vskip 1.5ex\normalsize\notes@speaker}\footnote{\protect\href{mailto:\notes@spemail}{\notes@spemail}}%
       }{%
-    {\vskip 1.5ex\normalsize\protect\MakeLowercase{\smallcaps\protect\textls[75]{\protect\scshape{\notes@speaker}}}}\footnote{\protect\href{mailto:\notes@spemail}{\notes@spemail} (speaker)}%
+    {\vskip 1.5ex\normalsize\notes@speaker}\footnote{\protect\href{mailto:\notes@spemail}{\notes@spemail} (speaker)}%
     }}%
     \par}}%
     \vskip 1.5em%
-    {\large
     \begin{tabular}[t]{c}%
       \ifthenelse{\equal{\notes@email}{}}{%
-        {\small\itshape\@author}%
+        {\normalsize\@author}%
       }{%
       \ifthenelse{\equal{\notes@speaker}{}}{%
-      {\small\itshape\@author}\footnote{\href{mailto:\notes@email}{\notes@email}}%
+      {\normalsize\@author}\footnote{\href{mailto:\notes@email}{\notes@email}}%
       }{%
-        {\small\itshape\@author}\footnote{\href{mailto:\notes@email}{\notes@email} (scribe)}%
+        {\normalsize\@author}\footnote{\href{mailto:\notes@email}{\notes@email} (scribe)}%
       }}%
-    \end{tabular}\par}%
+    \end{tabular}\par%
+    \ifthenelse{\equal{\notes@affiliations}{}}{}%
+      {%
+        {\small\notes@affiliations}%
+        \vskip 1ex%
+      }%
     \vskip 2ex%
     \ifthenelse{\equal{\notes@flag}{}}{}%
       {%
-        {\small\itshape\notes@flag}%
+        {\small\notes@flag}%
         \vskip 1ex%
       }%
     \ifthenelse{\equal{\notes@conference}{}}%
     {%
       \ifthenelse{\equal{\notes@place}{}}{}%
       {%
-        {\small\itshape\notes@place}%
+        {\small\notes@place}%
         \vskip 1ex%
       }%
     }%
     {%
       \ifthenelse{\equal{\notes@place}{}}%
       {%
-        {\small\itshape\notes@conference}%
+        {\small\notes@conference}%
         \vskip 1ex%
       }%
       {%
-        {\small\itshape\notes@conference, \notes@place}%
+        {\small\notes@conference, \notes@place}%
         \vskip 1ex%
       }%
     }
     \ifthenelse{\isundefined{\notes@season}}{% If season not defined
       \ifthenelse{\isundefined{\notes@dateenddef}}{% If end date not defined
         \ifthenelse{\isundefined{\notes@datestartdef}}{}{% If start date not defined do nothing else
-          {\small\itshape\displaydate{@date}}% Display start date
+          {\small\displaydate{@date}}% Display start date
         }%
       }{%
-        {\small\itshape\displaydate{@date} -- \displaydate{@dateend}}% Do this if end date and start date are defined
+        {\small\displaydate{@date} -- \displaydate{@dateend}}% Do this if end date and start date are defined
       }%
     }%
     {% If season is defined
-    {\itshape\notes@season}%
+    {\notes@season}%
     }%
     \ifthenelse{\isundefined{\notes@attn}}{}{\vskip 3ex%
-    {\itshape\notes@attn}%
+    {\notes@attn}%
     }%
     \ifthenelse{\isundefined{\notes@morelink}}{}{%
     \let\thefootnote\relax%
