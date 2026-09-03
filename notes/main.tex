@@ -3,21 +3,25 @@
 % compile with `latexmk -lualatex main.tex` (see notes/README.md).
 
 \input{preamble}
+\title{Tensor network algorithms for computational fluid dynamics}
+\shorttitle{TNs for CFD}
+% \email{raghavendra.peddinti@tii.ae}
+\author{Raghavendra D. Peddinti \& Stefano Pisoni}
 
-\title{Tensor Network Algorithms for Fluid Dynamics}
-\author{Raghavendra Dheeraj Peddinti, Stefano Pisoni}
-% \author is dumped raw into hyperref's pdfauthor field, so keep it plain text
-% (no \\, \thanks, or other formatting -- those break PDF-string sanitization
-% at \begin{document}); affiliation goes in \flag instead.
-\flag{Technology Innovation Institute}
+
+
 \conference{QTADE School}
 \place{Bilbao, Spain}
 \date{28}{09}{2026}
+\dateend{02}{10}{2026}
+
+% \attn{Lecture notes accompanying the mini-course on ``Tensor network algorithms for computational fluid dynamics'' presented at the QTADE School 2026 in Bilbao, Spain. }
+
 % The class prints the title page and (for the `course` type) the table of
 % contents automatically at \begin{document} -- no \maketitle/\tableofcontents needed.
 
 \begin{document}
-
+\newpage
 \input{sections/01-part1-tn-representations}
 \input{sections/02-part2-linear-algebra}
 \input{sections/03-part3-forward-problem}
