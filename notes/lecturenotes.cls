@@ -243,7 +243,9 @@
 \RequirePackage{mparhack}
 \RequirePackage{booktabs}
 \RequirePackage{multirow}
-\RequirePackage[fixlanguage]{babelbib}
+% babelbib removed: it only supports multilingual classic-BibTeX bibliographies
+% (unused -- this doc's bibliography uses biblatex, see preamble.tex) and biblatex
+% refuses to load at all with babelbib present ("Incompatible package 'babelbib'").
 % \RequirePackage{lecturenotes-styles} % Merged into this class below
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
