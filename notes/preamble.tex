@@ -12,12 +12,13 @@
 \usepackage{graphicx}
 \usepackage{cleveref}
 
-% Bibliography: plain BibTeX + natbib (works out of the box on Overleaf, no biber needed).
-% The .bib file lives at the repo root (shared with slides/); main.tex references it as
-% \bibliography{../bibliography}. If you'd rather use biblatex/biber instead, swap this for
-% \usepackage{biblatex} + \addbibresource{../bibliography.bib}, and replace \bibliography{...}
-% in main.tex with \printbibliography.
-\usepackage{natbib}
+% Bibliography: biblatex + biber. Needed because classic BibTeX resolves .bib paths
+% relative to the compiler's working directory (unreliable on Overleaf), while biblatex
+% resolves \addbibresource relative to the main .tex file itself — which is what lets us
+% keep bibliography.bib at the repo root and reference it as ../bibliography.bib from here.
+\usepackage[backend=biber, style=numeric, sorting=none]{biblatex}
+\addbibresource{../bibliography.bib}
+
 \usepackage{lipsum}
 
 \usetikzlibrary{shapes,positioning,arrows.meta}

@@ -16,7 +16,6 @@
 \date{28}{09}{2026}
 \dateend{02}{10}{2026}
 
-\attn{Lecture notes accompanying the mini-course on ``Tensor network algorithms for computational fluid dynamics'' presented at the QTADE School 2026 in Bilbao, Spain. }
 
 % The class prints the title page and (for the `course` type) the table of
 % contents automatically at \begin{document} -- no \maketitle/\tableofcontents needed.
@@ -24,16 +23,17 @@
 \begin{document}
 
 \clearpage
-\section*{General Information}
+\section{General Information}
 \lipsum[4-7]
 
 \input{sections/01-part1-tn-representations}
 \input{sections/02-part2-linear-algebra}
 \input{sections/03-part3-forward-problem}
 \input{sections/04-part4-inverse-problem}
+
+
+\printbibliography % shared bibliography.bib lives at the repo root, loaded via biblatex in preamble.tex
+
+\clearpage
 \input{sections/05-appendix}
-
-\bibliographystyle{unsrt} % TODO: pick the style you prefer (e.g. plain, unsrt, apalike)
-\bibliography{../bibliography} % shared bibliography lives at the repo root
-
 \end{document}
