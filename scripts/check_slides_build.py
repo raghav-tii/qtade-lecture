@@ -51,11 +51,37 @@ def main() -> int:
     check(n_slides > 50, "slide count plausible", f"{n_slides} h2 slides")
 
     # --- citation numbering -------------------------------------------------
-    rendered = {}
+    # A multi-key citation ([@a; @b]) renders as ONE span: data-cites keeps the
+    # written order, but the CSL sorts the numbers, so the two cannot be zipped.
+    # Build the authoritative map from single-key spans, then resolve any
+    # remaining key by elimination within its multi-key span.
+    spans = []
     for m in re.finditer(r'<span class="citation" data-cites="([^"]+)">(.*?)</span>', h, re.S):
-        inner = re.sub(r"<[^>]+>", "", m.group(2))
-        for n in re.findall(r"\d+", inner):
-            rendered.setdefault(m.group(1), set()).add(int(n))
+        keys = m.group(1).split()
+        nums = [int(n) for n in re.findall(r"\d+", re.sub(r"<[^>]+>", "", m.group(2)))]
+        spans.append((keys, nums))
+        if len(keys) != len(nums):
+            failures.append(f"citation span key/number mismatch: {keys} vs {nums}")
+
+    rendered = {}
+    for keys, nums in spans:
+        if len(keys) == 1 and len(nums) == 1:
+            rendered.setdefault(keys[0], set()).add(nums[0])
+    for _ in range(len(spans)):          # iterate to a fixed point
+        for keys, nums in spans:
+            if len(keys) < 2 or len(keys) != len(nums):
+                continue
+            unknown = [k for k in keys if k not in rendered]
+            left = [n for n in nums if n not in {next(iter(rendered[k])) for k in keys if k in rendered}]
+            if len(unknown) == 1 and len(left) == 1:
+                rendered.setdefault(unknown[0], set()).add(left[0])
+
+    # every multi-key span must still carry exactly the numbers its keys own
+    for keys, nums in spans:
+        if len(keys) > 1 and all(k in rendered for k in keys):
+            want = sorted(next(iter(rendered[k])) for k in keys)
+            if sorted(nums) != want:
+                failures.append(f"multi-key citation {keys}: rendered {sorted(nums)} want {want}")
 
     check(bool(rendered), "citations present", f"{len(rendered)} distinct sources")
     unstable = {k: sorted(v) for k, v in rendered.items() if len(v) != 1}
@@ -83,6 +109,16 @@ def main() -> int:
     check(sorted(refs) == list(range(1, len(refs) + 1)), "reference numbering contiguous")
     missing = sorted(set(citeproc.values()) - refs)
     check(not missing, "every cited number appears in the reference list", str(missing))
+
+    # --- figures survived the render ----------------------------------------
+    imgs = re.findall(r'<img\b[^>]*?(?:data-)?src="data:image/', h)
+    check(len(imgs) >= 3, "images embedded", f"{len(imgs)} found")
+    ess = re.search(r'<section id="essentials".*?</section>', h, re.S)
+    check(bool(ess and "<img" in ess.group(0)), "GitHub QR present on Essentials slide")
+    # A stretched figure sizes itself from the slide's leftover height, so a
+    # full-height section collapses it. Ensure the CSS still exempts them.
+    check(":not(:has(.r-stretch))" in h,
+          "full-height rule still exempts stretched figures")
 
     # --- the citation styling actually shipped ------------------------------
     check('content: "["' in h and 'content: "]"' in h, "bracketed citation markers styled")
