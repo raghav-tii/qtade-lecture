@@ -19,9 +19,26 @@
 \usepackage[backend=biber, style=numeric, sorting=none]{biblatex}
 \addbibresource{../bibliography.bib}
 
-\usepackage{lipsum}
+% The class sets a narrow text block (right=2in, to leave room for \margintext),
+% which leaves TeX little slack on lines carrying long unbreakable tokens --
+% arXiv identifiers and DOIs in the bibliography, mostly. A little emergency
+% stretch avoids overfull lines there without loosening normal body text.
+\setlength{\emergencystretch}{2em}
 
 \usetikzlibrary{shapes,positioning,arrows.meta}
+
+% --- Cross-references to the four course parts ---
+% The parts are \section's in a document whose section 1 is "General
+% Information", so \ref{sec:partN} would print the section number (2,3,4,5)
+% rather than the part number. \partref{n} prints the Roman numeral and still
+% hyperlinks: "Part~\partref{1}", "Parts~\partref{1} and~\partref{2}".
+\newcommand{\partref}[1]{%
+  \ifcase#1\or
+    \hyperref[sec:part1]{I}\or
+    \hyperref[sec:part2]{II}\or
+    \hyperref[sec:part3]{III}\or
+    \hyperref[sec:part4]{IV}%
+  \fi}
 
 % --- Tensor-network notation macros (placeholders — adapt to your convention) ---
 \newcommand{\tensor}[1]{\mathsf{#1}}

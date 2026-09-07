@@ -24,7 +24,77 @@
 
 \clearpage
 \section{General Information}
-\lipsum[4-7]
+\label{sec:general-information}
+
+\paragraph{What this course is about.}
+Simulating a fluid means storing a field on a grid and pushing it forward in
+time. Both halves of that sentence scale badly: the storage grows exponentially
+with resolution and dimension, and each timestep touches all of it. These notes
+develop one response to that problem --- represent the field as a
+\textbf{tensor network}, and do the entire computation without ever writing the
+field down in full.
+
+\paragraph{The single idea.}
+A field sampled on $2^n$ points is a vector in a space of dimension $2^n$, but a
+\emph{physical} field is not an arbitrary point in that space. It is smooth, it
+is multiscale, and its well-separated scales are weakly coupled. Such a vector
+lies close to a low-dimensional manifold, described by $O(n\chi^2)$ numbers
+rather than $2^n$. Every part of this course either exploits that fact, tests
+it, or maps out where it stops being true.
+\margintext{Keep the bet and its price together: exponential memory savings are
+bought with a truncation error that must be monitored at every step. The
+truncation never goes away.}
+
+\paragraph{How the four parts fit together.}
+\begin{itemize}
+  \item \textbf{Part~\partref{1}} builds the representation: diagrammatic
+    notation, matrix product states, the quantics encoding, and a first PDE
+    solver.
+  \item \textbf{Part~\partref{2}} adds the linear algebra --- solving
+    $Ax = b$ on the manifold, and constructing a tensor train from a function
+    you can only sample.
+  \item \textbf{Part~\partref{3}} spends both on the Navier--Stokes
+    equations: a full incompressible solver, and the empirical question of how
+    far the ranks stretch.
+  \item \textbf{Part~\partref{4}} inverts the problem: given data rather than
+    an equation, recover the dynamics.
+\end{itemize}
+
+Parts~\partref{1} and~\partref{2} are prerequisites for the rest.
+Parts~\partref{3} and~\partref{4} are independent of one another and can
+be read in either order.
+
+\paragraph{Prerequisites.}
+Linear algebra --- in particular the singular value decomposition and its
+optimality properties --- and a first course in numerical methods for PDEs
+(finite differences, explicit and implicit time stepping, stability). No
+background in quantum mechanics is assumed anywhere; where a quantum-many-body
+term is unavoidable, its numerical-analysis synonym is given alongside it in
+\cref{subsec:literature-survey}.
+
+\paragraph{Notation and conventions.}
+\begin{itemize}
+  \item $n$ is the number of tensors in a chain, so the grid has $N = 2^n$
+    points per encoded coordinate.
+  \item $\chi$ is the bond dimension, written \textsc{tt-rank} in the
+    numerical-analysis literature.
+  \item Physical legs point down in diagrams; virtual legs run horizontally.
+  \item \enquote{MPS} and \enquote{tensor train} are used interchangeably, as are
+    \enquote{bond dimension} and \enquote{rank}; both vocabularies appear in the
+    papers these notes draw on.
+\end{itemize}
+
+\paragraph{Margin notes.}
+\margintext{Like this one.}
+Notes set in the margin carry historical context, dates and attributions, and
+warnings that would interrupt the argument if placed in the main text. They are
+commentary --- nothing in the main development depends on them.
+
+\paragraph{Materials.}
+The companion slides, the notebooks referenced in the exercises, and the shared
+bibliography all live in the course repository. The notebooks are the place to
+check the claims of \cref{subsec:heat-explicit-euler,subsec:heat-implicit-euler}
+for yourself; they are written to run on a laptop.
 
 \input{sections/01-part1-tn-representations}
 \input{sections/02-part2-linear-algebra}
