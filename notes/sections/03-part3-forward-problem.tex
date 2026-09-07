@@ -4,13 +4,13 @@
 
 % Mirrors slides.qmd "Part III" outline. One subsection per outline item.
 
-Parts~\partref{1} and~\partref{2} assembled a complete toolkit on a
-problem chosen for its docility. Part~\partref{3} points that toolkit at the
-Navier--Stokes equations, where every one of the toolkit's weaknesses is
-provoked at once: nonlinearity, a global constraint, and complicated geometry.
+Parts~\partref{1} and~\partref{2} assembled a complete toolkit on a problem
+chosen for its docility. Part~\partref{3} points that toolkit at the
+Navier--Stokes equations, where every weakness of the toolkit is provoked at
+once: nonlinearity, a global constraint, and complicated geometry.
 
-The order of the argument is: what the equations demand
-(\cref{subsec:navier-stokes}), how a QTT solver is actually built
+The order of the argument: what the equations demand
+(\cref{subsec:navier-stokes}), how a QTT solver is built
 (\cref{subsec:qtt-cfd-frameworks}), why fluids are the right target for this
 ansatz rather than an arbitrary one (\cref{subsec:why-fluid-dynamics}), and then
 the question everything hinges on --- when does $\chi$ actually stay small
@@ -37,8 +37,8 @@ is awkward for a tensor network in a \emph{different} way:
 \begin{enumerate}
   \item \textbf{Nonlinear advection}, $(\mathbf{v}\cdot\nabla)\mathbf{v}$:
     products of MPSs, so ranks multiply.
-  \item \textbf{A nonlocal pressure constraint}: a global elliptic solve at every
-    step.
+  \item \textbf{A nonlocal pressure constraint}: a global elliptic solve at
+    every step.
   \item \textbf{Boundary conditions on complex geometry}: sharp features, hence
     high rank.
 \end{enumerate}
@@ -49,18 +49,26 @@ rounding after every product. The second is the expensive one.
 
 \paragraph{Why pressure is the hard part.}
 \margintext{This is not a tensor-network problem. The globally coupled elliptic
-solve dominates runtime in classical incompressible CFD too --- which is why the
-comparison in \cref{subsec:qtt-cfd-results} is a fair one.}
+solve dominates runtime in classical incompressible CFD too, which is what makes
+the comparison in \cref{subsec:qtt-cfd-results} a fair one.}
 \begin{itemize}
   \item Pressure is \textbf{not a dynamical variable}. There is no evolution
     equation for it in~\eqref{eq:navier-stokes}.
   \item It is whatever instantaneously enforces $\nabla\cdot\mathbf{v} = 0$: a
     constraint, not a dynamics.
-  \item Taking the divergence of the momentum equation yields an elliptic
-    \textbf{Poisson problem} for $p$, coupling the whole domain at once.
-  \item Consequently every timestep contains a globally coupled linear solve.
-    That is where the runtime goes --- in classical CFD and in tensor networks
-    alike.
+  \item Taking the divergence of the momentum equation and using
+    $\nabla\cdot\mathbf{v} = 0$ to kill the time-derivative and viscous terms
+    leaves an elliptic \textbf{Poisson problem},
+    \begin{equation}
+      \nabla^2 p = -\rho\, \nabla\cdot\!\left[(\mathbf{v}\cdot\nabla)\mathbf{v}\right],
+      \label{eq:pressure-poisson}
+    \end{equation}%
+    whose right-hand side is the only place the nonlinearity enters.
+  \item Equation~\eqref{eq:pressure-poisson} couples the whole domain at once:
+    the Green's function of $\nabla^2$ has infinite support, so information
+    propagates across the mesh within a single step. Every timestep therefore
+    contains a globally coupled linear solve. That is where the runtime goes ---
+    in classical CFD and in tensor networks alike.
 \end{itemize}
 
 \paragraph{Reynolds number and the cascade.}
@@ -69,29 +77,38 @@ comparison in \cref{subsec:qtt-cfd-results} is a fair one.}
     parameter survives: $\mathrm{Re} = UL/\nu$, the ratio of inertial to viscous
     forces.
   \item \textbf{Kolmogorov picture:} energy is injected at the large scale $L$
-    and dissipated at $\eta \sim L\,\mathrm{Re}^{-3/4}$, cascading through the
-    scales in between.
-  \item Resolving both ends in three dimensions therefore requires
-    $\sim\!\mathrm{Re}^{9/4}$ degrees of freedom --- the estimate quoted without
-    justification in \cref{subsec:numerical-methods-intro}.
-  \item A commercial aircraft at cruise sits around $\mathrm{Re} \sim 10^7$.
-    That is the number that makes direct numerical simulation impossible.
+    and dissipated at the Kolmogorov scale
+    $\eta \sim L\,\mathrm{Re}^{-3/4}$, cascading through the scales between.
+  \item Resolving both ends in three dimensions therefore needs
+    $(L/\eta)^3 \sim \mathrm{Re}^{9/4}$ degrees of freedom --- the estimate
+    quoted without justification in \cref{subsec:numerical-methods-intro}.
+  \item A commercial aircraft at cruise sits around $\mathrm{Re} \sim 10^7$,
+    giving $\sim\!10^{16}$ degrees of freedom. That is the number that makes
+    direct numerical simulation impossible.
 \end{itemize}
 
 \paragraph{Benchmarks used in these notes.}
-\begin{itemize}
-  \item \textbf{Lid-driven cavity} --- closed domain, no geometry; the standard
-    sanity check.
-  \item \textbf{Flow past a cylinder} --- a steady vortex pair, then a
-    K\'arm\'an street; well tabulated in the literature.
-  \item \textbf{NACA 0040 airfoil} --- genuinely non-trivial immersed geometry.
-  \item \textbf{Decaying isotropic turbulence} --- the hard case, and the one
-    where rank behaviour is the real question.
-\end{itemize}
+\begin{center}
+  \begin{tabular}{@{}lp{0.52\textwidth}@{}}
+    \toprule
+    \textsc{Case} & \textsc{What it tests} \\
+    \midrule
+    Lid-driven cavity     & closed domain, no immersed geometry; the standard
+                            sanity check \\
+    Flow past a cylinder  & steady vortex pair, then a K\'arm\'an street;
+                            well tabulated \\
+    NACA 0040 airfoil     & genuinely non-trivial immersed geometry \\
+    Decaying isotropic
+    turbulence            & rank behaviour at high $\mathrm{Re}$; the hard
+                            case \\
+    \bottomrule
+  \end{tabular}
+\end{center}
 
+\noindent
 The compressible cousin of~\eqref{eq:navier-stokes} --- the Euler equations,
-with shocks and a nonlinear flux --- is the target of our ABQCC 2024
-solver~\cite{peddinti2025compressible}.
+with shocks and a nonlinear flux --- is targeted
+separately~\cite{peddinti2025compressible}.
 
 \subsection{QTT Frameworks for CFD}
 \label{subsec:qtt-cfd-frameworks}
@@ -107,34 +124,43 @@ same place, rounding from \cref{subsec:mps}.}
 \begin{itemize}
   \item Each velocity and pressure component becomes \textbf{one MPS} over
     $n = n_x + n_y \,(+\, n_z)$ quantics bits.
-  \item Bits are \textbf{interleaved} across coordinates in 2D and 3D, so that
-    each length scale stays local along the chain.
+  \item Bits are \textbf{interleaved} across coordinates, so each length scale
+    stays local along the chain.
   \item Gradient, divergence and Laplacian are MPOs of rank $2$--$4$, built once
-    and reused throughout.
-  \item Everything downstream is then MPO applications, Hadamard products, and
-    rounding. There are no other operations in the solver.
+    in closed form and reused throughout~\cite{kazeev2012laplace}.
+  \item Everything downstream is MPO application, Hadamard product, and
+    rounding. The solver contains no other operation.
 \end{itemize}
 
 \paragraph{Chorin projection.}
-Three moves per timestep:
+The scheme is Chorin's projection method~\cite{chorin1968} carried out in tensor
+form~\cite{peddinti2024cfd}. Three moves per timestep:
 
 \begin{enumerate}
-  \item \textbf{Predictor} --- ignore pressure and advance the momentum equation,
+  \item \textbf{Predictor} --- ignore pressure and advance momentum,
     \begin{equation*}
       \mathbf{v}^{*} = \mathbf{v}^{t}
         + \Delta t \left(-(\mathbf{v}^t\cdot\nabla)\mathbf{v}^t
         + \nu\nabla^2\mathbf{v}^t\right).
     \end{equation*}
+    The result is generally not divergence-free.
   \item \textbf{Pressure Poisson} --- the DMRG linear solve of
     \cref{subsec:linear-solvers}, and the expensive step,
     \begin{equation*}
       \nabla^2 p = \frac{\rho}{\Delta t}\, \nabla\cdot\mathbf{v}^{*}.
     \end{equation*}
-  \item \textbf{Projection} --- correct back onto the divergence-free manifold,
+  \item \textbf{Projection} --- subtract the pressure gradient to land back on
+    the divergence-free manifold,
     \begin{equation*}
       \mathbf{v}^{t+1} = \mathbf{v}^{*} - \frac{\Delta t}{\rho}\nabla p .
     \end{equation*}
 \end{enumerate}
+
+\begin{remark}
+  Steps 2 and 3 are a Helmholtz--Hodge decomposition: any vector field splits
+  uniquely into a divergence-free part and a gradient, and the Poisson solve is
+  how you find the gradient part in order to discard it.
+\end{remark}
 
 \paragraph{Geometry and readout.}
 \begin{itemize}
@@ -144,15 +170,17 @@ Three moves per timestep:
   \item \textbf{Self-consistent readout} --- the part that makes the method
     usable rather than merely fast:
     \begin{itemize}
-      \item a coarse-grained field costs $O(n\chi^3)$;
-      \item a single pixel costs $O(\chi^3)$.
+      \item a coarse-grained field costs $O(n\chi^3)$, by contracting the fine
+        legs against uniform vectors;
+      \item a single grid value costs $O(\chi^3)$, by contracting the chain
+        against the binary digits of that index.
     \end{itemize}
   \item The dense $2^n$ vector is \textbf{never reconstructed}, at any point in
     the pipeline.
 \end{itemize}
 
 \begin{remark}
-  Without a compressed readout the entire advantage evaporates: you would
+  Without a compressed readout the whole advantage evaporates: you would
   compress the computation and then decompress it in order to look at it. This
   is a general lesson about compressed solvers, not a detail of this one.
 \end{remark}
@@ -177,22 +205,23 @@ Incompressible flow past a cylinder~\cite{peddinti2024cfd}:
 \end{center}
 
 \noindent
-The runtime is poly-logarithmic in the mesh size, and the results were validated
-against Ansys Fluent on the squared geometries.
+Runtime is linear in $n$ and therefore \textbf{poly-logarithmic in the mesh
+size} $2^n$. The results were validated against Ansys Fluent on the squared
+geometries.
 
 \paragraph{Other frameworks in the field.}
 \begin{itemize}
-  \item \textbf{Reduced-order models} for wall-bounded flows, at a few percent of
-    the DNS variable count~\cite{kiffner2023rom}.
+  \item \textbf{Reduced-order models} for wall-bounded flows, at a few percent
+    of the DNS variable count~\cite{kiffner2023rom}.
+  \item \textbf{Turbulence PDFs} computed directly in tensor-network form,
+    rather than by sampling a reconstructed field~\cite{gourianov2025pdf}.
+  \item \textbf{Vlasov--Poisson} for kinetic plasmas~\cite{ye2022vlasov}.
   \item \textbf{Lattice Boltzmann} in tensor-train form: a different
     discretization, the same compression idea.
-  \item \textbf{Vlasov--Poisson} for kinetic plasmas~\cite{ye2022vlasov}.
-  \item \textbf{GPU-accelerated 2D turbulence}, pushing the implementation rather
-    than the algorithm.
 \end{itemize}
 
 The common thread is that the ansatz is portable across discretizations, and
-that the hard part is always the global solve.
+that the global solve is always the hard part.
 
 \subsection{Why Fluid Dynamics?}
 \label{subsec:why-fluid-dynamics}
@@ -200,34 +229,35 @@ that the hard part is always the global solve.
 % scale separation, industrial/scientific relevance, motivation for
 % compressed tensor representations.
 
-Two separate questions are worth keeping apart: why fluids are worth the effort,
+Two separate questions, worth keeping apart: why fluids are worth the effort,
 and why they happen to suit this particular ansatz.
 
 \paragraph{Fluid dynamics is where the cycles go.}
 \begin{itemize}
-  \item CFD is one of the largest consumers of HPC worldwide: aerodynamics,
-    weather and climate, combustion, biomedical flow.
+  \item CFD is a top consumer of HPC worldwide: aerodynamics, weather and
+    climate, combustion, biomedical flow.
   \item The bottleneck is resolution, and resolution costs
     $\sim\!\mathrm{Re}^{9/4}$ in three dimensions.
   \item Exascale still cannot simulate a full aircraft at flight Reynolds
     number.
   \item Everything cheaper than DNS --- RANS, LES --- is a \textbf{model}, with
-    tuned closures and limited transferability between regimes.
+    tuned closures and limited transfer between regimes.
 \end{itemize}
 
 \paragraph{Why it suits tensor networks.}
 \margintext{Gourianov \emph{et al.} (2022) made this argument first and
-quantitatively; it is the observation that turned a plausible analogy into a
+quantitatively. It is the observation that turned a plausible analogy into a
 research programme.}
 \begin{itemize}
   \item Turbulence has precisely the structure the ansatz wants: a
-    \textbf{cascade} in which well-separated scales are weakly
-    coupled~\cite{gourianov2022}.
+    \textbf{cascade} in which well-separated scales couple
+    weakly~\cite{gourianov2022}.
   \item Quantics provides a scale-by-scale representation for free
     (\cref{subsec:qtt-functions-operators}), so the natural hierarchy of the
-    physics \emph{is} the natural hierarchy of the ansatz.
-  \item It is also an honest stress test --- nonlinear, multiscale,
-    geometrically complex, and with unambiguous quantitative benchmarks.
+    physics \emph{is} the natural hierarchy of the ansatz. Weak inter-scale
+    coupling is exactly what a small bond dimension encodes.
+  \item It is also an honest stress test: nonlinear, multiscale, geometrically
+    complex, with unambiguous quantitative benchmarks.
   \item And it is a bridge to hardware: the same encoding is what a
     fault-tolerant quantum CFD algorithm would consume and return.
 \end{itemize}
@@ -238,12 +268,11 @@ research programme.}
 % rank, turbulent vs. laminar flow compressibility, empirical rank
 % studies, limits of expressivity.
 
-Everything so far has assumed that $\chi$ stays small. This subsection asks
-when that is actually true, and it is the most important one in
-Part~\partref{3}.
+Everything so far assumed that $\chi$ stays small. This subsection asks when
+that is actually true, and it is the most important one in Part~\partref{3}.
 
 \paragraph{The central question.}
-There are two sub-questions, and they have different answers:
+Two sub-questions, with different answers:
 
 \begin{itemize}
   \item How does $\chi$ grow with \textbf{resolution}, at fixed physics?
@@ -252,8 +281,8 @@ There are two sub-questions, and they have different answers:
 
 \noindent
 The first is benign --- that is the quantics promise of
-\cref{subsec:qtt-functions-operators}. The second is the real question, and it
-is empirical.
+\cref{subsec:qtt-functions-operators}. The second is the real question, it has
+no theory behind it (\cref{subsec:part3-outlook}), and the answer is empirical.
 
 \paragraph{3D turbulence at $\mathrm{Re}_\lambda = 315$.}
 \margintext{Pisoni \emph{et al.} (2026): DNS snapshots on $1024^3 = 2^{30}$
@@ -278,10 +307,13 @@ essentially intact~\cite{pisoni2026turbulence}.
 \paragraph{What breaks first.}
 \begin{itemize}
   \item \textbf{The spectrum is the easy diagnostic.} It still looks fine long
-    after the flow does not. Reporting only $E(k)$ overstates the quality of a
+    after the flow does not. $E(k)$ is a second-order two-point statistic, and
+    second-order statistics are exactly what an $\ell_2$-optimal truncation
+    protects. Reporting only $E(k)$ therefore overstates the quality of a
     compression.
   \item The demanding diagnostics are the \textbf{PDFs of velocity increments}
-    and the \textbf{flatness} --- the intermittency statistics.
+    and the \textbf{flatness}, i.e.\ the intermittency statistics. These are
+    high-order and live in the tails, where truncation error concentrates.
   \item \textbf{Bit ordering decides this.} Stacked ordering over-smooths the
     field at low $\chi$; interleaved ordering preserves the non-Gaussian
     statistics.
@@ -297,7 +329,7 @@ essentially intact~\cite{pisoni2026turbulence}.
   physical statement.
 \end{remark}
 
-The flip side is genuinely encouraging: random low-rank tensor trains with
+The flip side is genuinely encouraging. Random low-rank tensor trains with
 $\chi = 10$, cascaded across scales, \textbf{synthesize} divergence-free
 turbulent-like snapshots --- correct spectrum, correct flatness --- at
 logarithmic cost~\cite{pisoni2026turbulence}. Whatever the ansatz is missing, it
@@ -312,24 +344,28 @@ is not the gross statistical structure of turbulence.
 \begin{itemize}
   \item \textbf{Higher $\mathrm{Re}$, full 3D.} Lifting the $\chi = 100$ ceiling
     is an engineering problem before it is a physics one.
-  \item \textbf{Better solvers.} TT preconditioning, GPU and distributed sweeps,
-    mixed precision --- recall that the Poisson solve is $80\%$ of runtime.
+  \item \textbf{Better solvers.} TT preconditioning, distributed and GPU sweeps,
+    mixed precision. Recall that the Poisson solve is $80\%$ of runtime, so
+    nothing else is worth optimizing first.
   \item \textbf{Adaptivity.} Choose $\chi(t)$ and $\Delta t$ from a live error
-    estimate rather than from a fixed cap.
+    estimate rather than a fixed cap; tangent-space integrators supply the
+    machinery~\cite{lubich2015timeint}.
   \item \textbf{Structure-preserving truncation.} Maintain
     $\nabla\cdot\mathbf{v} = 0$ and the conserved quantities under SVD rounding.
 \end{itemize}
 
 \paragraph{Physics and theory.}
-\margintext{The theory gap is the one an applied-mathematics audience should
-take away: there is at present no sharp rank bound for Navier--Stokes solutions
-as a function of $\mathrm{Re}$.}
+\margintext{The theory gap is the takeaway for an applied-mathematics audience:
+there is at present no sharp rank bound for Navier--Stokes solutions as a
+function of $\mathrm{Re}$.}
 \begin{itemize}
   \item \textbf{Compressible and multiphysics.} Shocks, reacting flows, MHD ---
-    regimes in which rank behaviour is essentially unmapped.
+    regimes where rank behaviour is essentially unmapped.
   \item \textbf{The theory gap.} No sharp rank bounds for Navier--Stokes
-    solutions as a function of $\mathrm{Re}$. This is the missing foundation
-    beneath every empirical result quoted above.
+    solutions as a function of $\mathrm{Re}$. Contrast this with
+    \cref{subsec:mps}, where the one-dimensional area law~\cite{hastings2007}
+    gives exactly such a bound for quantum ground states. That is the missing
+    foundation beneath every empirical result quoted above.
   \item \textbf{Hybrid tensor networks and machine learning.} Learned closures,
     learned preconditioners, tensor-network surrogates --- which is
     Part~\partref{4}.

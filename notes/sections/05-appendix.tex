@@ -4,8 +4,8 @@
 
 % Mirrors slides.qmd "Appendix" outline. One subsection per outline item.
 
-The two algorithms below are used throughout the notes and are stated here in
-full, so that the main text can refer to them without interrupting its argument.
+The two algorithms below are used throughout the notes. They are stated here in
+full so the main text can refer to them without interrupting its argument.
 
 \subsection{TT-Cross}
 \label{subsec:appendix-tt-cross}
@@ -13,47 +13,72 @@ full, so that the main text can refer to them without interrupting its argument.
 % maxvol, skeleton decomposition, pivoting strategy, convergence and error
 % bounds, computational cost.
 
-TT-cross builds a tensor train from evaluations of a black-box function, never
-forming the full array~\cite{oseledets2010ttcross}. It is what makes
-\cref{subsec:finding-qtt,subsec:tt-cross-geometry} possible.
+TT-cross builds a tensor train for a black-box $f$ from $O(n\chi^2)$
+evaluations, never forming the full array~\cite{oseledets2010ttcross}. It is
+what makes \cref{subsec:finding-qtt,subsec:tt-cross-geometry} possible.
 
 \paragraph{The matrix case first.}
 \begin{itemize}
   \item A rank-$r$ matrix $M$ is exactly reconstructed from $r$ rows $I$ and $r$
     columns $J$ by the \textbf{skeleton} (or CUR) formula
     \begin{equation}
-      M \approx M(:,J)\, M(I,J)^{-1} M(I,:) .
+      M = M(:,J)\, M(I,J)^{-1} M(I,:) .
       \label{eq:skeleton}
     \end{equation}
   \item The whole question is which rows and columns to pick. A badly
-    conditioned $M(I,J)$ destroys the reconstruction.
+    conditioned $M(I,J)$ destroys the reconstruction, since its inverse appears
+    in~\eqref{eq:skeleton}.
   \item \textbf{maxvol} answers it: choose the $r \times r$ submatrix of maximum
     volume, i.e.\ largest $\abs{\det}$.\margintext{The maximum-volume principle
     is due to Goreinov and Tyrtyshnikov (2001); Oseledets and Tyrtyshnikov
-    carried it up to tensor trains in 2010.} The resulting error is within a
-    factor $(r+1)$ of the best rank-$r$ approximation in the Chebyshev norm.
-  \item maxvol is computed greedily by row swaps, at cost $O(N r^2)$ per sweep.
+    carried it up to tensor trains in 2010.} For an approximately rank-$r$ $M$
+    the resulting error is within a factor $(r+1)$ of the best rank-$r$
+    approximation in the Chebyshev norm.
+  \item Finding the true maximum-volume submatrix is NP-hard. The practical
+    algorithm swaps rows greedily until no single swap increases $\abs{\det}$,
+    which lands within a controlled factor of the true maximum and costs
+    $O(N r^2)$ per sweep.
 \end{itemize}
 
-\paragraph{From matrices to tensor trains.}
-\begin{itemize}
-  \item Apply~\eqref{eq:skeleton} recursively down the chain: at each bond,
-    unfold the tensor into a matrix, choose pivots by maxvol, and keep the index
-    sets.
-  \item Sweeping left to right and back refines the index sets; the cost is
-    $O(n \chi^3)$ function evaluations for $n$ tensors of bond dimension $\chi$
-    --- \textbf{independent of $2^n$}.
-  \item \textbf{Rectangular maxvol} keeps more than $r$ pivots, which improves
-    robustness at modest extra cost, and is generally worth switching on.
-  \item Rank adaptation: grow $\chi$ until the cross error --- measured on fresh
-    sample points, not on the pivots --- stops decreasing.
-\end{itemize}
+\paragraph{The tensor-train algorithm.}
+Maintain, for each bond $k$, a set of row multi-indices $\mathcal{I}_k$ and
+column multi-indices $\mathcal{J}_k$. Then:
 
-\begin{remark}
-  Convergence is heuristic. There is no guarantee for adversarial or noisy
-  black boxes, and the failure modes listed in \cref{subsec:finding-qtt} are all
-  observed in practice. Always validate on points the cross has never sampled.
+\begin{enumerate}
+  \item Initialize $\mathcal{I}_k$ and $\mathcal{J}_k$, either at random or from
+    a coarse pass over the domain.
+  \item Sweeping left to right, form the slice
+    $F_k = f(\mathcal{I}_k,\, i_k,\, \mathcal{J}_k)$, a $\chi \times d\chi$
+    matrix obtained by varying only the local index $i_k$ while the pivots hold
+    everything else fixed. This is the only place $f$ is called.
+  \item Apply \textbf{maxvol} to $F_k$: select the $\chi$ rows of maximum
+    $\abs{\det}$, and use them to update $\mathcal{I}_{k+1}$.
+  \item Set the core to $F_k \hat{F}_k^{-1}$, where $\hat{F}_k$ is the selected
+    maximum-volume submatrix, and carry the residual factor to the right.
+  \item Sweep back right to left and repeat until the cross error, measured on
+    fresh sample points, plateaus.
+\end{enumerate}
+
+\begin{remark}[Interpolation property]
+  The resulting MPS is \textbf{exact} on every fibre it sampled --- that is what
+  $\hat{F}_k^{-1}$ in step~4 enforces. This is the algorithm's defining
+  strength and its defining weakness: it reproduces sampled values exactly,
+  including sampled noise, and it says nothing at all about the fibres it never
+  looked at.
 \end{remark}
+
+\paragraph{Practical notes.}
+\begin{itemize}
+  \item Cost is $O(n \chi^3)$ arithmetic and $O(n \chi^2)$ function evaluations
+    for $n$ tensors of bond dimension $\chi$ --- \textbf{independent of $2^n$}.
+  \item \textbf{Rectangular maxvol} keeps more than $\chi$ pivots, improving
+    robustness at modest extra cost. Generally worth switching on.
+  \item \textbf{Rank-adaptive variants} insert pivots where the local error is
+    largest, rather than fixing $\chi$ in advance~\cite{nunez2025tci}.
+  \item Convergence is heuristic. There is no guarantee for adversarial or noisy
+    black boxes, and the failure modes of \cref{subsec:finding-qtt} are all
+    observed in practice. Always validate on points the cross never sampled.
+\end{itemize}
 
 \subsection{DMRG}
 \label{subsec:appendix-dmrg}
@@ -67,34 +92,45 @@ by local updates. In these notes it appears as the linear solver of
 \cref{subsec:qtt-cfd-frameworks}, and as the all-at-once space--time solve of
 \cref{subsec:dmd-space-time}.
 
-\margintext{White introduced DMRG in 1992 to find ground states; its use as a
-general-purpose linear solver on the MPS manifold is a later reading of the same
-algorithm.}
 \paragraph{The two-site sweep.}
 \begin{enumerate}
   \item Bring the MPS into mixed canonical form with the orthogonality centre at
-    site $k$.
-  \item Merge sites $k$ and $k+1$ into a single two-site tensor.
-  \item Solve the \textbf{local problem} in that tensor alone --- an eigenproblem
-    for ground states, a linear system for $Ax = b$ --- with every other tensor
-    held fixed. The environments are contracted once and reused.
-  \item Split the result by SVD, truncating to tolerance $\varepsilon$ or to a
+    site $k$ (\cref{subsec:mps}).
+  \item Merge sites $k$ and $k+1$ into a single two-site tensor of size
+    $\chi d^2 \chi$.
+  \item Solve the \textbf{local problem} in that tensor alone, with every other
+    tensor held fixed: an eigenproblem for ground states, a linear system for
+    $Ax = b$. The effective operator is assembled from cached left and right
+    \textbf{environments} --- the partial contractions of the MPO with the
+    frozen parts of the chain --- which are updated one site at a time rather
+    than rebuilt.
+  \item Split the result by SVD, truncating to a tolerance $\varepsilon$ or a
     rank cap $\chi_{\max}$.
   \item Move the orthogonality centre one site along and repeat, sweeping right
     then left.
 \end{enumerate}
 
-\paragraph{Practical notes.}
+\begin{remark}
+  Because the canonical form makes the environments orthonormal, the local
+  problem in step~3 is a genuine restriction of the global one, not an
+  approximation of it. This is why the global objective decreases monotonically.
+\end{remark}
+
+\paragraph{Cost and practical notes.}
 \begin{itemize}
+  \item Per sweep, $O(n \chi^3 d^2 + n \chi^2 d\, \chi_{\mathrm{MPO}})$ for the
+    contractions, with the local solve reaching $O(\chi^6)$ in the worst case.
+    Observed totals are much better (\cref{subsec:linear-solvers}).
   \item \textbf{Adaptive bond dimension} is the point of the two-site variant:
-    the SVD in step~4 is free to return a larger rank than it started with.
-  \item The local cost is up to $O(\chi^6)$ in the worst case; observed totals
-    are much better (\cref{subsec:linear-solvers}).
+    the SVD in step~4 may return a larger rank than it started with, so
+    $\varepsilon$ rather than $\chi$ becomes the control parameter.
+  \item \textbf{Escaping local minima.} Two-site updates explore directions
+    unavailable to any single tensor, so they escape stalls that trap one-site
+    sweeps. AMEn recovers most of this at one-site cost by enriching the update
+    with residual directions~\cite{dolgov2014amen,holtz2012als}.
   \item \textbf{Sweeping schedule.} Start with a loose tolerance and a low rank
-    cap, and tighten both over successive sweeps. Two or three sweeps usually
+    cap, then tighten both over successive sweeps. Two or three sweeps usually
     suffice from a warm start.
   \item \textbf{Warm starts} matter more than any other tuning parameter in a
     time-stepping context, because consecutive solutions are close.
-  \item The one-site variant is cheaper but cannot grow the rank, which is what
-    AMEn's residual enrichment repairs~\cite{dolgov2014amen}.
 \end{itemize}

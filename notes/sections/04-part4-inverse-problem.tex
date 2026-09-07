@@ -4,15 +4,15 @@
 
 % Mirrors slides.qmd "Part IV" outline. One subsection per outline item.
 
-Parts~\partref{1}--\partref{3} assumed we know the governing equation
-and want its solution. Part~\partref{4} inverts that assumption. What we
-have instead are \textbf{snapshots} $\{u(t_k)\}$ --- from an experiment, from
-DNS output, or from sensors. What we lack is the operator, the closure, and
-sometimes the equation itself.
+Parts~\partref{1}--\partref{3} assumed we know the governing equation and want
+its solution. Part~\partref{4} inverts that assumption. What we have instead are
+\textbf{snapshots} $\{u(t_k)\}$ --- from an experiment, from DNS output, or from
+sensors. What we lack is the operator, the closure, and sometimes the equation
+itself.
 
 This is the regime of most real measurement data, and of every system too
 complex to write down. The claim of this part is that the same compressed format
-serves here too, and that it does so without giving up interpretability.
+serves here too, and does so without giving up interpretability.
 
 \subsection{Prediction of dynamics using time-series}
 \label{subsec:prediction-time-series}
@@ -23,35 +23,42 @@ serves here too, and that it does so without giving up interpretability.
 \paragraph{Two tasks, kept separate.}
 \margintext{Conflating these two is the most common error in the data-driven
 literature. A method can be excellent at one and useless at the other.}
-\begin{itemize}
-  \item \textbf{Prediction.} Given the past, forecast $u(t_{K+k})$. No
-    interpretable model is required; only the forecast is judged.
-  \item \textbf{Learning, or identification.} Recover the operator or the
-    governing equations. Here interpretability is the entire point.
-  \item Neural surrogates are the clean illustration: they predict well and
-    explain nothing.
-\end{itemize}
+\begin{center}
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    \textsc{Task} & \textsc{Goal} & \textsc{Interpretable model} \\
+    \midrule
+    Prediction     & forecast $u(t_{K+k})$          & not required \\
+    Identification & recover operator or equations  & the entire point \\
+    \bottomrule
+  \end{tabular}
+\end{center}
 
-The classical toolkit spanning both tasks: POD and PCA, DMD and Koopman
-operators, SINDy, operator learning (DeepONet, FNO), and data assimilation.
+\begin{itemize}
+  \item Methods strong at one are often weak at the other. Neural surrogates are
+    the clean illustration: they predict well and explain nothing.
+  \item The classical toolkit spans both: POD and PCA, DMD and Koopman
+    operators, SINDy~\cite{brunton2016sindy}, operator learning, and data
+    assimilation.
+\end{itemize}
 
 \paragraph{The same curse, again.}
 \begin{itemize}
-  \item Snapshot matrices are $N_x \times N_t$ with $N_x = 2^n$, so even taking
-    the SVD is prohibitive --- the wall of
-    \cref{subsec:numerical-methods-intro} in a new costume.
+  \item Snapshot matrices are $N_x \times N_t$ with $N_x = 2^n$, so even the SVD
+    is prohibitive: $O(N_x N_t^2)$ work and $O(N_x N_t)$ memory. This is the
+    wall of \cref{subsec:numerical-methods-intro} in a new costume.
   \item The data brings its own problems on top: sparse and noisy measurements,
     short time series, non-stationarity, and no guarantee that a closed model
     exists at all.
-  \item \textbf{The tensor-network promise:} compress \emph{both} space and time,
-    perform the linear algebra inside the compressed format, and keep the modes
+  \item \textbf{The tensor-network promise:} compress \emph{both} space and
+    time, do the linear algebra inside the compressed format, and keep the modes
     interpretable.
 \end{itemize}
 
 \begin{remark}
-  A useful practical bonus: a model obtained in MPS format plugs straight back
-  into the Part~\partref{3} solver. Same data structure, no conversion
-  layer, no lossy hand-off between the learned model and the simulator.
+  A practical bonus: a model obtained in MPS format plugs straight back into the
+  Part~\partref{3} solver. Same data structure, no conversion layer, and no
+  lossy hand-off between the learned model and the simulator.
 \end{remark}
 
 \subsection{Dynamic Mode Decomposition and Space-Time Encoding}
@@ -65,66 +72,72 @@ Assume the dynamics are approximately linear in the state,
 \begin{equation}
   u_{k+1} \approx A\, u_k ,
   \label{eq:dmd-linear}
-\end{equation}
-find the best such $A$ from the data, and read off its eigenpairs. Each
-eigenvalue gives a \textbf{growth rate and a frequency}; each eigenvector gives a
-\textbf{spatial mode}. That is the whole appeal: the output is a set of
-individually interpretable physical structures.
+\end{equation}%
+find the best such $A$ from the data, and read off its
+eigenpairs~\cite{schmid2010dmd}. Each eigenvalue gives a \textbf{growth rate and
+a frequency}; each eigenvector gives a \textbf{spatial mode}. That is the whole
+appeal: the output is a set of individually interpretable physical structures.
 
 \paragraph{The standard recipe.}
-\begin{itemize}
-  \item Build snapshot matrices $X = [u_0 \cdots u_{T-1}]$ and
-    $X' = [u_1 \cdots u_T]$.
-  \item Take the SVD $X = U\Sigma V^{\dagger}$ and project onto the leading
-    modes,
-    \begin{equation}
-      \tilde{A} = U^{\dagger} X' V \Sigma^{-1}.
-      \label{eq:dmd-projected}
-    \end{equation}
-  \item Eigendecompose the small matrix $\tilde{A}$; the DMD modes are
-    $\Phi = UW$.
-\end{itemize}
+Build the two shifted snapshot matrices, take an SVD, and project:
+\begin{align}
+  X   &= [u_0 \; \cdots \; u_{T-1}], \qquad
+  X'   = [u_1 \; \cdots \; u_T], \qquad
+  X    = U\Sigma V^{\dagger}, \\
+  \tilde{A} &= U^{\dagger} X' V \Sigma^{-1}, \qquad
+  \tilde{A} = W\Lambda W^{-1}, \qquad
+  \Phi = UW .
+  \label{eq:dmd-recipe}
+\end{align}%
+The matrix $\tilde{A}$ is the projection of $A$ onto the leading $r$ left
+singular vectors, so it is $r \times r$ rather than $N_x \times N_x$. The DMD
+modes are the columns of $\Phi$.
 
 \begin{remark}[Koopman view]
-  Equation~\eqref{eq:dmd-projected} is a finite-rank approximation of the linear,
-  infinite-dimensional Koopman operator acting on observables. That is why a
-  linear method can describe nonlinear dynamics without contradiction.
+  Equation~\eqref{eq:dmd-recipe} is a finite-rank approximation of the linear,
+  infinite-dimensional Koopman operator acting on observables~\cite{tu2014dmd}.
+  The nonlinear dynamics are linear in the space of observables, but that space
+  is infinite-dimensional; DMD truncates it to $r$ dimensions. That is why a
+  linear method can describe nonlinear dynamics without contradiction, and also
+  why it fails when $r$ modes do not span the relevant observables.
 \end{remark}
 
 \paragraph{Space and time in a single MPS.}
 \margintext{Our 2025 space--time paper. The conceptual move is small and the
 consequence is large: once time is just more legs, there is no time loop to
-parallelize or to accumulate error along.}
+parallelize and no step-to-step error accumulation along it.}
 \begin{itemize}
   \item The idea~\cite{peddinti2025spacetime}: binarize \textbf{both} $x$ and
     $t$, into one MPS of $\log_2 N_x + \log_2 N_t$ tensors.
-  \item Time stops being a loop and becomes simply more legs on the same chain.
+  \item Time stops being a loop and becomes more legs on the same chain.
   \item \textbf{Ordering matters here too.} Space-then-time works generally;
     time-then-space converged better for the nonlinear Schr\"odinger case,
     giving smoother vectorized solutions.
-  \item The conceptual payoff: the \textbf{temporal} bond dimension becomes a
-    direct measure of temporal complexity. Smooth dynamics means small $\chi$.
+  \item The payoff: the \textbf{temporal} bond dimension --- the rank across the
+    cut separating space legs from time legs --- is a direct measure of temporal
+    complexity. Smooth dynamics means small $\chi$.
 \end{itemize}
 
 \paragraph{The all-at-once solve.}
 \begin{itemize}
   \item Assemble the entire space--time linear system as a single MPO and solve
-    it \textbf{once} with DMRG --- there is no time-stepping loop at all.
-  \item Nonlinear terms are handled by Picard iteration, with linear
-    convergence; Newton would give quadratic convergence at higher cost per
-    iteration.
+    it \textbf{once} with DMRG. There is no time-stepping loop at all, so the
+    scheme is not subject to a step-size stability condition.
+  \item Nonlinear terms are handled by Picard iteration, converging linearly;
+    Newton would give quadratic convergence at higher cost per iteration.
 \end{itemize}
 
 \noindent
-Benchmarks on a $1024 \times 1024$ space--time grid:
+On a $1024 \times 1024$ space--time grid~\cite{peddinti2025spacetime}:
 
 \begin{center}
-  \begin{tabular}{lll}
+  \begin{tabular}{@{}llp{0.38\textwidth}@{}}
     \toprule
     \textsc{Equation} & $\chi$ & \textsc{Compression} \\
     \midrule
     Heat, wave                    & $2$--$22$ & $> 99\%$ \\
-    Burgers, nonlinear diffusion  & $10$      & $> 99\%$, residual $\sim\!10^{-3}$ \\
+    Burgers, nonlinear diffusion  & $10$      & $> 99\%$, residual
+                                                $\sim\!10^{-3}$ \\
     \bottomrule
   \end{tabular}
 \end{center}
@@ -138,31 +151,35 @@ Standard DMD needs an SVD of an $N_x \times N_t$ matrix. That is the bottleneck
     pipeline \emph{inside} the space--time MPS, never forming the snapshot
     matrix.
   \item The key observation is that the MPS already contains the SVD. It only
-    has to be gauged into the right form --- see \cref{subsec:mps}.
+    has to be gauged into the right form (\cref{subsec:mps}).
   \item Same modes, same eigenvalues, same predictions, at exponentially lower
-    cost.
+    cost. Earlier tensor-based DMD variants compressed space but stayed linear
+    in $N_t$~\cite{klus2018tdmd}.
 \end{itemize}
 
 \noindent
 The algorithm is three steps:
 
 \begin{enumerate}
-  \item \textbf{Gauge} into mixed canonical form at the space/time bond. The
-    Schmidt decomposition there \emph{is} $U\Sigma V^{\dagger}$, so the SVD comes
-    for free.
-  \item \textbf{Project} the evolution operator onto the POD basis,
-    $\tilde{A} = U^{\dagger} A U$: a small $\chi \times \chi$ matrix.
+  \item \textbf{Gauge} into mixed canonical form at the bond separating the
+    space legs from the time legs. The Schmidt decomposition across that bond
+    \emph{is} $U\Sigma V^{\dagger}$, so the SVD comes for free: $U$ is the
+    left-orthogonal half of the chain, $\Sigma$ the bond singular values.
+  \item \textbf{Project} the evolution operator onto that basis,
+    $\tilde{A} = U^{\dagger} A U$, a $\chi \times \chi$ matrix. Here $\chi$
+    plays the role of the truncation rank $r$ in~\eqref{eq:dmd-recipe}.
   \item \textbf{Eigendecompose} $\tilde{A} = W\Lambda W^{-1}$, take modes
     $\Phi = UW$, and predict by local contractions alone,
     \begin{equation}
       u_{T+k} = A^k u_T = U W \Lambda^k W^{-1} U^{\dagger} u_T .
       \label{eq:mps-dmd-predict}
-    \end{equation}
+    \end{equation}%
 \end{enumerate}
 
-For externally supplied data --- where no space--time solve produced the MPS ---
-stack the snapshot MPSs sequentially, truncating after each. The cost is linear
-in the number of timesteps.
+Raising $\Lambda$ to the power $k$ costs nothing, so forecasting $1000$ steps
+ahead costs the same as forecasting one. For externally supplied data, where no
+space--time solve produced the MPS, stack the snapshot MPSs sequentially and
+truncate after each; the cost is linear in the number of timesteps.
 
 \paragraph{Results.}
 \margintext{The headline is the scaling, not the compression ratio: runtime
@@ -193,16 +210,18 @@ DMD recovers an operator. The more ambitious task is to recover the
 the regime it was fitted in whereas an equation is not.
 
 \begin{itemize}
-  \item \textbf{System identification.} Fit a parametrized operator or a
-    dictionary of candidate terms, and select among them. SINDy-style sparse
-    regression is the canonical example; TT-based variants keep the dictionary
-    manageable at high resolution.
+  \item \textbf{System identification.} Fit a sparse combination of candidate
+    terms from a dictionary --- $u_x$, $u u_x$, $u_{xx}$, and so on --- and
+    select among them by sparse regression. SINDy is the canonical
+    example~\cite{brunton2016sindy}. The dictionary is a tensor product over
+    candidate terms, so it grows exponentially with the number of terms
+    considered; TT-based variants keep it manageable~\cite{klus2018tdmd}.
   \item \textbf{Data assimilation.} Combine a known but imperfect model with
-    sparse observations. Here the tensor network carries the state, and the
-    model is the Part~\partref{3} solver.
+    sparse observations. The tensor network carries the state, and the model is
+    the Part~\partref{3} solver.
   \item \textbf{Sparse and noisy measurements} are the normal case, not the
     exception. Recall from \cref{subsec:finding-qtt} that cross interpolation
-    will fit noise faithfully if you let it.
+    fits noise faithfully if you let it.
   \item \textbf{Governing-equation discovery} is the hardest of these, and the
     one where interpretability is not a bonus but the deliverable.
 \end{itemize}
@@ -212,7 +231,8 @@ the regime it was fitted in whereas an equation is not.
   differently, a regularizer: discarding small singular values discards
   low-amplitude structure, some of which is noise. Whether it denoises or
   faithfully reproduces the noise depends on where the noise sits in the
-  spectrum, and that is not something you get to assume.
+  singular-value spectrum. Broadband noise spreads across all singular values
+  and is partly removed; structured or low-rank noise is retained exactly.
 \end{remark}
 
 \subsection{Tensor Networks for Learning Dynamical Laws}
@@ -224,25 +244,28 @@ the regime it was fitted in whereas an equation is not.
 \begin{itemize}
   \item \textbf{TT surrogates and operator learning.} Represent the solution
     operator itself as an MPO and fit it to data. The training problem is again
-    a sweeping optimization, so the machinery of
-    \cref{subsec:linear-solvers} carries over directly.
+    a sweeping optimization, so the machinery of \cref{subsec:linear-solvers}
+    carries over directly --- including its rank adaptivity and its tendency to
+    stall in local minima.
   \item \textbf{Tensor-network closures.} Learn only the unresolved part --- the
     closure term --- and leave the resolved dynamics to the solver. This is the
     hybrid route, and the one where the physics prior does the most work.
   \item \textbf{Training strategies.} Sweeping optimization with adaptive ranks,
     warm starts across parameter values, and rank as the primary regularization
-    knob.
-  \item \textbf{Generalization and extrapolation.} Extrapolating in time is
-    where surrogate models usually fail. A linear-in-observables model of the
-    DMD kind extrapolates in a way you can reason about; a neural surrogate
-    typically does not.
+    knob. Unlike a neural network's width and depth, rank has a direct
+    interpretation: it is the number of retained singular values.
+  \item \textbf{Generalization and extrapolation.} Extrapolating in time is where
+    surrogate models usually fail. A linear-in-observables model of the DMD kind
+    extrapolates in a way you can reason about --- the eigenvalues of $\Lambda$
+    tell you exactly which modes grow and which decay. A neural surrogate offers
+    no such handle.
 \end{itemize}
 
 \begin{remark}[The comparison that matters]
   Against neural-network surrogates the tensor-network case does not rest on raw
-  accuracy. It rests on the fact that modes, frequencies and growth rates come
-  out of the method directly, rather than from a post-hoc probe --- and on the
-  fact that rank gives a single, monitorable complexity knob.
+  accuracy. It rests on two things: modes, frequencies and growth rates come out
+  of the method directly rather than from a post-hoc probe; and rank gives a
+  single monitorable complexity knob with a known meaning.
 \end{remark}
 
 \subsection{Outlook}
@@ -258,22 +281,26 @@ space--time work, and lifting it brings back the index-ordering questions of
   \item \textbf{Beyond $(1+1)$D.} The space--time analysis so far is
     one-dimensional in space. Two and three dimensions plus time --- and the
     index ordering that goes with them --- is open.
-  \item \textbf{Nonlinear and Koopman extensions.} Extended DMD with TT
+  \item \textbf{Nonlinear and Koopman extensions.} Extended DMD with tensor-train
     dictionaries, and kernel DMD in compressed form.
+  \item \textbf{Equation discovery.} SINDy over tensor-product dictionaries kept
+    in TT form~\cite{brunton2016sindy,klus2018tdmd}.
   \item \textbf{Noise and sparsity.} How TT truncation interacts with
-    measurement noise is not settled; it can denoise, or it can fit the noise.
+    measurement noise is not settled; it can denoise, or it can fit the noise,
+    and there is no theory saying which.
   \item \textbf{Online and streaming.} Update the MPS as data arrives, without
     recompressing from scratch.
 \end{itemize}
 
 \paragraph{Practice and positioning.}
 \begin{itemize}
-  \item \textbf{Hybrid physics and data.} Use the Part~\partref{3} solver as
-    a prior and learn only the closure or the residual in TT form.
+  \item \textbf{Hybrid physics and data.} Use the Part~\partref{3} solver as a
+    prior and learn only the closure or the residual in TT form.
   \item \textbf{Uncertainty quantification.} Error bars on tensor-network
     predictions are essentially absent today. This is a serious gap for any
-    engineering use.
-  \item \textbf{Interpretability is the selling point.}
-  \item \textbf{Software and reproducibility.} Shared TT/MPS tooling, standard
-    benchmarks, and open datasets.
+    engineering use, and it compounds the missing a-posteriori bounds of
+    \cref{subsec:part2-open-problems}.
+  \item \textbf{Interpretability is the edge} over neural surrogates.
+  \item \textbf{Software and reproducibility.} Shared TT/MPS
+    tooling~\cite{nunez2025tci}, standard benchmarks, and open datasets.
 \end{itemize}
