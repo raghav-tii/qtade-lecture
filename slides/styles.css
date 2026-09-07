@@ -88,24 +88,33 @@
 /* Slide footnote line, pinned just above the deck footer.
 
    The footer is `position: fixed; bottom: 18px` on .reveal, outside the scaled
-   slide area, so it cannot be targeted relatively. Instead the slide itself is
-   stretched to the full slide height and the footnote is anchored to its
-   bottom edge, which sits above the footer band. */
-.reveal .slides section.level2 {
-  min-height: 100%;
-}
+   slide area, so it cannot be targeted relatively. Instead the slide is
+   stretched to full height and the footnote anchored to its bottom edge.
 
+   Stretching the section is NOT safe on every slide: reveal gives a lone
+   figure the `r-stretch` class and sizes it from the leftover slide height, so
+   a full-height section collapses that image to nothing. Pin only on slides
+   that actually carry a footnote and hold no stretched figure; everywhere else
+   the footnote simply flows after the content. */
 .reveal .slide-refs {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0.2em;
-  margin: 0;
+  margin-top: 1.2em;
   padding-top: 0.35em;
   border-top: 1px solid rgba(19, 21, 22, 0.18);
   font-size: 0.4em;
   line-height: 1.45;
   opacity: 0.8;
+}
+
+.reveal .slides section.level2:has(.slide-refs):not(:has(.r-stretch)) {
+  min-height: 100%;
+}
+
+.reveal .slides section.level2:has(.slide-refs):not(:has(.r-stretch)) .slide-refs {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.2em;
+  margin: 0;
 }
 
 .reveal .slide-refs p {
@@ -145,3 +154,46 @@
 .reveal .reference-list li::marker {
   color: #107895;
 }
+
+/* --------------------------------------------------------------------------
+   Inline tensor-network schematics.
+
+   Diagrams are hand-authored SVG rather than imported figures: no licensing
+   question, one consistent visual language, and they scale with the slide.
+   Node fill and bond stroke reuse the deck accent so diagrams, citation
+   markers and reference numbers read as one system.
+   -------------------------------------------------------------------------- */
+
+.reveal .tn {
+  text-align: center;
+  margin: 0.5em 0 0.3em;
+}
+
+.reveal .tn svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.reveal .tn .nd   { fill: #107895; }
+.reveal .tn .nd2  { fill: #9a2515; }
+.reveal .tn .open { fill: #ffffff; stroke: #107895; stroke-width: 2.2; }
+.reveal .tn .lg   { stroke: #131516; stroke-width: 2.2; fill: none; stroke-linecap: round; }
+.reveal .tn .bd   { stroke: #107895; stroke-width: 2.2; fill: none; stroke-linecap: round; }
+.reveal .tn .cut  { stroke: #9a2515; stroke-width: 1.8; stroke-dasharray: 5 4; fill: none; }
+.reveal .tn .box  { fill: none; stroke: #9a2515; stroke-width: 1.8; }
+
+.reveal .tn text      { font-family: inherit; text-anchor: middle; fill: #131516; }
+.reveal .tn .lbl      { font-size: 14px; }
+.reveal .tn .lbl-sm   { font-size: 12px; opacity: 0.75; }
+.reveal .tn .lbl-w    { font-size: 12px; fill: #ffffff; }
+
+/* Caption under a schematic. */
+.reveal .tn figcaption,
+.reveal .tn .cap {
+  font-size: 0.42em;
+  opacity: 0.72;
+  margin-top: 0.2em;
+}
+
+/* Tighter default list rhythm — the deck is deliberately terse. */
+.reveal .slides section.level2 ul { margin-top: 0.35em; }
