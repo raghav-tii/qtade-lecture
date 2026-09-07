@@ -49,9 +49,200 @@ date: 09-28-2026
 
 - TODO[@knuth1984]
 
+<!-- BEGIN generated: slide refs -->
+::: slide-refs
+[<span class="ref-n">1</span>]&nbsp;Knuth (1984)
+:::
+<!-- END generated: slide refs -->
+
 ## Tensor Network Basics
 
 - TODO
+
+## Penrose Diagrams: Tensors as Nodes
+
+- A tensor is a **node**; every index is a **leg**. The rank is just the number of legs
+- scalar (0 legs) · vector $v_i$ (1) · matrix $M_{ij}$ (2) · tensor $T_{ijk}$ (3)
+- Nothing is lost --- the diagram carries exactly what the index expression carries
+- What is gained: the *structure* of a computation becomes something you can see
+
+## Penrose Diagrams: Contraction
+
+- Joining two legs means **summing over that shared index**
+  $$\sum_j M_{ij} N_{jk} \quad\longleftrightarrow\quad \text{two nodes, one bond}$$
+- **Dangling legs** are the indices of the result --- count them to know what you have built
+- A **closed loop** is a trace: no free legs left, so the diagram is a number
+- Everything in this course is built from these two moves: place nodes, join legs
+
+## Penrose Diagrams: A Small Vocabulary
+
+- **Identity** --- a bare line
+- **Copy / $\delta$ tensor** --- a branching node, one index shared by three legs
+- **Isometry** --- a shaded node; contracted with its conjugate it gives the identity
+- Convention here: physical legs point **down**, virtual (bond) legs run **horizontally**
+
+::: {.callout-tip}
+The real payoff: contraction **order** is visible in the diagram --- and order is what determines cost.
+:::
+
+## Two Communities, One Object
+
+The same ansatz was invented twice, and both vocabularies are still in use:
+
+| Quantum many-body | Numerical analysis |
+|---|---|
+| Matrix product state (MPS) | Tensor train (TT) |
+| Bond dimension $\chi$ | TT-rank |
+| Entanglement across a cut | Singular-value decay |
+| DMRG sweep | Alternating least squares |
+
+- Both appear in this course and in the papers we draw on. They mean the same thing
+
+## Literature: Where It Came From
+
+- **DMRG** --- variational optimization over matrix product states, born in condensed matter [@white1992]
+- **MPS in modern language** --- the standard reference for canonical forms and sweeping [@schollwoeck2011]
+- **Tensor-train decomposition** --- the same ansatz rederived for numerical linear algebra [@oseledets2011]
+- **Quantics** --- binary indexing gives $O(d\log N)$ approximation of $N$-$d$ tensors [@khoromskij2011]
+- **TT-cross** --- build a tensor train from samples, never forming the full array [@oseledets2010ttcross]
+
+<!-- BEGIN generated: slide refs -->
+::: slide-refs
+[<span class="ref-n">2</span>]&nbsp;White (1992) · [<span class="ref-n">3</span>]&nbsp;Schollwöck (2011) · [<span class="ref-n">4</span>]&nbsp;Oseledets (2011) · [<span class="ref-n">5</span>]&nbsp;Khoromskij (2011) · [<span class="ref-n">6</span>]&nbsp;Oseledets & Tyrtyshnikov (2010)
+:::
+<!-- END generated: slide refs -->
+
+## Literature: Tensor Networks Meet Fluids
+
+- **Turbulence has exploitable structure.** Correlations between well-separated scales are weak, so the bond dimension stays modest [@gourianov2022]
+- **Kinetic plasmas.** Vlasov--Poisson solved in MPS form with large compression [@ye2022vlasov]
+- **Reduced-order models.** Wall-bounded flows at a few percent of the DNS variable count [@kiffner2023rom]
+- **A full stack.** Incompressible flow around arbitrary immersed geometry, end to end [@peddinti2024cfd]
+
+<!-- BEGIN generated: slide refs -->
+::: slide-refs
+[<span class="ref-n">7</span>]&nbsp;Gourianov *et al.* (2022) · [<span class="ref-n">8</span>]&nbsp;Ye & Loureiro (2022) · [<span class="ref-n">9</span>]&nbsp;Kiffner & Jaksch (2023) · [<span class="ref-n">10</span>]&nbsp;Peddinti *et al.* (2024)
+:::
+<!-- END generated: slide refs -->
+
+## Literature: Where the Field Is Now
+
+- **3D turbulence** --- compression, simulation and synthesis at $\mathrm{Re}_\lambda = 315$ on $1024^3$ [@pisoni2026turbulence]
+- **Compressible flow** --- a 2D Euler solver, finalist in the Airbus--BMW Quantum Computing Challenge 2024 [@peddinti2025compressible]
+- **Space-time and data-driven** --- space and time in one MPS, plus MPS-DMD [@peddinti2025spacetime]
+- Parts III and IV are built directly on these three
+
+<!-- BEGIN generated: slide refs -->
+::: slide-refs
+[<span class="ref-n">11</span>]&nbsp;Pisoni *et al.* (2026) · [<span class="ref-n">12</span>]&nbsp;Peddinti *et al.* (2025) · [<span class="ref-n">13</span>]&nbsp;Peddinti *et al.* (2025)
+:::
+<!-- END generated: slide refs -->
+
+## The Curse of Dimensionality
+
+- Discretize a field on a mesh: $N = 2^n$ points per dimension, so $2^{nd}$ unknowns in $d$ dimensions
+- A $1024^3$ mesh is already $\sim\!10^9$ unknowns --- **per field, per timestep**
+- In CFD the cost driver is resolution, and 3D DNS needs $\sim\mathrm{Re}^{9/4}$ degrees of freedom
+- Exascale hardware does not close this gap. It moves it by a couple of orders of magnitude
+
+## Why Structure Is the Only Way Out
+
+- The standard toolkit --- finite differences/volumes/elements, explicit or implicit stepping, a linear solve per step --- does not change the scaling
+- Every classical escape route exploits **structure**: adaptive meshes, multigrid, spectral methods, POD/ROM
+- **The tensor-network bet:** the exponentially long vector is not an arbitrary point in $\mathbb{R}^{2^n}$. A smooth, multiscale field lives on a low-rank manifold of size $O(n\chi^2)$
+- **The price:** exact linear algebra becomes approximate arithmetic with a controlled truncation at every step
+
+## Matrix Product States: The Ansatz
+
+- Factorize the $2^n$-component vector into a chain of rank-3 tensors
+  $$v_{i_1 i_2 \cdots i_n} = A^{(i_1)}_1 A^{(i_2)}_2 \cdots A^{(i_n)}_n$$
+- The **bond dimension** $\chi$ is the matrix size on the virtual legs
+- Parameter count is at most $2n\chi^2$, instead of $2^n$
+- Exponential compression --- **provided $\chi$ stays bounded as $n$ grows.** Everything that follows is about when that proviso holds
+
+## Why an MPS Can Work at All
+
+- Cut the chain at bond $k$. The bond dimension there is the rank of $v$ reshaped across that cut
+- That rank is governed by **singular-value decay** --- which physicists read as entanglement between the two halves
+- For ground states of local Hamiltonians an **area law** bounds it independently of system size, hence $\chi$ independent of $n$
+- Smooth, multiscale functions behave the same way. Rough, noisy or randomly structured data do not
+
+## Building an MPS: TT-SVD
+
+- Reshape the vector, take an SVD, split off one tensor, repeat along the chain
+- Truncating small singular values at each cut is **quasi-optimal** --- within a $\sqrt{n}$ factor of the best rank-$\chi$ approximation
+- Exact and fully controlled, but it needs the dense $2^n$ vector in memory
+- Practical only for modest $n$. Part II covers how to build an MPS **without** ever forming the full array
+
+## Canonical Forms and Rounding
+
+- The factorization is not unique: insert $G G^{-1}$ on any bond and nothing changes. Fixing this **gauge freedom** gives canonical forms
+- Sweep QR from the left and from the right for **left / right / mixed** canonical form, with an orthogonality centre
+- Why it matters: truncation becomes optimal, and inner products become cheap
+- **Rounding is the workhorse.** Every operation inflates ranks (a product gives $\chi_1\chi_2$), so recompress back to $\chi$ --- once per step, every step
+
+## The Quantics Trick
+
+- Index a grid point by its **binary digits**: $x = \sum_{k=1}^{n} i_k 2^{-k}$, with $i_k \in \{0,1\}$
+- A length-$2^n$ vector is reshaped into an $n$-leg tensor, then written as an MPS
+- Each tensor now carries **one length scale** --- leg 1 the coarsest, leg $n$ the finest
+- The chain becomes a multiscale, wavelet-like object, and the bond between legs $k$ and $k+1$ measures coupling *between scales*
+
+## Which Functions Are Low-Rank?
+
+- Exact and tiny: $e^{ax}$, $\sin$, $\cos$ all have $\chi = 2$
+- Polynomials of degree $p$: $\chi = p+1$
+- Sums and products of these stay low-rank --- ranks add and multiply, then you round
+- **The key point:** rank tracks **smoothness and scale separation, not resolution.** Doubling the resolution adds one tensor, costing $O(n)$ parameters rather than $O(2^n)$
+
+## Bit Ordering in Two and Three Dimensions
+
+With more than one coordinate there is a real choice:
+
+- **Stacked** --- $x_1 x_2 \cdots x_n \, y_1 y_2 \cdots y_n$: all $x$ scales, then all $y$ scales
+- **Interleaved** --- $x_1 y_1 x_2 y_2 \cdots$: coarsest scale of both, then the next, and so on
+
+. . .
+
+- Interleaved keeps each *scale* local in the chain, matching the physics of a cascade
+- Not cosmetic: it decides whether non-Gaussian turbulence statistics survive compression [@pisoni2026turbulence]. We return to this in Part III
+
+<!-- BEGIN generated: slide refs -->
+::: slide-refs
+[<span class="ref-n">11</span>]&nbsp;Pisoni *et al.* (2026)
+:::
+<!-- END generated: slide refs -->
+
+## Operators as MPOs
+
+- The operator analogue of an MPS: each tensor carries two physical legs (in and out) plus two bonds
+- Finite-difference shift, first-derivative and Laplacian operators have **exact, tiny** MPO ranks, $\chi_{\text{MPO}} \approx 2\text{--}4$
+- Applying an MPO to an MPS costs $O(n\chi^2\chi_{\text{MPO}}^2)$, plus a rounding step
+- The dense $2^n \times 2^n$ matrix is never formed --- it never exists in memory at all
+
+## Heat Equation: The Setup
+
+- Model problem: $\partial_t u = \alpha\,\partial_x^2 u$ on $[0,1]$, discretized with $N = 2^n$ points
+- Three ingredients, and nothing else:
+  - the initial condition $u^0$ as an MPS
+  - the discrete Laplacian $L$ as an MPO
+  - one scalar, $\alpha\Delta t / \Delta x^2$
+- Deliberately the easiest possible PDE: diffusion smooths, so the ranks should behave
+
+## Heat Equation: One Timestep
+
+- Explicit Euler is a single line of tensor arithmetic
+  $$u^{k+1} = \left(\mathbb{1} + \alpha\Delta t\, L\right) u^{k}$$
+- Two operations: an **MPO--MPS product**, then **rounding** to tolerance $\varepsilon$ (or to a fixed $\chi$)
+- Cost $O(n\chi^3)$ per step, memory $O(n\chi^2)$ --- **logarithmic in the mesh size**
+- Skipping the rounding is the classic first mistake: ranks double every step and you are back to $2^n$
+
+## Heat Equation: What to Watch
+
+- **Compression does not rescue stability.** Still $\alpha\Delta t/\Delta x^2 \le 1/2$, and with $\Delta x = 2^{-n}$ that is punishing --- the motivation for Part II
+- **Two error sources, kept apart:** discretization $O(\Delta t, \Delta x^2)$ and truncation. Monitor both, and know which dominates
+- **Watch $\chi(t)$.** Diffusion smooths, so the bond dimension should stay flat or fall
+- Companion notebook: explicit Euler at $n = 20$ ($10^6$ points) on a laptop
 
 # Part II {#part-ii background-color="#40666e"}
 
@@ -78,6 +269,165 @@ date: 09-28-2026
 
 - TODO
 
+## Solving $Ax = b$ in Tensor Format
+
+- The task: $A$ is an MPO, $b$ is an MPS, and we want $x$ as an MPS of bond dimension $\chi$
+- Direct inversion is meaningless here --- $A^{-1}$ has no reason to be low-rank
+- Instead **recast as a minimization over the MPS manifold**
+  $$\min_x \|Ax - b\|^2 \qquad\text{or}\qquad \min_x \tfrac12 x^\top\! A x - x^\top b \;\; (A \text{ SPD})$$
+- The manifold is not a vector space, so we optimize **one tensor at a time**
+
+## Sweeping Solvers: ALS and DMRG
+
+- **ALS / one-site DMRG.** Freeze every tensor but one; the problem becomes a small dense linear system. Sweep left to right and back
+- Each local solve is exact, and the global objective decreases monotonically
+- Limitation: $\chi$ is fixed in advance and never adapts to the solution
+- **Two-site DMRG.** Optimize a *pair*, then SVD-split --- the bond dimension adapts on its own, at a local cost of up to $O(\chi^6)$
+
+## AMEn and Krylov Alternatives
+
+- **AMEn** [@dolgov2014amen] --- one-site sweeps enriched with residual directions: adaptive ranks at roughly one-site cost. Often the best default
+- **Krylov in TT format** (CG, GMRES with rounding after every operation) --- easy to build on top of existing TT arithmetic
+- But rank growth per iteration is severe, demanding aggressive truncation. And preconditioning in TT form is still open
+- Rule of thumb: sweeping methods for structured PDE operators, Krylov when the operator is a black box
+
+<!-- BEGIN generated: slide refs -->
+::: slide-refs
+[<span class="ref-n">14</span>]&nbsp;Dolgov & Savostyanov (2014)
+:::
+<!-- END generated: slide refs -->
+
+## What the Solve Actually Costs
+
+In our incompressible CFD solver the DMRG-type Poisson solve dominates everything else [@peddinti2024cfd]:
+
+| Quantity | Value |
+|---|---|
+| Share of total runtime | **80.1%** |
+| Worst-case local cost | $O(n\chi^6)$ |
+| Observed total cost | $O(n\chi^{4.1})$ |
+
+- The gap between worst case and observed is where the practical knobs live: sweep count, local tolerance, rank cap, and **warm-starting from the previous timestep**
+
+<!-- BEGIN generated: slide refs -->
+::: slide-refs
+[<span class="ref-n">10</span>]&nbsp;Peddinti *et al.* (2024)
+:::
+<!-- END generated: slide refs -->
+
+## Implicit Euler: Why Bother
+
+- Same heat equation, backward Euler:
+  $$\left(\mathbb{1} - \alpha\Delta t\, L\right) u^{k+1} = u^{k}$$
+- A **linear solve** every step instead of a matrix--vector product --- strictly more work per step
+- The payoff is unconditional stability: $\Delta t$ is set by **accuracy**, not by $\Delta x^2$
+- With $\Delta x = 2^{-n}$ and $n \gtrsim 20$, the explicit constraint is crushing. That is the whole argument
+
+## Implicit Euler: Assembling and Solving
+
+- Build $A = \mathbb{1} - \alpha\Delta t\, L$ directly as an MPO --- rank $\approx 3$, written down analytically
+- The right-hand side is simply the previous state MPS
+- Solve with DMRG or AMEn, **warm-started from $u^k$**: consecutive solutions are close, so one or two sweeps usually suffice
+- Compare **total wall-clock to a target error**, never per-step cost. Implicit wins by taking far fewer steps
+
+## Implicit Euler: The Error Budget
+
+The budget now has three parts, not two:
+
+1. time discretization, $O(\Delta t)$
+2. space discretization, $O(\Delta x^2)$
+3. **the solver residual** --- new, and entirely under your control
+
+. . .
+
+- Keep the residual well below the discretization errors, or you converge efficiently to the wrong answer
+- **Forward pointer:** this exact solve reappears as the pressure-Poisson step of Chorin projection in Part III
+
+## Three Routes to a QTT
+
+- **Analytic.** For exponentials, trigonometric functions and polynomials, write the small cores by hand. Exact, no sampling, no error
+- **From a full array (TT-SVD).** Exact and quasi-optimal --- but needs the dense $2^n$ vector, so viable only for small $n$
+- **Black-box (TT-cross / TCI).** Build the MPS from $O(n\chi^2)$ **evaluations** of $f$, never forming the full tensor [@oseledets2010ttcross]
+- The third is the one that scales, and the one that makes the method practical
+
+<!-- BEGIN generated: slide refs -->
+::: slide-refs
+[<span class="ref-n">6</span>]&nbsp;Oseledets & Tyrtyshnikov (2010)
+:::
+<!-- END generated: slide refs -->
+
+## Cross Interpolation and maxvol
+
+- Cross interpolation is a **skeleton (CUR) decomposition applied recursively** down the chain
+- A rank-$r$ matrix is exactly reconstructible from $r$ well-chosen rows and columns. The only question is *which* ones
+- **maxvol:** choose the submatrix of maximum volume (largest $|\det|$) --- near-optimal, and computable greedily
+- Quantics $+$ TCI $=$ **QTCI**: parsimonious representations of multivariate functions at very high resolution [@ritter2024qtci]
+
+<!-- BEGIN generated: slide refs -->
+::: slide-refs
+[<span class="ref-n">15</span>]&nbsp;Ritter *et al.* (2024)
+:::
+<!-- END generated: slide refs -->
+
+## TT-Cross in Practice
+
+The recipe:
+
+1. choose the bit ordering (interleaved or stacked)
+2. set a tolerance
+3. sweep until the cross error plateaus
+4. round
+
+. . .
+
+**Failure modes to expect:**
+
+- discontinuous $f$ $\Rightarrow$ rank blow-up
+- poorly placed pivots $\Rightarrow$ features missed entirely
+- noisy $f$ $\Rightarrow$ the cross faithfully interpolates the noise
+
+## The Problem with Sharp Boundaries
+
+- Goal: put an arbitrary immersed object --- cylinder, airfoil --- on a $2^n$ mesh **without touching $2^n$ cells**
+- The natural object is an indicator function $\theta(q(x))$: one inside the body, zero outside
+- That is exactly the wrong thing for a tensor network. A step edge has **slowly decaying singular values**, so $\chi$ explodes
+- The fix is to give up the sharp edge *deliberately*, and control what that costs
+
+## Smoothed Masks
+
+- Replace the indicator by a smooth mask, with $q$ vanishing on the object boundary [@peddinti2024cfd]
+  $$m(x) = 1 - e^{-\alpha\left(q(x) + |q(x)|\right)}$$
+- $\alpha$ tunes sharpness against rank: large $\alpha$ approaches the true indicator, and costs bond dimension
+- The $\ell_2$ distance to the true indicator scales as $\sqrt{\ell_0^{D-2}/\alpha}$ in $D$ dimensions
+- That is the point --- an approximation with **a knob and an error bound**, not an uncontrolled hack
+
+<!-- BEGIN generated: slide refs -->
+::: slide-refs
+[<span class="ref-n">10</span>]&nbsp;Peddinti *et al.* (2024)
+:::
+<!-- END generated: slide refs -->
+
+## Geometry: Putting It Together
+
+- Build $m$ as an MPS with standard **TT-cross** to tolerance $\varepsilon$, at a cost independent of the mesh size
+- Apply it by an **elementwise (Hadamard) MPS product** on the velocity field each step: no-slip enforced without ever meshing the body
+- Inlet and outlet conditions fold straight into the differential MPOs via **ghost cells** --- open BCs keep the domain small
+- Demonstrated on a **NACA 0040 airfoil**: $\chi = 45$, 18,800 parameters, $27.9\times$ compression
+
+## Open Problems: Ranks and Nonlinearity
+
+- **Rank blow-up.** Shocks, sharp interfaces, non-smooth data and high-$\mathrm{Re}$ turbulence all push $\chi$ up. Where exactly does the method stop paying for itself?
+- **Nonlinearity.** Products of MPSs square the bond dimension. Picard converges linearly, Newton quadratically --- but every iteration re-rounds
+- **Error control.** No sharp a-posteriori bound links truncation tolerance to the PDE error accumulated over many steps
+- **Robustness of TT-cross.** Pivot selection is heuristic, with no guarantee for adversarial or noisy black boxes
+
+## Open Problems: Solvers and Structure
+
+- **Preconditioning in TT format** is largely unsolved --- and it is the single biggest lever on solver cost
+- **Conservation.** SVD truncation does not preserve mass, energy, or $\nabla\cdot\mathbf{v} = 0$. Structure-preserving rounding is wide open
+- **Scaling out.** 3D $+$ time, index ordering at scale, memory-bound implementations, GPU and distributed sweeps
+- **Fair benchmarking.** Honest comparison against tuned classical CFD --- multigrid, spectral --- on equal hardware
+
 # Part III {#part-iii background-color="#40666e"}
 
 ::: mini-agenda
@@ -99,6 +449,180 @@ date: 09-28-2026
 
 - TODO
 
+## The Incompressible Navier--Stokes Equations
+
+$$\partial_t \mathbf{v} + (\mathbf{v}\cdot\nabla)\mathbf{v} = -\frac{1}{\rho}\nabla p + \nu\nabla^2\mathbf{v}, \qquad \nabla\cdot\mathbf{v} = 0$$
+
+Three difficulties, each awkward for a tensor network in a *different* way:
+
+1. **nonlinear advection** --- products of MPSs, so ranks multiply
+2. **a nonlocal pressure constraint** --- a global elliptic solve every step
+3. **boundary conditions on complex geometry** --- sharp features, high rank
+
+## Why Pressure Is the Hard Part
+
+- Pressure is **not a dynamical variable.** There is no evolution equation for it
+- It is whatever instantaneously enforces $\nabla\cdot\mathbf{v} = 0$ --- a constraint, not a dynamics
+- Taking the divergence of the momentum equation gives an elliptic **Poisson problem** for $p$, coupling the whole domain at once
+- Consequence: every timestep contains a globally coupled linear solve. That is where the runtime goes --- in classical CFD and in tensor networks alike
+
+## Reynolds Number and the Cascade
+
+- Nondimensionalize and one control parameter survives: $\mathrm{Re} = UL/\nu$, inertial over viscous forces
+- **Kolmogorov picture:** energy injected at the large scale $L$, dissipated at $\eta \sim L\,\mathrm{Re}^{-3/4}$, cascading through the scales between
+- Resolving both ends in 3D therefore needs $\sim\mathrm{Re}^{9/4}$ degrees of freedom
+- A commercial aircraft at cruise sits around $\mathrm{Re} \sim 10^7$. That is the number that makes DNS impossible
+
+## Benchmarks We Will Use
+
+- **Lid-driven cavity** --- closed domain, no geometry, the standard sanity check
+- **Flow past a cylinder** --- steady vortex pair, then a Kármán street; well-tabulated
+- **NACA 0040 airfoil** --- genuinely non-trivial immersed geometry
+- **Decaying isotropic turbulence** --- the hard case, where rank behaviour is the real question
+- The compressible cousin (Euler, with shocks and a nonlinear flux) is the target of our ABQCC 2024 solver [@peddinti2025compressible]
+
+<!-- BEGIN generated: slide refs -->
+::: slide-refs
+[<span class="ref-n">12</span>]&nbsp;Peddinti *et al.* (2025)
+:::
+<!-- END generated: slide refs -->
+
+## QTT-CFD: The Encoding
+
+- Each velocity and pressure component becomes **one MPS** over $n = n_x + n_y \,(+\, n_z)$ quantics bits
+- Bits are **interleaved** across coordinates in 2D and 3D, so each length scale stays local in the chain
+- Gradient, divergence and Laplacian are MPOs of rank 2--4, built once and reused
+- Everything downstream is then MPO applications, Hadamard products, and rounding
+
+## QTT-CFD: Chorin Projection
+
+Three moves per timestep:
+
+1. **Predictor** --- ignore pressure, advance momentum
+   $$\mathbf{v}^{*} = \mathbf{v}^{t} + \Delta t\left(-(\mathbf{v}^t\cdot\nabla)\mathbf{v}^t + \nu\nabla^2\mathbf{v}^t\right)$$
+2. **Pressure Poisson** --- the DMRG linear solve, and the expensive step
+   $$\nabla^2 p = \frac{\rho}{\Delta t}\nabla\cdot\mathbf{v}^{*}$$
+3. **Projection** --- correct back onto the divergence-free manifold
+   $$\mathbf{v}^{t+1} = \mathbf{v}^{*} - \frac{\Delta t}{\rho}\nabla p$$
+
+## QTT-CFD: Geometry and Readout
+
+- **Geometry.** The smoothed MPS mask from Part II is applied elementwise after the predictor; ghost-cell inlet/outlet conditions live inside the MPOs
+- **Self-consistent readout** --- the part that makes the method usable:
+  - a coarse-grained field costs $O(n\chi^3)$
+  - a single pixel costs $O(\chi^3)$
+- The dense $2^n$ vector is **never reconstructed**, at any point in the pipeline
+- Without this you would compress the computation, then decompress to look at it --- losing the entire advantage
+
+## QTT-CFD: Results and Scaling
+
+Incompressible flow past a cylinder [@peddinti2024cfd]:
+
+| Quantity | Value |
+|---|---|
+| Mesh | $2^{30}$ cells |
+| Bond dimension | $\chi = 30$ |
+| Parameters | 24,200 |
+| Compression | $\sim\!4.4\times10^{4}$ |
+| Reynolds range (all cases) | 1.7 -- 2230 |
+| Observed runtime | $\sim n\chi^{4.1}$ |
+
+- Poly-logarithmic in mesh size, and validated against Ansys Fluent on the squared geometries
+
+<!-- BEGIN generated: slide refs -->
+::: slide-refs
+[<span class="ref-n">10</span>]&nbsp;Peddinti *et al.* (2024)
+:::
+<!-- END generated: slide refs -->
+
+## Other Frameworks in the Field
+
+- **Reduced-order models** for wall-bounded flows, at a few percent of the DNS variable count [@kiffner2023rom]
+- **Lattice Boltzmann** in tensor-train form --- a different discretization, the same compression idea
+- **Vlasov--Poisson** for kinetic plasmas [@ye2022vlasov]
+- **GPU-accelerated 2D turbulence** --- pushing the implementation rather than the algorithm
+- Common thread: the ansatz is portable, and the hard part is always the global solve
+
+<!-- BEGIN generated: slide refs -->
+::: slide-refs
+[<span class="ref-n">8</span>]&nbsp;Ye & Loureiro (2022) · [<span class="ref-n">9</span>]&nbsp;Kiffner & Jaksch (2023)
+:::
+<!-- END generated: slide refs -->
+
+## Fluid Dynamics Is Where the Cycles Go
+
+- CFD is one of the largest consumers of HPC worldwide: aerodynamics, weather and climate, combustion, biomedical flow
+- The bottleneck is resolution, and resolution costs $\sim\mathrm{Re}^{9/4}$ in 3D
+- Exascale still cannot do a full aircraft at flight Reynolds number
+- Everything cheaper than DNS --- RANS, LES --- is a **model**, with tuned closures and limited transferability between regimes
+
+## Why It Suits Tensor Networks
+
+- Turbulence has precisely the structure the ansatz wants: a **cascade** in which well-separated scales are weakly coupled [@gourianov2022]
+- Quantics gives a scale-by-scale representation for free, so the physics' natural hierarchy **is** the ansatz' natural hierarchy
+- It is also an honest stress test --- nonlinear, multiscale, geometrically complex, with unambiguous quantitative benchmarks
+- And it is a bridge to hardware: the same encoding is what a fault-tolerant quantum CFD algorithm would consume and return
+
+<!-- BEGIN generated: slide refs -->
+::: slide-refs
+[<span class="ref-n">7</span>]&nbsp;Gourianov *et al.* (2022)
+:::
+<!-- END generated: slide refs -->
+
+## Expressivity: The Central Question
+
+- Everything so far assumed $\chi$ stays small. **When is that actually true?**
+- Two sub-questions, with different answers:
+  - how does $\chi$ grow with **resolution**, at fixed physics?
+  - how does $\chi$ grow with **Reynolds number**?
+- The first is benign --- that is the quantics promise. The second is the real question
+- What follows is the empirical answer for 3D turbulence [@pisoni2026turbulence]
+
+<!-- BEGIN generated: slide refs -->
+::: slide-refs
+[<span class="ref-n">11</span>]&nbsp;Pisoni *et al.* (2026)
+:::
+<!-- END generated: slide refs -->
+
+## Expressivity: 3D Turbulence at $\mathrm{Re}_\lambda = 315$
+
+DNS snapshots on $1024^3 = 2^{30}$ points, encoded as 30-tensor trains:
+
+| $\chi$ | Parameters retained | What survives |
+|---|---|---|
+| 1000 | 2.2% | the full flat inertial range of $E(k)$ |
+| 100 | 0.03% | enough to run the solver stably for 9--10 turnover times |
+
+- Four orders of magnitude of compression, with the energy spectrum essentially intact
+
+## Expressivity: What Breaks First
+
+- **The spectrum is the easy diagnostic.** It still looks fine long after the flow does not
+- The demanding ones are the **PDFs of velocity increments** and the **flatness** --- the intermittency statistics
+- **Bit ordering decides this.** Stacked ordering over-smooths the field at low $\chi$; interleaved preserves the non-Gaussian statistics
+- But below $\chi \approx 500$ the interleaved encoding injects spurious small-scale fluctuations. Both encodings fail --- differently
+
+## Expressivity: The Honest Claim
+
+- What the evidence supports: turbulence compresses **well at moderate $\mathrm{Re}$**
+- What it does not support: any claim that turbulence is low-rank at arbitrary $\mathrm{Re}$ and every scale
+- The $\chi = 100$ ceiling in the current 3D solver is a **memory-bound implementation limit**, not a physical statement
+- The flip side is encouraging: random low-rank TTs ($\chi = 10$) cascaded across scales **synthesize** divergence-free, turbulent-like snapshots --- correct spectrum, correct flatness --- at logarithmic cost
+
+## Outlook: Solvers and Scale
+
+- **Higher $\mathrm{Re}$, full 3D.** Lifting the $\chi = 100$ ceiling is an engineering problem before it is a physics one
+- **Better solvers.** TT preconditioning, GPU and distributed sweeps, mixed precision --- remember the Poisson solve is 80% of runtime
+- **Adaptivity.** Choose $\chi(t)$ and $\Delta t$ from a live error estimate rather than a fixed cap
+- **Structure-preserving truncation.** Maintain $\nabla\cdot\mathbf{v} = 0$ and conserved quantities under SVD rounding
+
+## Outlook: Physics and Theory
+
+- **Compressible and multiphysics.** Shocks, reacting flows, MHD --- regimes where rank behaviour is essentially unmapped
+- **Theory gap.** No sharp rank bounds for Navier--Stokes solutions as a function of $\mathrm{Re}$. This is the missing foundation
+- **Hybrid TN $+$ ML.** Learned closures, learned preconditioners, tensor-network surrogates --- which is Part IV
+- **Quantum hand-off.** The same MPS encoding is the natural interface to future quantum CFD algorithms
+
 # Part IV {#part-iv background-color="#40666e"}
 
 ::: mini-agenda
@@ -117,12 +641,146 @@ date: 09-28-2026
 
 ## MPS-DMD
 
+## When the PDE Is Unknown
+
+- Parts I--III assumed we know the governing equation and want its solution. Now invert that
+- What we have instead: **snapshots** $\{u(t_k)\}$ from experiment, DNS output, or sensors
+- What we lack: the operator, the closure --- sometimes the equation itself
+- This is the regime of most real measurement data, and of every system too complex to write down
+
+## Two Tasks, Kept Separate
+
+- **Prediction.** Given the past, forecast $u(t_{K+k})$. No interpretable model required; only the forecast is judged
+- **Learning / identification.** Recover the operator or the governing equations. Interpretability is the entire point
+- Methods excellent at one are often poor at the other --- neural surrogates predict well and explain nothing
+- Classical toolkit spanning both: POD/PCA, DMD and Koopman operators, SINDy, operator learning (DeepONet, FNO), data assimilation
+
+## The Same Curse, Again
+
+- Snapshot matrices are $N_x \times N_t$ with $N_x = 2^n$ --- so even taking the SVD is prohibitive
+- And the data brings its own problems: sparse and noisy measurements, short time series, non-stationarity, no guarantee a closed model exists
+- **Tensor-network promise:** compress *both* space and time, do the linear algebra inside the compressed format, keep the modes interpretable
+- Bonus: a model in MPS format plugs straight back into the Part III solver --- same data structure, no conversion layer
+
+## Dynamic Mode Decomposition in One Line
+
+- Assume the dynamics are approximately linear in the state
+  $$u_{k+1} \approx A\, u_k$$
+- Find the best such $A$ from the data, then read off its eigenpairs
+- Each eigenvalue gives a **growth rate and a frequency**; each eigenvector a **spatial mode**
+- That is the whole appeal --- the output is a set of individually interpretable physical structures
+
+## The Standard DMD Recipe
+
+- Build snapshot matrices $X = [u_0 \cdots u_{T-1}]$ and $X' = [u_1 \cdots u_T]$
+- Take the SVD $X = U\Sigma V^\dagger$ and project onto the leading modes
+  $$\tilde{A} = U^\dagger X' V \Sigma^{-1}$$
+- Eigendecompose the small matrix $\tilde{A}$; the DMD modes are $\Phi = UW$
+- **Koopman view:** a finite-rank approximation of the linear, infinite-dimensional Koopman operator on observables --- which is why a linear method can describe nonlinear dynamics
+
+## Space-Time in a Single MPS
+
+- The idea [@peddinti2025spacetime]: binarize **both** $x$ and $t$, into one MPS of $\log_2 N_x + \log_2 N_t$ tensors
+- Time stops being a loop and becomes just more legs on the same chain
+- **Ordering matters.** Space-then-time works generally; time-then-space converged better for the nonlinear Schrödinger case, giving smoother vectorized solutions
+- Conceptual payoff: the **temporal** bond dimension becomes a direct measure of temporal complexity. Smooth dynamics means small $\chi$
+
+<!-- BEGIN generated: slide refs -->
+::: slide-refs
+[<span class="ref-n">13</span>]&nbsp;Peddinti *et al.* (2025)
+:::
+<!-- END generated: slide refs -->
+
+## The All-at-Once Solve
+
+- Assemble the entire space-time linear system as a single MPO and solve it **once** with DMRG --- no time-stepping loop at all
+- Nonlinear terms are handled by Picard iteration (linear convergence; Newton would give quadratic)
+- Benchmarks on a $1024 \times 1024$ space-time grid:
+
+| Equation | $\chi$ | Compression |
+|---|---|---|
+| Heat, wave | 2 -- 22 | $> 99\%$ |
+| Burgers, nonlinear diffusion | 10 | $> 99\%$, residual $\sim\!10^{-3}$ |
+
+## MPS-DMD: The Idea
+
+- Standard DMD needs an SVD of an $N_x \times N_t$ matrix. That is the bottleneck --- and it is unnecessary
+- **MPS-DMD:** run the entire DMD pipeline *inside* the space-time MPS, never forming the snapshot matrix [@peddinti2025spacetime]
+- The key observation: the MPS already contains the SVD. It only has to be gauged into the right form
+- Same modes, same eigenvalues, same predictions --- at exponentially lower cost
+
+<!-- BEGIN generated: slide refs -->
+::: slide-refs
+[<span class="ref-n">13</span>]&nbsp;Peddinti *et al.* (2025)
+:::
+<!-- END generated: slide refs -->
+
+## MPS-DMD: Three Steps
+
+1. **Gauge** into mixed canonical form at the space/time bond. The Schmidt decomposition there **is** $U\Sigma V^\dagger$ --- the SVD comes for free
+2. **Project** the evolution operator onto the POD basis, $\tilde{A} = U^\dagger A U$: a small $\chi \times \chi$ matrix
+3. **Eigendecompose** $\tilde{A} = W\Lambda W^{-1}$, modes $\Phi = UW$, and predict by local contractions alone
+   $$u_{T+k} = A^k u_T = U W \Lambda^k W^{-1} U^\dagger u_T$$
+
+. . .
+
+- For externally supplied data: stack snapshot MPSs sequentially, truncating after each --- cost linear in the number of timesteps
+
+## MPS-DMD: Results
+
+**Runtime logarithmic in both $N_x$ and $N_t$**, where prior tensor DMD variants are linear in $N_t$.
+
+| Case | Setup | Outcome |
+|---|---|---|
+| Burgers | $\chi = 10$ on $1024^2$ | accurate **1000 steps ahead** at 99% compression |
+| 2D cylinder wake | $256\times128\times1024 \to$ 25-bit MPS, $\chi = 200$ | 97.42% compression; 100 modes capture the vortex street |
+
+- Related directions: TT-based equation discovery (SINDy-style), TT surrogates and operator learning, tensor-network closures
+
+## Outlook: Extending the Method
+
+- **Beyond (1+1)D.** The space-time analysis so far is one-dimensional in space. 2D/3D $+$ time, and the index ordering that goes with it, is open
+- **Nonlinear and Koopman extensions.** Extended DMD with TT dictionaries, kernel DMD in compressed form
+- **Noise and sparsity.** How does TT truncation interact with measurement noise? It can denoise --- or faithfully fit the noise
+- **Online and streaming.** Update the MPS as data arrives, without recompressing from scratch
+
+## Outlook: Practice and Positioning
+
+- **Hybrid physics $+$ data.** Use the Part III solver as a prior and learn only the closure or residual in TT form
+- **Uncertainty quantification.** Error bars on tensor-network predictions are essentially absent today
+- **Interpretability is the selling point** against neural surrogates: modes, frequencies and growth rates come out directly, not from a post-hoc probe
+- **Software and reproducibility.** Shared TT/MPS tooling, standard benchmarks, open datasets
+
 # Appendix {background-color="#bc6c16"}
 
 ## TT-Cross
 
 ## DMRG
 
+<!-- BEGIN generated: bibliography -->
 # Bibliography {background-color="#bc6c16"}
 
 ## References
+
+::: reference-list
+1. Donald E. Knuth, *Literate Programming*, The Computer Journal **27**, 97–111 (1984).
+2. S. R. White, *Density matrix formulation for quantum renormalization groups*, Physical Review Letters **69**, 2863–2866 (1992).
+3. U. Schollwöck, *The density-matrix renormalization group in the age of matrix product states*, Annals of Physics **326**, 96–192 (2011).
+4. I. V. Oseledets, *Tensor-train decomposition*, SIAM Journal on Scientific Computing **33**, 2295–2317 (2011).
+5. B. N. Khoromskij, *$O(d\log N)$-quantics approximation of $N$-$d$ tensors in high-dimensional numerical modeling*, Constructive Approximation **34**, 257–289 (2011).
+6. I. Oseledets & E. Tyrtyshnikov, *TT-cross approximation for multidimensional arrays*, Linear Algebra and its Applications **432**, 70–88 (2010).
+7. N. Gourianov *et al.*, *A quantum-inspired approach to exploit turbulence structures*, Nature Computational Science **2**, 30–37 (2022).
+8. E. Ye & N. F. G. Loureiro, *Quantum-inspired method for solving the Vlasov–Poisson equations*, Physical Review E **106**, 035208 (2022).
+:::
+
+## References
+
+::: reference-list
+9. M. Kiffner & D. Jaksch, *Tensor network reduced order models for wall-bounded flows*, Physical Review Fluids **8**, 124101 (2023).
+10. R. D. Peddinti *et al.*, *Quantum-inspired framework for computational fluid dynamics*, Communications Physics **7**, 135 (2024). [arXiv:2308.12972]
+11. S. Pisoni *et al.*, *Compression, simulation, and synthesis of turbulent flows with tensor trains*, Physical Review Research (2026). [arXiv:2506.05477]
+12. R. D. Peddinti *et al.*, *Technical report on a quantum-inspired solver for simulating compressible flows*, arXiv:2506.03833 (2025).
+13. R. D. Peddinti *et al.*, *Quantum-inspired space-time PDE solver and dynamic mode decomposition*, arXiv:2510.21767 (2025).
+14. S. V. Dolgov & D. V. Savostyanov, *Alternating minimal energy methods for linear systems in higher dimensions*, SIAM Journal on Scientific Computing **36**, A2248–A2271 (2014).
+15. M. K. Ritter *et al.*, *Quantics tensor cross interpolation for high-resolution parsimonious representations of multivariate functions*, Physical Review Letters **132**, 056501 (2024).
+:::

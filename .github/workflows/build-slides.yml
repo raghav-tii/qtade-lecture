@@ -7,16 +7,27 @@ on:
       - "slides/**"
       - "notes/figures/**"
       - "bibliography.bib"
+      - "scripts/gen_slide_refs.py"
       - ".github/workflows/build-slides.yml"
   pull_request:
     paths:
       - "slides/**"
+      - "notes/figures/**"
+      - "bibliography.bib"
+      - "scripts/gen_slide_refs.py"
+      - ".github/workflows/build-slides.yml"
   workflow_dispatch: {}
 
 permissions:
   contents: read
   pages: write
   id-token: write
+
+# Let a newer push supersede an in-flight run, but never cancel a deployment
+# that is already publishing.
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   render:
@@ -28,23 +39,48 @@ jobs:
       - name: Set up Quarto
         uses: quarto-dev/quarto-actions/setup@v2
 
+      # The deck's citation numbering, the per-slide footnote lines and the
+      # reference slides are generated from bibliography.bib + slides.qmd.
+      # Regenerate here so the published deck is always consistent even when an
+      # edit arrived via Overleaf, where nobody can run the script.
+      - name: Regenerate citation footnotes and reference slides
+        run: |
+          python3 scripts/gen_slide_refs.py
+          if ! git diff --quiet -- slides/slides.qmd; then
+            echo "::warning file=slides/slides.qmd::Generated citation blocks were stale; the published deck uses the regenerated version. Run 'python3 scripts/gen_slide_refs.py' locally and commit the result."
+            git --no-pager diff --stat -- slides/slides.qmd
+          fi
+
       - name: Render slides
         run: quarto render slides/slides.qmd
+
+      # embed-resources: true makes index.html fully self-contained (fonts,
+      # MathJax, images and the reveal.js runtime are all inlined), so the site
+      # is exactly one file. Staging it keeps slide sources out of the public
+      # Pages deployment.
+      - name: Stage site
+        run: |
+          mkdir -p _site
+          cp slides/index.html _site/index.html
+          echo "site size: $(du -h _site/index.html | cut -f1)"
+
+      - name: Verify the rendered deck
+        run: python3 scripts/check_slides_build.py _site/index.html
 
       - name: Upload rendered slides
         uses: actions/upload-artifact@v4
         with:
           name: slides-html
-          path: slides/*.html
+          path: _site/index.html
           if-no-files-found: error
 
-      # Optional: publish the rendered deck to GitHub Pages on pushes to main.
+      # Publishes the deck to GitHub Pages on pushes to main.
       # Requires: Settings -> Pages -> Source = "GitHub Actions" (one-time, see README).
       - name: Upload Pages artifact
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: actions/upload-pages-artifact@v3
         with:
-          path: slides
+          path: _site
 
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'

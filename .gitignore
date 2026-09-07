@@ -20,6 +20,7 @@ notes/main.pdf
 /.quarto/
 slides/.quarto/
 slides/_site/
+/_site/
 slides/*_files/
 slides/*_cache/
 

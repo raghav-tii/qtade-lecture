@@ -74,6 +74,18 @@ in as `\bibliography{../bibliography}`; `slides/_quarto.yml` as `bibliography: .
 Add new references only to the root file — both the notes and the slides pick them up
 automatically.
 
+The slides cite with `nature.csl`: superscript numbers, numbered globally by order of first
+appearance, so a source keeps the same number throughout the deck. Each citing slide also
+carries a footnote line naming its sources, and the reference list at the end is split across
+several slides. Both are generated — after adding, removing, or reordering any citation, run:
+
+```bash
+python3 scripts/gen_slide_refs.py
+```
+
+It rewrites the generated blocks in `slides/slides.qmd` in place (they are marked with
+`<!-- BEGIN generated: ... -->` comments) and renumbers everything to match citeproc.
+
 ## Figures
 
 Figures used in the notes live in `notes/figures/`. Slides reference the same files via a
@@ -86,6 +98,26 @@ On every push, GitHub Actions:
 - compiles `notes/main.tex` → `notes.pdf` (uploaded as a build artifact),
 - renders `slides/slides.qmd` → reveal.js HTML (uploaded as a build artifact, and deployed to
   GitHub Pages from `main`, see `.github/workflows/build-slides.yml`).
+
+The slides workflow does three things beyond a plain render:
+
+1. **Regenerates the citation blocks** (`scripts/gen_slide_refs.py`) before rendering, so the
+   published deck is correct even when an edit arrived through Overleaf, where nobody can run
+   the script. If the committed file was stale, the run still succeeds but leaves a warning
+   asking you to run the script locally and commit the result.
+2. **Stages a single-file site.** `embed-resources: true` inlines fonts, MathJax, images and
+   the reveal.js runtime, so `index.html` stands alone and only that file is deployed — slide
+   sources are not published to Pages.
+3. **Verifies the build** (`scripts/check_slides_build.py`) before publishing: that the deck is
+   genuinely self-contained, and that in-text citation numbers, the per-slide footnote lines and
+   the reference slides all agree. The run fails rather than deploying a broken deck.
+
+You can run that check locally against your own render:
+
+```bash
+quarto render slides/slides.qmd
+python3 scripts/check_slides_build.py slides/index.html
+```
 
 See `.github/workflows/` for details, and the "Setup" section below for the one-time repo
 settings these require.
