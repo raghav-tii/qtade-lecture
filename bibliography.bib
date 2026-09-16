@@ -1,353 +1,1786 @@
-% Shared bibliography for the whole repo (notes + slides).
-% notes/main.tex references this as ../bibliography.bib; slides/_quarto.yml the same way.
-% Single source of truth — add all references here only.
+% ===========================================================================
+%  Tensor Network Algorithms for Fluid Dynamics -- QTADE School, Bilbao
+%  Shared bibliography: single source of truth for notes/ and slides/.
+%
+%  notes/main.tex     -> \addbibresource{../bibliography.bib}  (biblatex+biber)
+%  slides/_quarto.yml -> bibliography: ../bibliography.bib     (citeproc+nature.csl)
+%
+%  Conventions
+%  -----------
+%  * Keys are JabRef style: Surname + Year, disambiguated with a/b/c.
+%    Let JabRef generate them ("Cleanup entries" -> "Generate BibTeX key").
+%  * Entries are grouped by role in the course, in the order the course uses
+%    them. Add new entries to the group they belong to, not at the end.
+%  * Abstracts, file paths, keyword lists and urldate fields are deliberately
+%    stripped: this file is read by humans and by two different citation
+%    processors, and those fields break both.
+%  * A one-line comment above an entry says what the course uses it FOR.
+%    Keep that habit -- it is what makes a 200-entry file navigable.
+%
+%  See bibliography-keymap.md for the mapping from the three pre-merge files.
+% ===========================================================================
 
-@article{knuth1984,
-  author  = {Donald E. Knuth},
-  title   = {Literate Programming},
-  journal = {The Computer Journal},
-  year    = {1984},
-  volume  = {27},
+
+% ===========================================================================
+%  1. TENSOR NETWORKS: FOUNDATIONS AND REVIEWS            [Part I]
+% ===========================================================================
+
+% Origin of the diagrammatic notation used throughout Part I.
+@InCollection{Penrose1971,
+  author    = {Penrose, Roger},
+  title     = {Applications of negative dimensional tensors},
+  booktitle = {Combinatorial Mathematics and its Applications},
+  publisher = {Academic Press},
+  year      = {1971},
+  editor    = {Welsh, D. J. A.},
+  pages     = {221--244},
+  address   = {London},
+}
+
+% The readable modern introduction to diagrams; first reading for students.
+@Article{Bridgeman2017,
+  author    = {Bridgeman, Jacob C. and Chubb, Christopher T.},
+  journal   = {Journal of Physics A: Mathematical and Theoretical},
+  title     = {Hand-waving and interpretive dance: an introductory course on tensor networks},
+  year      = {2017},
+  number    = {22},
+  pages     = {223001},
+  volume    = {50},
+  doi       = {10.1088/1751-8121/aa6dc3},
+}
+
+% Physics-side review: MPS, PEPS, canonical forms, contraction.
+@Article{Orus2014,
+  author    = {Or{\'u}s, Rom{\'a}n},
+  journal   = {Annals of Physics},
+  title     = {A practical introduction to tensor networks: matrix product states and projected entangled pair states},
+  year      = {2014},
+  pages     = {117--158},
+  volume    = {349},
+  doi       = {10.1016/j.aop.2014.06.013},
+  publisher = {Elsevier},
+}
+
+% The standard MPS/DMRG reference: canonical forms, sweeping, rounding.
+@Article{Schollwoeck2011,
+  author    = {Schollw{\"o}ck, Ulrich},
+  journal   = {Annals of Physics},
+  title     = {The density-matrix renormalization group in the age of matrix product states},
+  year      = {2011},
+  number    = {1},
+  pages     = {96--192},
+  volume    = {326},
+  doi       = {10.1016/j.aop.2010.09.012},
+  publisher = {Elsevier},
+}
+
+% Variational-RG framing; complements Schollwoeck2011.
+@Article{Verstraete2008,
+  author    = {Verstraete, Frank and Murg, Valentin and Cirac, J. Ignacio},
+  journal   = {Advances in Physics},
+  title     = {Matrix product states, projected entangled pair states, and variational renormalization group methods for quantum spin systems},
+  year      = {2008},
+  number    = {2},
+  pages     = {143--224},
+  volume    = {57},
+  doi       = {10.1080/14789940801912366},
+  publisher = {Taylor \& Francis},
+}
+
+% DMRG is born: the variational algorithm behind every sweeping solver here.
+@Article{White1992,
+  author    = {White, Steven R.},
+  journal   = {Physical Review Letters},
+  title     = {Density matrix formulation for quantum renormalization groups},
+  year      = {1992},
+  number    = {19},
+  pages     = {2863--2866},
+  volume    = {69},
+  doi       = {10.1103/PhysRevLett.69.2863},
+  publisher = {American Physical Society},
+}
+
+% Why truncation works at all: Schmidt rank and simulability.
+@Article{Vidal2003,
+  author    = {Vidal, Guifr{\'e}},
+  journal   = {Physical Review Letters},
+  title     = {Efficient classical simulation of slightly entangled quantum computations},
+  year      = {2003},
+  number    = {14},
+  pages     = {147902},
+  volume    = {91},
+  doi       = {10.1103/PhysRevLett.91.147902},
+  publisher = {American Physical Society},
+}
+
+% TEBD: the time-stepping ancestor of every "apply operator, then round" loop.
+@Article{Vidal2004,
+  author    = {Vidal, Guifr{\'e}},
+  journal   = {Physical Review Letters},
+  title     = {Efficient simulation of one-dimensional quantum many-body systems},
+  year      = {2004},
+  number    = {4},
+  pages     = {040502},
+  volume    = {93},
+  doi       = {10.1103/PhysRevLett.93.040502},
+  publisher = {American Physical Society},
+}
+
+% The area-law theorem: the cleanest statement of "why chi can stay bounded".
+@Article{Hastings2007,
+  author    = {Hastings, M. B.},
+  journal   = {Journal of Statistical Mechanics: Theory and Experiment},
+  title     = {An area law for one-dimensional quantum systems},
+  year      = {2007},
+  number    = {08},
+  pages     = {P08024},
+  volume    = {2007},
+  doi       = {10.1088/1742-5468/2007/08/P08024},
+}
+
+% Area laws, reviewed. Use for the singular-value-decay intuition.
+@Article{Eisert2010,
+  author    = {Eisert, Jens and Cramer, Marcus and Plenio, Martin B.},
+  journal   = {Reviews of Modern Physics},
+  title     = {Colloquium: Area laws for the entanglement entropy},
+  year      = {2010},
+  number    = {1},
+  pages     = {277--306},
+  volume    = {82},
+  doi       = {10.1103/RevModPhys.82.277},
+  publisher = {American Physical Society},
+}
+
+% Entanglement, reviewed. Background only.
+@Article{Horodecki2009,
+  author    = {Horodecki, Ryszard and Horodecki, Pawe{\l} and Horodecki, Micha{\l} and Horodecki, Karol},
+  journal   = {Reviews of Modern Physics},
+  title     = {Quantum entanglement},
+  year      = {2009},
+  number    = {2},
+  pages     = {865--942},
+  volume    = {81},
+  doi       = {10.1103/RevModPhys.81.865},
+  publisher = {American Physical Society},
+}
+
+% "Hilbert space is a convenient illusion": the manifold picture, stated sharply.
+@Article{Poulin2011,
+  author    = {Poulin, David and Qarry, Angie and Somma, Rolando and Verstraete, Frank},
+  journal   = {Physical Review Letters},
+  title     = {Quantum simulation of time-dependent {Hamiltonians} and the convenient illusion of {Hilbert} space},
+  year      = {2011},
+  number    = {17},
+  pages     = {170501},
+  volume    = {106},
+  doi       = {10.1103/PhysRevLett.106.170501},
+  publisher = {American Physical Society},
+}
+
+% Classic TN successes in quantum many-body physics (context slide, Part I).
+@Article{Yan2011,
+  author    = {Yan, Simeng and Huse, David A. and White, Steven R.},
+  journal   = {Science},
+  title     = {Spin-liquid ground state of the {S~=~1/2} kagome {Heisenberg} antiferromagnet},
+  year      = {2011},
+  number    = {6034},
+  pages     = {1173--1176},
+  volume    = {332},
+  doi       = {10.1126/science.1201080},
+}
+
+@Article{Clark2004,
+  author    = {Clark, Stephen R. and Jaksch, Dieter},
+  journal   = {Physical Review A},
+  title     = {Dynamics of the superfluid to {Mott}-insulator transition in one dimension},
+  year      = {2004},
+  number    = {4},
+  pages     = {043612},
+  volume    = {70},
+  doi       = {10.1103/PhysRevA.70.043612},
+  publisher = {American Physical Society},
+}
+
+% Images as low-entanglement states: the friendliest "compression = structure" demo.
+@Article{Latorre2005,
+  author    = {Latorre, Jos{\'e} I.},
+  journal   = {arXiv preprint quant-ph/0510031},
+  title     = {Image compression and entanglement},
+  year      = {2005},
+  doi       = {10.48550/arXiv.quant-ph/0510031},
+}
+
+
+% ===========================================================================
+%  2. TENSOR TRAINS, QUANTICS, AND APPROXIMATION THEORY   [Parts I-II]
+% ===========================================================================
+
+% The TT decomposition and its quasi-optimality bound (the sqrt(n-1) factor).
+@Article{Oseledets2011,
+  author    = {Oseledets, Ivan V.},
+  journal   = {SIAM Journal on Scientific Computing},
+  title     = {Tensor-train decomposition},
+  year      = {2011},
+  number    = {5},
+  pages     = {2295--2317},
+  volume    = {33},
+  doi       = {10.1137/090752286},
+  publisher = {SIAM},
+}
+
+% The quantics/binary re-indexing that makes each core a length scale.
+@Article{Khoromskij2011,
+  author    = {Khoromskij, Boris N.},
+  journal   = {Constructive Approximation},
+  title     = {$\mathcal{O}(d\log N)$-quantics approximation of {$N$-$d$} tensors in high-dimensional numerical modeling},
+  year      = {2011},
+  number    = {2},
+  pages     = {257--280},
+  volume    = {34},
+  doi       = {10.1007/s00365-011-9131-1},
+  publisher = {Springer},
+}
+
+% Closed-form QTT cores for exp, sin, polynomials: the rank table in Part I.
+@Article{Oseledets2013,
+  author    = {Oseledets, Ivan V.},
+  journal   = {Constructive Approximation},
+  title     = {Constructive representation of functions in low-rank tensor formats},
+  year      = {2013},
+  number    = {1},
+  pages     = {1--18},
+  volume    = {37},
+  doi       = {10.1007/s00365-012-9175-x},
+  publisher = {Springer},
+}
+
+% QTT for 2^d x 2^d matrices: the operator side of the quantics trick.
+@Article{Oseledets2010a,
+  author    = {Oseledets, Ivan V.},
+  journal   = {SIAM Journal on Matrix Analysis and Applications},
+  title     = {Approximation of $2^d \times 2^d$ matrices using tensor decomposition},
+  year      = {2010},
+  number    = {4},
+  pages     = {2130--2145},
+  volume    = {31},
+  doi       = {10.1137/090757861},
+  publisher = {SIAM},
+}
+
+% Exact low-rank QTT Laplacian and its inverse: the MPO we build in Part I.
+@Article{Kazeev2012,
+  author    = {Kazeev, Vladimir A. and Khoromskij, Boris N.},
+  journal   = {SIAM Journal on Matrix Analysis and Applications},
+  title     = {Low-rank explicit {QTT} representation of the {Laplace} operator and its inverse},
+  year      = {2012},
+  number    = {3},
+  pages     = {742--758},
+  volume    = {33},
+  doi       = {10.1137/100820479},
+  publisher = {SIAM},
+}
+
+% Shift operators as finite automata on binary digits; why chi_MPO is 2-4.
+@Article{Kazeev2013,
+  author    = {Kazeev, Vladimir A. and Khoromskij, Boris N. and Tyrtyshnikov, Eugene E.},
+  journal   = {SIAM Journal on Scientific Computing},
+  title     = {Multilevel {Toeplitz} matrices generated by tensor-structured vectors and convolution with logarithmic complexity},
+  year      = {2013},
+  number    = {3},
+  pages     = {A1511--A1536},
+  volume    = {35},
+  doi       = {10.1137/110844830},
+  publisher = {SIAM},
+}
+
+% Z-order / Morton permutations in QTT: the bit-ordering question, formalised.
+@Article{Markeeva2020,
+  author    = {Markeeva, L. B. and Tsybulin, I. V.},
+  journal   = {Computational Mathematics and Mathematical Physics},
+  title     = {Building {Z}-permuted matrices in the {QTT} format},
+  year      = {2020},
+  number    = {12},
+  pages     = {2108--2115},
+  volume    = {60},
+  doi       = {10.1134/S096554252012009X},
+  publisher = {Pleiades Publishing},
+}
+
+% When is a tensor compressible at all? Counterexamples worth showing.
+@Article{Shi2021,
+  author    = {Shi, Tianyi and Townsend, Alex},
+  journal   = {SIAM Journal on Matrix Analysis and Applications},
+  title     = {On the compressibility of tensors},
+  year      = {2021},
+  number    = {1},
+  pages     = {275--298},
+  volume    = {42},
+  doi       = {10.1137/20M1316639},
+  publisher = {SIAM},
+}
+
+% Rank bounds for point singularities: the theory behind "sharp features cost rank".
+@Article{Marcati2022,
+  author    = {Marcati, Carlo and Rakhuba, Maxim and Schwab, Christoph},
+  journal   = {Advances in Computational Mathematics},
+  title     = {Tensor rank bounds for point singularities in $\mathbb{R}^3$},
+  year      = {2022},
+  number    = {3},
+  pages     = {18},
+  volume    = {48},
+  doi       = {10.1007/s10444-022-09925-7},
+  publisher = {Springer},
+}
+
+% Exponential convergence of quantized tensor FEM: approximation theory for QTT PDEs.
+@Article{Kazeev2018,
+  author    = {Kazeev, Vladimir and Schwab, Christoph},
+  journal   = {Numerische Mathematik},
+  title     = {Quantized tensor-structured finite elements for second-order elliptic {PDEs} in two dimensions},
+  year      = {2018},
+  number    = {1},
+  pages     = {133--190},
+  volume    = {138},
+  doi       = {10.1007/s00211-017-0899-1},
+  publisher = {Springer},
+}
+
+% Multiscale interpolative construction of QTTs: a constructive alternative to TCI.
+@Article{Lindsey2023,
+  author    = {Lindsey, Michael},
+  journal   = {arXiv preprint arXiv:2311.12554},
+  title     = {Multiscale interpolative construction of quantized tensor trains},
+  year      = {2023},
+  doi       = {10.48550/arXiv.2311.12554},
+}
+
+% Low-rank tensor formats, surveyed: TT in the wider hierarchy (Tucker, HT).
+@Article{Grasedyck2013,
+  author    = {Grasedyck, Lars and Kressner, Daniel and Tobler, Christine},
+  journal   = {GAMM-Mitteilungen},
+  title     = {A literature survey of low-rank tensor approximation techniques},
+  year      = {2013},
+  number    = {1},
+  pages     = {53--78},
+  volume    = {36},
+  doi       = {10.1002/gamm.201310004},
+  publisher = {Wiley},
+}
+
+% The reference monograph for numerical tensor calculus.
+@Book{Hackbusch2019,
+  author    = {Hackbusch, Wolfgang},
+  publisher = {Springer},
+  title     = {Tensor Spaces and Numerical Tensor Calculus},
+  year      = {2019},
+  edition   = {2nd},
+  series    = {Springer Series in Computational Mathematics},
+  doi       = {10.1007/978-3-030-35554-8},
+}
+
+% Khoromskij's book-length treatment of tensor numerical methods.
+@Book{Khoromskij2018,
+  author    = {Khoromskij, Boris N.},
+  publisher = {De Gruyter},
+  title     = {Tensor Numerical Methods in Scientific Computing},
+  year      = {2018},
+  doi       = {10.1515/9783110365917},
+}
+
+% Separated representations before TT: the prehistory worth one margin note.
+@Article{Beylkin2002,
+  author    = {Beylkin, Gregory and Mohlenkamp, Martin J.},
+  journal   = {Proceedings of the National Academy of Sciences},
+  title     = {Numerical operator calculus in higher dimensions},
+  year      = {2002},
+  number    = {16},
+  pages     = {10246--10251},
+  volume    = {99},
+  doi       = {10.1073/pnas.112329799},
+}
+
+% Tensor methods, machine-learning framing. Part 1: decompositions.
+@Article{Cichocki2016,
+  author    = {Cichocki, Andrzej and Lee, Namgil and Oseledets, Ivan and Phan, Anh-Huy and Zhao, Qibin and Mandic, Danilo P.},
+  journal   = {Foundations and Trends in Machine Learning},
+  title     = {Tensor networks for dimensionality reduction and large-scale optimization: {Part 1}, low-rank tensor decompositions},
+  year      = {2016},
+  number    = {4-5},
+  pages     = {249--429},
+  volume    = {9},
+  doi       = {10.1561/2200000059},
+}
+
+% Part 2: applications.
+@Article{Cichocki2017,
+  author    = {Cichocki, Andrzej and Lee, Namgil and Oseledets, Ivan and Phan, Anh-Huy and Zhao, Qibin and Sugiyama, Masashi and Mandic, Danilo P.},
+  journal   = {Foundations and Trends in Machine Learning},
+  title     = {Tensor networks for dimensionality reduction and large-scale optimization: {Part 2}, applications and future perspectives},
+  year      = {2017},
+  number    = {6},
+  pages     = {431--673},
+  volume    = {9},
+  doi       = {10.1561/2200000067},
+}
+
+% Tensor decompositions in electronic structure: an early large-scale success.
+@Article{Khoromskij2009,
+  author    = {Khoromskij, Boris N. and Khoromskaia, Venera and Chinnamsetty, S. R. and Flad, H.-J.},
+  journal   = {Journal of Computational Physics},
+  title     = {Tensor decomposition in electronic structure calculations on {3D} {Cartesian} grids},
+  year      = {2009},
+  number    = {16},
+  pages     = {5749--5762},
+  volume    = {228},
+  doi       = {10.1016/j.jcp.2009.04.043},
+  publisher = {Elsevier},
+}
+
+
+% ===========================================================================
+%  3. TT ALGORITHMS: CONSTRUCTION, SOLVERS, ARITHMETIC    [Part II]
+% ===========================================================================
+
+% TT-cross: build a tensor train from O(n chi^2) samples of a black box.
+@Article{Oseledets2010,
+  author    = {Oseledets, Ivan V. and Tyrtyshnikov, Eugene},
+  journal   = {Linear Algebra and its Applications},
+  title     = {{TT}-cross approximation for multidimensional arrays},
+  year      = {2010},
+  number    = {1},
+  pages     = {70--88},
+  volume    = {432},
+  doi       = {10.1016/j.laa.2009.07.024},
+  publisher = {Elsevier},
+}
+
+% DMRG-cross: rank-adaptive cross interpolation.
+@InProceedings{Savostyanov2011,
+  author    = {Savostyanov, Dmitry V. and Oseledets, Ivan V.},
+  booktitle = {2011 International Workshop on Multidimensional ({nD}) Systems},
+  title     = {Fast adaptive interpolation of multi-dimensional arrays in tensor train format},
+  year      = {2011},
+  pages     = {1--8},
+  doi       = {10.1109/nDS.2011.6076873},
+}
+
+% maxvol: which rows and columns to pick, and why greedy is good enough.
+@InCollection{Goreinov2010,
+  author    = {Goreinov, Sergei A. and Oseledets, Ivan V. and Savostyanov, Dmitry V. and Tyrtyshnikov, Eugene E. and Zamarashkin, N. L.},
+  booktitle = {Matrix Methods: Theory, Algorithms and Applications},
+  publisher = {World Scientific},
+  title     = {How to find a good submatrix},
+  year      = {2010},
+  pages     = {247--256},
+  doi       = {10.1142/9789812836021_0015},
+}
+
+% Cross approximation of matrices: the ancestor of TT-cross (ACA).
+@Article{Bebendorf2000,
+  author    = {Bebendorf, Mario},
+  journal   = {Numerische Mathematik},
+  title     = {Approximation of boundary element matrices},
+  year      = {2000},
+  number    = {4},
+  pages     = {565--589},
+  volume    = {86},
+  doi       = {10.1007/PL00005410},
+  publisher = {Springer},
+}
+
+@Article{Tyrtyshnikov2000,
+  author    = {Tyrtyshnikov, Eugene},
+  journal   = {Computing},
+  title     = {Incomplete cross approximation in the mosaic-skeleton method},
+  year      = {2000},
+  number    = {4},
+  pages     = {367--380},
+  volume    = {64},
+  doi       = {10.1007/s006070070031},
+  publisher = {Springer},
+}
+
+% QTCI: quantics + cross interpolation. The practical high-resolution recipe.
+@Article{Ritter2024,
+  author    = {Ritter, Marc K. and N{\'u}{\~n}ez Fern{\'a}ndez, Yuriel and Wallerberger, Markus and von Delft, Jan and Shinaoka, Hiroshi and Waintal, Xavier},
+  journal   = {Physical Review Letters},
+  title     = {Quantics tensor cross interpolation for high-resolution parsimonious representations of multivariate functions},
+  year      = {2024},
+  number    = {5},
+  pages     = {056501},
+  volume    = {132},
+  doi       = {10.1103/PhysRevLett.132.056501},
+  publisher = {American Physical Society},
+}
+
+% The TCI algorithm/library paper: xfac and TensorCrossInterpolation.jl.
+@Article{Nunez2025,
+  author    = {N{\'u}{\~n}ez Fern{\'a}ndez, Yuriel and Ritter, Marc K. and Jeannin, Matthieu and Li, Jheng-Wei and Kloss, Thomas and Louvet, Thibaud and Terasaki, Satoshi and Parcollet, Olivier and von Delft, Jan and Shinaoka, Hiroshi and Waintal, Xavier},
+  journal   = {SciPost Physics},
+  title     = {Learning tensor networks with tensor cross interpolation: new algorithms and libraries},
+  year      = {2025},
+  pages     = {104},
+  volume    = {18},
+  doi       = {10.21468/SciPostPhys.18.3.104},
+}
+
+% ALS on the TT manifold: the one-site sweeping solver, with convergence theory.
+@Article{Holtz2012,
+  author    = {Holtz, Sebastian and Rohwedder, Thorsten and Schneider, Reinhold},
+  journal   = {SIAM Journal on Scientific Computing},
+  title     = {The alternating linear scheme for tensor optimization in the tensor train format},
+  year      = {2012},
+  number    = {2},
+  pages     = {A683--A713},
+  volume    = {34},
+  doi       = {10.1137/100818893},
+  publisher = {SIAM},
+}
+
+% AMEn: rank adaptivity at one-site cost. The default solver in Part II.
+@Article{Dolgov2014,
+  author    = {Dolgov, Sergey V. and Savostyanov, Dmitry V.},
+  journal   = {SIAM Journal on Scientific Computing},
+  title     = {Alternating minimal energy methods for linear systems in higher dimensions},
+  year      = {2014},
+  number    = {5},
+  pages     = {A2248--A2271},
+  volume    = {36},
+  doi       = {10.1137/140953289},
+  publisher = {SIAM},
+}
+
+% Ax = b in TT format, and why you must not form A^{-1}.
+@Article{Oseledets2012,
+  author    = {Oseledets, Ivan V. and Dolgov, Sergey V.},
+  journal   = {SIAM Journal on Scientific Computing},
+  title     = {Solution of linear systems and matrix inversion in the {TT}-format},
+  year      = {2012},
+  number    = {5},
+  pages     = {A2718--A2739},
+  volume    = {34},
+  doi       = {10.1137/110833142},
+  publisher = {SIAM},
+}
+
+% Krylov-in-TT: the projection alternative to sweeping.
+@Article{Ballani2013,
+  author    = {Ballani, Jonas and Grasedyck, Lars},
+  journal   = {Numerical Linear Algebra with Applications},
+  title     = {A projection method to solve linear systems in tensor format},
+  year      = {2013},
+  number    = {1},
+  pages     = {27--43},
+  volume    = {20},
+  doi       = {10.1002/nla.1818},
+  publisher = {Wiley},
+}
+
+% Tangent-space time integration: higher order with rank adaptivity.
+@Article{Lubich2015,
+  author    = {Lubich, Christian and Oseledets, Ivan V. and Vandereycken, Bart},
+  journal   = {SIAM Journal on Numerical Analysis},
+  title     = {Time integration of tensor trains},
+  year      = {2015},
+  number    = {2},
+  pages     = {917--941},
+  volume    = {53},
+  doi       = {10.1137/140976546},
+  publisher = {SIAM},
+}
+
+% Dynamical low-rank approximation in hierarchical formats.
+@Article{Lubich2013,
+  author    = {Lubich, Christian and Rohwedder, Thorsten and Schneider, Reinhold and Vandereycken, Bart},
+  journal   = {SIAM Journal on Matrix Analysis and Applications},
+  title     = {Dynamical approximation by hierarchical {Tucker} and tensor-train tensors},
+  year      = {2013},
+  number    = {2},
+  pages     = {470--494},
+  volume    = {34},
+  doi       = {10.1137/120885723},
+  publisher = {SIAM},
+}
+
+% Elementwise (Hadamard) products of TTs without squaring the rank first.
+@Article{Michailidis2025,
+  author    = {Michailidis, Alexios A. and Fenton, Christian and Kiffner, Martin},
+  journal   = {SIAM Journal on Scientific Computing},
+  title     = {Element-wise multiplication of tensor trains},
+  year      = {2025},
+  number    = {5},
+  pages     = {B1158--B1174},
+  volume    = {47},
+  doi       = {10.1137/24M1714149},
+  publisher = {SIAM},
+}
+
+% Streaming TT approximation: build the train as data arrives (Part IV outlook).
+@Article{Kressner2023,
+  author    = {Kressner, Daniel and Vandereycken, Bart and Voorhaar, Rik},
+  journal   = {SIAM Journal on Scientific Computing},
+  title     = {Streaming tensor train approximation},
+  year      = {2023},
+  number    = {5},
+  pages     = {A2610--A2631},
+  volume    = {45},
+  doi       = {10.1137/22M1515045},
+  publisher = {SIAM},
+}
+
+% TT-SVD is memory-bound in practice: the numbers behind "use TT-cross instead".
+@Article{Roehrig2022,
+  author    = {R{\"o}hrig-Z{\"o}llner, Melven and Thies, Jonas and Basermann, Achim},
+  journal   = {SIAM Journal on Scientific Computing},
+  title     = {Performance of the low-rank {TT-SVD} for large dense tensors on modern multicore {CPUs}},
+  year      = {2022},
+  number    = {4},
+  pages     = {C287--C309},
+  volume    = {44},
+  doi       = {10.1137/21M1395545},
+  publisher = {SIAM},
+}
+
+% Contraction order is NP-hard: why opt_einsum exists.
+@Article{ChiChung1997,
+  author    = {Chi-Chung, Lam and Sadayappan, P. and Wenger, Rephael},
+  journal   = {Parallel Processing Letters},
+  title     = {On optimizing a class of multi-dimensional loops with reduction for parallel execution},
+  year      = {1997},
+  number    = {02},
+  pages     = {157--168},
+  volume    = {07},
+  doi       = {10.1142/S0129626497000176},
+}
+
+@Article{Pfeifer2014,
+  author    = {Pfeifer, Robert N. C. and Haegeman, Jutho and Verstraete, Frank},
+  journal   = {Physical Review E},
+  title     = {Faster identification of optimal contraction sequences for tensor networks},
+  year      = {2014},
+  number    = {3},
+  pages     = {033315},
+  volume    = {90},
+  doi       = {10.1103/PhysRevE.90.033315},
+  publisher = {American Physical Society},
+}
+
+@Article{Smith2018,
+  author    = {Smith, Daniel G. A. and Gray, Johnnie},
+  journal   = {Journal of Open Source Software},
+  title     = {opt\_einsum -- a {Python} package for optimizing contraction order for einsum-like expressions},
+  year      = {2018},
+  number    = {26},
+  pages     = {753},
+  volume    = {3},
+  doi       = {10.21105/joss.00753},
+}
+
+@Article{Gray2021,
+  author    = {Gray, Johnnie and Kourtis, Stefanos},
+  journal   = {Quantum},
+  title     = {Hyper-optimized tensor network contraction},
+  year      = {2021},
+  pages     = {410},
+  volume    = {5},
+  doi       = {10.22331/q-2021-03-15-410},
+}
+
+
+% ===========================================================================
+%  4. CLASSICAL NUMERICAL METHODS FOR PDEs                [Parts I-II]
+% ===========================================================================
+
+% The stability condition that motivates the switch to implicit stepping.
+@Article{Courant1928,
+  author    = {Courant, Richard and Friedrichs, Kurt and Lewy, Hans},
+  journal   = {Mathematische Annalen},
+  title     = {{\"U}ber die partiellen {Differenzengleichungen} der mathematischen {Physik}},
+  year      = {1928},
+  number    = {1},
+  pages     = {32--74},
+  volume    = {100},
+  doi       = {10.1007/BF01448839},
+}
+
+% The standard first course: finite differences, stability, convergence.
+@Book{LeVeque2007,
+  author    = {LeVeque, Randall J.},
+  publisher = {SIAM},
+  title     = {Finite Difference Methods for Ordinary and Partial Differential Equations},
+  year      = {2007},
+  doi       = {10.1137/1.9780898717839},
+}
+
+% Spectral accuracy and smoothness: the classical version of "rank tracks smoothness".
+@Book{Trefethen2000,
+  author    = {Trefethen, Lloyd N.},
+  publisher = {SIAM},
+  title     = {Spectral Methods in {MATLAB}},
+  year      = {2000},
+  doi       = {10.1137/1.9780898719598},
+}
+
+@Book{Grossmann2007,
+  author    = {Grossmann, Christian and Roos, Hans-G{\"o}rg and Stynes, Martin},
+  publisher = {Springer},
+  title     = {Numerical Treatment of Partial Differential Equations},
+  year      = {2007},
+  doi       = {10.1007/978-3-540-71584-9},
+}
+
+% Finite-volume CFD, the practitioner's reference.
+@Book{Patankar2018,
+  author    = {Patankar, Suhas V.},
+  publisher = {CRC Press},
+  title     = {Numerical Heat Transfer and Fluid Flow},
+  year      = {2018},
+  doi       = {10.1201/9781482234213},
+}
+
+% Arbitrary-order finite-difference stencils on general grids.
+@Article{Fornberg1988,
+  author    = {Fornberg, Bengt},
+  journal   = {Mathematics of Computation},
+  title     = {Generation of finite difference formulas on arbitrarily spaced grids},
+  year      = {1988},
+  number    = {184},
+  pages     = {699--706},
+  volume    = {51},
+  doi       = {10.1090/S0025-5718-1988-0935077-0},
+}
+
+% Newton and Picard for nonlinear discrete systems: the Part III iteration loop.
+@InCollection{Golub1992,
+  author    = {Golub, Gene H. and Ortega, James M.},
+  booktitle = {Scientific Computing and Differential Equations: An Introduction to Numerical Methods},
+  publisher = {Academic Press},
+  title     = {Chapter 5 -- {Life} is really nonlinear},
+  year      = {1992},
+  pages     = {145--178},
+  address   = {Boston},
+  doi       = {10.1016/B978-0-08-051669-1.50009-5},
+}
+
+@Article{Filipov2018,
+  author    = {Filipov, Stefan M. and Farag{\'o}, Istv{\'a}n},
+  journal   = {arXiv preprint arXiv:1811.06337},
+  title     = {Implicit {Euler} time discretization and {FDM} with {Newton} method in nonlinear heat transfer modeling},
+  year      = {2018},
+  doi       = {10.48550/arXiv.1811.06337},
+}
+
+@Book{Teschl2012,
+  author    = {Teschl, Gerald},
+  publisher = {American Mathematical Society},
+  title     = {Ordinary Differential Equations and Dynamical Systems},
+  year      = {2012},
+  series    = {Graduate Studies in Mathematics},
+  volume    = {140},
+}
+
+% Exact solutions used as ground truth in the notebooks.
+@Article{Wood2006,
+  author    = {Wood, W. L.},
+  journal   = {Communications in Numerical Methods in Engineering},
+  title     = {An exact solution for {Burgers'} equation},
+  year      = {2006},
+  number    = {7},
+  pages     = {797--798},
+  volume    = {22},
+  doi       = {10.1002/cnm.850},
+  publisher = {Wiley},
+}
+
+@Book{Polyanin2016,
+  author    = {Polyanin, Andrei D. and Zaitsev, Valentin F.},
+  publisher = {Chapman and Hall/CRC},
+  title     = {Handbook of Nonlinear Partial Differential Equations},
+  year      = {2016},
+  edition   = {2nd},
+  doi       = {10.1201/b11412},
+}
+
+@Book{Polyanin2021,
+  author    = {Polyanin, Andrei D. and Zhurov, Alexei I.},
+  publisher = {Chapman and Hall/CRC},
+  title     = {Separation of Variables and Exact Solutions to Nonlinear {PDEs}},
+  year      = {2021},
+  doi       = {10.1201/9781003042297},
+}
+
+% Space-time (all-at-once) methods, classical versions. Context for Part IV.
+@Misc{Steinbach2019,
+  author    = {Steinbach, Olaf and Yang, Huidong},
+  title     = {Space-time finite element methods for parabolic evolution equations: discretization, a posteriori error estimation, adaptivity and solution},
+  year      = {2019},
+  doi       = {10.1515/9783110548488-007},
+  journal   = {Space-Time Methods},
+  pages     = {207--248},
+  publisher = {De Gruyter},
+}
+
+@PhdThesis{Schafelner2021,
+  author = {Schafelner, Andreas},
+  school = {Johannes Kepler University Linz},
+  title  = {Space-Time Finite Element Methods},
+  year   = {2021},
+  url    = {https://resolver.obvsg.at/urn:nbn:at:at-ubl:1-48095},
+}
+
+@Book{Wick2023,
+  author = {Wick, Thomas},
+  title  = {Space-Time Methods: Formulations, Discretization, Solution, Goal-Oriented Error Control and Adaptivity},
+  year   = {2023},
+}
+
+
+% ===========================================================================
+%  5. FLUID DYNAMICS AND TURBULENCE                       [Part III]
+% ===========================================================================
+
+% The projection method the QTT solver implements.
+@Article{Chorin1968,
+  author    = {Chorin, Alexandre Joel},
+  journal   = {Mathematics of Computation},
+  title     = {Numerical solution of the {Navier--Stokes} equations},
+  year      = {1968},
+  number    = {104},
+  pages     = {745--762},
+  volume    = {22},
+  doi       = {10.1090/S0025-5718-1968-0242392-2},
+}
+
+@Article{Chorin1967,
+  author    = {Chorin, Alexandre Joel},
+  journal   = {Bulletin of the American Mathematical Society},
+  title     = {The numerical solution of the {Navier--Stokes} equations for an incompressible fluid},
+  year      = {1967},
+  number    = {6},
+  pages     = {928--931},
+  volume    = {73},
+  doi       = {10.1090/S0002-9904-1967-11853-6},
+}
+
+% The other half of the projection-method origin story.
+@Article{Temam1969,
+  author    = {Temam, Roger},
+  journal   = {Archive for Rational Mechanics and Analysis},
+  title     = {Sur l'approximation de la solution des {\'e}quations de {Navier--Stokes} par la m{\'e}thode des pas fractionnaires {(II)}},
+  year      = {1969},
+  number    = {5},
+  pages     = {377--385},
+  volume    = {33},
+  doi       = {10.1007/BF00247696},
+}
+
+% Staggered (MAC) grids: where the pressure-velocity coupling comes from.
+@Article{Harlow1965,
+  author    = {Harlow, Francis H. and Welch, J. Eddie},
+  journal   = {The Physics of Fluids},
+  title     = {Numerical calculation of time-dependent viscous incompressible flow of fluid with free surface},
+  year      = {1965},
+  number    = {12},
+  pages     = {2182--2189},
+  volume    = {8},
+  doi       = {10.1063/1.1761178},
+}
+
+% Boundary conditions for the discrete pressure Poisson equation.
+@TechReport{Anderson1988,
+  author      = {Anderson, Christopher Radcliff},
+  institution = {Lawrence Berkeley National Laboratory},
+  title       = {Derivation and solution of the discrete pressure equations for the incompressible {Navier--Stokes} equations},
+  year        = {1988},
+  doi         = {10.2172/975250},
+}
+
+% Numerical boundary layers in projection methods: the subtle error source.
+@Article{Weinan1995,
+  author    = {E, Weinan and Liu, Jian-Guo},
+  journal   = {SIAM Journal on Numerical Analysis},
+  title     = {Projection method {I}: convergence and numerical boundary layers},
+  year      = {1995},
+  number    = {4},
+  pages     = {1017--1057},
+  volume    = {32},
+  doi       = {10.1137/0732047},
+}
+
+% Lid-driven cavity reference solution: benchmark #1 in the notebooks.
+@Article{Ghia1982,
+  author    = {Ghia, U. and Ghia, K. N. and Shin, C. T.},
+  journal   = {Journal of Computational Physics},
+  title     = {High-{Re} solutions for incompressible flow using the {Navier--Stokes} equations and a multigrid method},
+  year      = {1982},
+  number    = {3},
+  pages     = {387--411},
+  volume    = {48},
+  doi       = {10.1016/0021-9991(82)90058-4},
+  publisher = {Elsevier},
+}
+
+% Flow past a cylinder benchmark: drag, lift and Strouhal reference values.
+@InCollection{Schaefer1996,
+  author    = {Sch{\"a}fer, Michael and Turek, Stefan},
+  booktitle = {Flow Simulation with High-Performance Computers {II}},
+  publisher = {Vieweg+Teubner},
+  title     = {Benchmark computations of laminar flow around a cylinder},
+  year      = {1996},
+  pages     = {547--566},
+  series    = {Notes on Numerical Fluid Mechanics},
+  volume    = {48},
+  doi       = {10.1007/978-3-322-89849-4_39},
+}
+
+% Strouhal-Reynolds relation and wake transitions.
+@Article{Williamson1996,
+  author    = {Williamson, C. H. K.},
+  journal   = {Annual Review of Fluid Mechanics},
+  title     = {Vortex dynamics in the cylinder wake},
+  year      = {1996},
+  number    = {1},
+  pages     = {477--539},
+  volume    = {28},
+  doi       = {10.1146/annurev.fl.28.010196.002401},
+}
+
+% Experimental cylinder-wake data used for validation plots.
+@PhdThesis{Roshko1952,
+  author = {Roshko, Anatol},
+  school = {California Institute of Technology},
+  title  = {On the development of turbulent wakes from vortex streets},
+  year   = {1952},
+  doi    = {10.7907/4WDN-9807},
+}
+
+@Article{Norberg1994,
+  author  = {Norberg, C.},
+  journal = {Journal of Fluid Mechanics},
+  title   = {An experimental investigation of the flow around a circular cylinder: influence of aspect ratio},
+  year    = {1994},
+  pages   = {287--316},
+  volume  = {258},
+  doi     = {10.1017/S0022112094003332},
+}
+
+@Article{Coutanceau1977,
+  author  = {Coutanceau, Madeleine and Bouard, Roger},
+  journal = {Journal of Fluid Mechanics},
+  title   = {Experimental determination of the main features of the viscous flow in the wake of a circular cylinder in uniform translation. {Part 1}. {Steady} flow},
+  year    = {1977},
   number  = {2},
-  pages   = {97--111}
+  pages   = {231--256},
+  volume  = {79},
+  doi     = {10.1017/S0022112077000135},
 }
 
-% ---------------------------------------------------------------------------
-% Core references for the QTADE lecture (added as scaffolding for the slides).
-% ---------------------------------------------------------------------------
+@Article{Thom1933,
+  author  = {Thom, A.},
+  journal = {Proceedings of the Royal Society of London A},
+  title   = {The flow past circular cylinders at low speeds},
+  year    = {1933},
+  number  = {845},
+  pages   = {651--669},
+  volume  = {141},
+  doi     = {10.1098/rspa.1933.0146},
+}
 
-% --- Our own work ---------------------------------------------------------
+% Airfoil geometry and reference coefficients (NACA 0040 case).
+@TechReport{Abbott1945,
+  author      = {Abbott, Ira H. and von Doenhoff, Albert E. and Stivers, Louis S.},
+  institution = {National Advisory Committee for Aeronautics},
+  title       = {Summary of Airfoil Data},
+  year        = {1945},
+  number      = {NACA-TR-824},
+}
 
-@article{peddinti2024cfd,
-  author  = {Peddinti, Raghavendra D. and Pisoni, Stefano and Marini, Alessandro
-             and Lott, Philippe and Argentieri, Henrique and Tiunov, Egor
-             and Aolita, Leandro},
-  title   = {Quantum-inspired framework for computational fluid dynamics},
+% Turbulence: the textbook, and the cascade that motivates the whole approach.
+@Book{Pope2000,
+  author    = {Pope, Stephen B.},
+  publisher = {Cambridge University Press},
+  title     = {Turbulent Flows},
+  year      = {2000},
+  doi       = {10.1017/CBO9780511840531},
+}
+
+@Book{Frisch1995,
+  author    = {Frisch, Uriel},
+  publisher = {Cambridge University Press},
+  title     = {Turbulence: The Legacy of {A.~N.~Kolmogorov}},
+  year      = {1995},
+  doi       = {10.1017/CBO9781139170666},
+}
+
+@InProceedings{Kolmogorov1941,
+  author    = {Kolmogorov, Andrey Nikolaevich},
+  booktitle = {Doklady Akademii Nauk SSSR},
+  title     = {The local structure of turbulence in incompressible viscous fluid for very large {Reynolds} numbers},
+  year      = {1941},
+  pages     = {301--305},
+  volume    = {30},
+}
+
+% Locality of the cascade: the physical statement behind "scales couple weakly".
+@Article{Eyink2005,
+  author    = {Eyink, Gregory L.},
+  journal   = {Physica D: Nonlinear Phenomena},
+  title     = {Locality of turbulent cascades},
+  year      = {2005},
+  number    = {1-2},
+  pages     = {91--116},
+  volume    = {207},
+  doi       = {10.1016/j.physd.2005.05.018},
+  publisher = {Elsevier},
+}
+
+@Article{Chen2006,
+  author    = {Chen, Shiyi and Ecke, Robert E. and Eyink, Gregory L. and Rivera, Michael and Wan, Minping and Xiao, Zuoli},
+  journal   = {Physical Review Letters},
+  title     = {Physical mechanism of the two-dimensional inverse energy cascade},
+  year      = {2006},
+  number    = {8},
+  pages     = {084502},
+  volume    = {96},
+  doi       = {10.1103/PhysRevLett.96.084502},
+  publisher = {American Physical Society},
+}
+
+% Coherent structures: the classical version of "turbulence is not random".
+@Article{Hussain1983,
+  author    = {Hussain, A. K. M. Fazle},
+  journal   = {The Physics of Fluids},
+  title     = {Coherent structures -- reality and myth},
+  year      = {1983},
+  number    = {10},
+  pages     = {2816--2850},
+  volume    = {26},
+  doi       = {10.1063/1.864048},
+}
+
+% Wavelets in turbulence: the closest classical relative of the quantics idea.
+@Article{Farge1992,
+  author  = {Farge, Marie},
+  journal = {Annual Review of Fluid Mechanics},
+  title   = {Wavelet transforms and their applications to turbulence},
+  year    = {1992},
+  number  = {1},
+  pages   = {395--458},
+  volume  = {24},
+  doi     = {10.1146/annurev.fl.24.010192.002143},
+}
+
+% The first DNS: where the Re^{9/4} cost argument becomes concrete.
+@Article{Orszag1972,
+  author    = {Orszag, Steven A. and Patterson, G. S.},
+  journal   = {Physical Review Letters},
+  title     = {Numerical simulation of three-dimensional homogeneous isotropic turbulence},
+  year      = {1972},
+  number    = {2},
+  pages     = {76--79},
+  volume    = {28},
+  doi       = {10.1103/PhysRevLett.28.76},
+  publisher = {American Physical Society},
+}
+
+% Existence and smoothness: the open problem behind the equations.
+@Article{Fefferman2000,
+  author  = {Fefferman, Charles L.},
+  journal = {The Millennium Prize Problems},
+  title   = {Existence and smoothness of the {Navier--Stokes} equation},
+  year    = {2000},
+  pages   = {57--67},
+}
+
+@Book{VonKarman2004,
+  author    = {von K{\'a}rm{\'a}n, Theodore},
+  publisher = {Dover},
+  title     = {Aerodynamics: Selected Topics in the Light of Their Historical Development},
+  year      = {2004},
+}
+
+
+% ===========================================================================
+%  6. TENSOR NETWORKS FOR PDEs AND CFD                    [Parts I, III]
+% ===========================================================================
+%  --- Work by the lecturers (the spine of Parts III and IV) ---
+
+% The full incompressible QTT stack: encoding, Chorin loop, immersed geometry.
+@Article{Peddinti2024,
+  author  = {Peddinti, Raghavendra Dheeraj and Pisoni, Stefano and Marini, Alessandro and Lott, Philippe and Argentieri, Henrique and Tiunov, Egor and Aolita, Leandro},
   journal = {Communications Physics},
+  title   = {Quantum-inspired framework for computational fluid dynamics},
   year    = {2024},
-  volume  = {7},
+  number  = {1},
   pages   = {135},
+  volume  = {7},
   doi     = {10.1038/s42005-024-01623-8},
-  note    = {arXiv:2308.12972}
+  note    = {arXiv:2308.12972},
 }
 
-@article{pisoni2026turbulence,
-  author  = {Pisoni, Stefano and Peddinti, Raghavendra Dheeraj and Tiunov, Egor
-             and Guzman, Siddhartha E. and Aolita, Leandro},
-  title   = {Compression, simulation, and synthesis of turbulent flows with
-             tensor trains},
+% How far the ranks stretch in 3D turbulence: the expressivity evidence.
+@Article{Pisoni2026,
+  author  = {Pisoni, Stefano and Peddinti, Raghavendra Dheeraj and Tiunov, Egor and Guzman, Siddhartha E. and Aolita, Leandro},
   journal = {Physical Review Research},
+  title   = {Compression, simulation, and synthesis of turbulent flows with tensor trains},
   year    = {2026},
   doi     = {10.1103/v8c9-9ccm},
-  note    = {arXiv:2506.05477}
+  note    = {arXiv:2506.05477},
 }
 
-@article{peddinti2025spacetime,
-  author  = {Peddinti, Raghavendra Dheeraj and Pisoni, Stefano and Rapaka, Narsimha
-             and Addad, Yacine and Riahi, Mohamed K. and Tiunov, Egor
-             and Aolita, Leandro},
-  title   = {Quantum-inspired space-time {PDE} solver and dynamic mode
-             decomposition},
-  journal = {arXiv preprint arXiv:2510.21767},
-  year    = {2025},
-  doi     = {10.48550/arXiv.2510.21767}
-}
-
-@article{peddinti2025compressible,
-  author  = {Peddinti, Raghavendra Dheeraj and Pisoni, Stefano and Tiunov, Egor
-             and Marini, Alessandro and Aolita, Leandro},
-  title   = {Technical report on a quantum-inspired solver for simulating
-             compressible flows},
+% Compressible flows: shocks, nonlinear flux, and where ranks hurt.
+@Article{Peddinti2025,
+  author  = {Peddinti, Raghavendra Dheeraj and Pisoni, Stefano and Tiunov, Egor and Marini, Alessandro and Aolita, Leandro},
   journal = {arXiv preprint arXiv:2506.03833},
+  title   = {Technical report on a quantum-inspired solver for simulating compressible flows},
   year    = {2025},
-  doi     = {10.48550/arXiv.2506.03833}
+  doi     = {10.48550/arXiv.2506.03833},
 }
 
-% --- Tensor network foundations -------------------------------------------
-
-@article{white1992,
-  author  = {White, Steven R.},
-  title   = {Density matrix formulation for quantum renormalization groups},
-  journal = {Physical Review Letters},
-  year    = {1992},
-  volume  = {69},
-  number  = {19},
-  pages   = {2863--2866},
-  doi     = {10.1103/PhysRevLett.69.2863}
-}
-
-@article{schollwoeck2011,
-  author  = {Schollw{\"o}ck, Ulrich},
-  title   = {The density-matrix renormalization group in the age of matrix
-             product states},
-  journal = {Annals of Physics},
-  year    = {2011},
-  volume  = {326},
-  number  = {1},
-  pages   = {96--192},
-  doi     = {10.1016/j.aop.2010.09.012}
-}
-
-@article{oseledets2011,
-  author  = {Oseledets, Ivan V.},
-  title   = {Tensor-train decomposition},
-  journal = {SIAM Journal on Scientific Computing},
-  year    = {2011},
-  volume  = {33},
-  number  = {5},
-  pages   = {2295--2317},
-  doi     = {10.1137/090752286}
-}
-
-@article{khoromskij2011,
-  author  = {Khoromskij, Boris N.},
-  title   = {{$O(d\log N)$}-quantics approximation of {$N$-$d$} tensors in
-             high-dimensional numerical modeling},
-  journal = {Constructive Approximation},
-  year    = {2011},
-  volume  = {34},
-  number  = {2},
-  pages   = {257--289},
-  doi     = {10.1007/s00365-011-9131-1}
-}
-
-@article{oseledets2010ttcross,
-  author  = {Oseledets, Ivan and Tyrtyshnikov, Eugene},
-  title   = {{TT}-cross approximation for multidimensional arrays},
-  journal = {Linear Algebra and its Applications},
-  year    = {2010},
-  volume  = {432},
-  number  = {1},
-  pages   = {70--88},
-  doi     = {10.1016/j.laa.2009.07.024}
-}
-
-@article{dolgov2014amen,
-  author  = {Dolgov, Sergey V. and Savostyanov, Dmitry V.},
-  title   = {Alternating minimal energy methods for linear systems in higher
-             dimensions},
-  journal = {SIAM Journal on Scientific Computing},
-  year    = {2014},
-  volume  = {36},
-  number  = {5},
-  pages   = {A2248--A2271},
-  doi     = {10.1137/140953289}
-}
-
-@article{ritter2024qtci,
-  author  = {Ritter, Marc K. and N{\'u}{\~n}ez Fern{\'a}ndez, Yuriel and
-             Wallerberger, Markus and von Delft, Jan and Shinaoka, Hiroshi
-             and Waintal, Xavier},
-  title   = {Quantics tensor cross interpolation for high-resolution
-             parsimonious representations of multivariate functions},
-  journal = {Physical Review Letters},
-  year    = {2024},
-  volume  = {132},
-  number  = {5},
-  pages   = {056501},
-  doi     = {10.1103/PhysRevLett.132.056501}
-}
-
-% --- Tensor networks for fluids and PDEs ----------------------------------
-
-@article{gourianov2022,
-  author  = {Gourianov, Nikita and Lubasch, Michael and Dolgov, Sergey and
-             van den Berg, Quincy Y. and Babaee, Hessam and Givi, Peyman and
-             Kiffner, Martin and Jaksch, Dieter},
-  title   = {A quantum-inspired approach to exploit turbulence structures},
-  journal = {Nature Computational Science},
-  year    = {2022},
-  volume  = {2},
-  number  = {1},
-  pages   = {30--37},
-  doi     = {10.1038/s43588-021-00181-1}
-}
-
-@article{kiffner2023rom,
-  author  = {Kiffner, Martin and Jaksch, Dieter},
-  title   = {Tensor network reduced order models for wall-bounded flows},
-  journal = {Physical Review Fluids},
-  year    = {2023},
-  volume  = {8},
-  number  = {12},
-  pages   = {124101},
-  doi     = {10.1103/PhysRevFluids.8.124101}
-}
-
-@article{ye2022vlasov,
-  author  = {Ye, Erika and Loureiro, Nuno F. G.},
-  title   = {Quantum-inspired method for solving the {Vlasov--Poisson}
-             equations},
-  journal = {Physical Review E},
-  year    = {2022},
-  volume  = {106},
-  number  = {3},
-  pages   = {035208},
-  doi     = {10.1103/PhysRevE.106.035208}
-}
-
-% --- Broader literature (not authored by the lecturers) -------------------
-
-@article{orus2014,
-  author  = {Or{\'u}s, Rom{\'a}n},
-  title   = {A practical introduction to tensor networks: Matrix product states
-             and projected entangled pair states},
-  journal = {Annals of Physics},
-  year    = {2014},
-  volume  = {349},
-  pages   = {117--158},
-  doi     = {10.1016/j.aop.2014.06.013}
-}
-
-@article{bridgeman2017,
-  author  = {Bridgeman, Jacob C. and Chubb, Christopher T.},
-  title   = {Hand-waving and interpretive dance: an introductory course on
-             tensor networks},
-  journal = {Journal of Physics A: Mathematical and Theoretical},
-  year    = {2017},
-  volume  = {50},
-  number  = {22},
-  pages   = {223001},
-  doi     = {10.1088/1751-8121/aa6dc3}
-}
-
-@article{hastings2007,
-  author  = {Hastings, M. B.},
-  title   = {An area law for one-dimensional quantum systems},
-  journal = {Journal of Statistical Mechanics: Theory and Experiment},
-  year    = {2007},
-  volume  = {2007},
-  number  = {08},
-  pages   = {P08024},
-  doi     = {10.1088/1742-5468/2007/08/P08024}
-}
-
-@article{holtz2012als,
-  author  = {Holtz, Sebastian and Rohwedder, Thorsten and Schneider, Reinhold},
-  title   = {The alternating linear scheme for tensor optimization in the tensor
-             train format},
-  journal = {SIAM Journal on Scientific Computing},
-  year    = {2012},
-  volume  = {34},
-  number  = {2},
-  pages   = {A683--A713},
-  doi     = {10.1137/100818893}
-}
-
-@article{kazeev2012laplace,
-  author  = {Kazeev, Vladimir A. and Khoromskij, Boris N.},
-  title   = {Low-rank explicit {QTT} representation of the {Laplace} operator
-             and its inverse},
-  journal = {SIAM Journal on Matrix Analysis and Applications},
-  year    = {2012},
-  volume  = {33},
-  number  = {3},
-  pages   = {742--758},
-  doi     = {10.1137/100820479}
-}
-
-@article{oseledets2013functions,
-  author  = {Oseledets, Ivan V.},
-  title   = {Constructive representation of functions in low-rank tensor
-             formats},
-  journal = {Constructive Approximation},
-  year    = {2013},
-  volume  = {37},
-  pages   = {1--18},
-  doi     = {10.1007/s00365-012-9175-x}
-}
-
-@article{lubich2015timeint,
-  author  = {Lubich, Christian and Oseledets, Ivan V. and Vandereycken, Bart},
-  title   = {Time integration of tensor trains},
-  journal = {SIAM Journal on Numerical Analysis},
-  year    = {2015},
-  volume  = {53},
-  number  = {2},
-  pages   = {917--941},
-  doi     = {10.1137/140976546}
-}
-
-@article{nunez2025tci,
-  author  = {N{\'u}{\~n}ez Fern{\'a}ndez, Yuriel and Ritter, Marc K. and
-             Jeannin, Matthieu and Li, Jheng-Wei and Kloss, Thomas and
-             Louvet, Thibaud and Terasaki, Satoshi and Parcollet, Olivier and
-             von Delft, Jan and Shinaoka, Hiroshi and Waintal, Xavier},
-  title   = {Learning tensor networks with tensor cross interpolation: new
-             algorithms and libraries},
-  journal = {SciPost Physics},
+% Space and time in one MPS, plus MPS-DMD. The backbone of Part IV.
+@Article{Peddinti2025a,
+  author  = {Peddinti, Raghavendra Dheeraj and Pisoni, Stefano and Rapaka, Narsimha and Addad, Yacine and Riahi, Mohamed K. and Tiunov, Egor and Aolita, Leandro},
+  journal = {arXiv preprint arXiv:2510.21767},
+  title   = {Quantum-inspired space-time {PDE} solver and dynamic mode decomposition},
   year    = {2025},
-  volume  = {18},
-  pages   = {104},
-  doi     = {10.21468/SciPostPhys.18.3.104}
+  doi     = {10.48550/arXiv.2510.21767},
 }
 
-@article{chorin1968,
-  author  = {Chorin, Alexandre Joel},
-  title   = {Numerical solution of the {Navier--Stokes} equations},
-  journal = {Mathematics of Computation},
-  year    = {1968},
-  volume  = {22},
-  number  = {104},
-  pages   = {745--762},
-  doi     = {10.1090/S0025-5718-1968-0242392-2}
+%  --- Tensor networks meet fluids: the wider field ---
+
+% The founding observation: weak inter-scale correlations in turbulence.
+@Article{Gourianov2022,
+  author    = {Gourianov, Nikita and Lubasch, Michael and Dolgov, Sergey and van den Berg, Quincy Y. and Babaee, Hessam and Givi, Peyman and Kiffner, Martin and Jaksch, Dieter},
+  journal   = {Nature Computational Science},
+  title     = {A quantum-inspired approach to exploit turbulence structures},
+  year      = {2022},
+  number    = {1},
+  pages     = {30--37},
+  volume    = {2},
+  doi       = {10.1038/s43588-021-00181-1},
+  publisher = {Nature Publishing Group},
 }
 
-@article{gourianov2025pdf,
-  author  = {Gourianov, Nikita and Givi, Peyman and Jaksch, Dieter and
-             Pope, Stephen B.},
-  title   = {Tensor networks enable the calculation of turbulence probability
-             distributions},
+@PhdThesis{Gourianov2022a,
+  author = {Gourianov, Nikita},
+  school = {University of Oxford},
+  title  = {Exploiting the structure of turbulence with tensor networks},
+  year   = {2022},
+}
+
+% Turbulence PDFs computed directly in TN form -- no sampling of the field.
+@Article{Gourianov2025,
+  author  = {Gourianov, Nikita and Givi, Peyman and Jaksch, Dieter and Pope, Stephen B.},
   journal = {Science Advances},
+  title   = {Tensor networks enable the calculation of turbulence probability distributions},
   year    = {2025},
-  volume  = {11},
   number  = {5},
   pages   = {eads5990},
-  doi     = {10.1126/sciadv.ads5990}
+  volume  = {11},
+  doi     = {10.1126/sciadv.ads5990},
 }
 
-@article{schmid2010dmd,
-  author  = {Schmid, Peter J.},
-  title   = {Dynamic mode decomposition of numerical and experimental data},
-  journal = {Journal of Fluid Mechanics},
-  year    = {2010},
-  volume  = {656},
-  pages   = {5--28},
-  doi     = {10.1017/S0022112010001217}
+% Reduced-order models for wall-bounded flow at a few percent of DNS variables.
+@Article{Kiffner2023,
+  author    = {Kiffner, Martin and Jaksch, Dieter},
+  journal   = {Physical Review Fluids},
+  title     = {Tensor network reduced order models for wall-bounded flows},
+  year      = {2023},
+  number    = {12},
+  pages     = {124101},
+  volume    = {8},
+  doi       = {10.1103/PhysRevFluids.8.124101},
+  publisher = {American Physical Society},
 }
 
-@article{tu2014dmd,
-  author  = {Tu, Jonathan H. and Rowley, Clarence W. and Luchtenburg, Dirk M.
-             and Brunton, Steven L. and Kutz, J. Nathan},
-  title   = {On dynamic mode decomposition: theory and applications},
+% Kinetic plasma in MPS form: same ansatz, six-dimensional phase space.
+@Article{Ye2022,
+  author    = {Ye, Erika and Loureiro, Nuno F. G.},
+  journal   = {Physical Review E},
+  title     = {Quantum-inspired method for solving the {Vlasov--Poisson} equations},
+  year      = {2022},
+  number    = {3},
+  pages     = {035208},
+  volume    = {106},
+  doi       = {10.1103/PhysRevE.106.035208},
+  publisher = {American Physical Society},
+}
+
+% 2D turbulence on GPUs: the engineering side of making QTT solvers fast.
+@Article{Hoelscher2025,
+  author    = {H{\"o}lscher, Leonhard and Rao, Pooja and M{\"u}ller, Lukas and Klepsch, Johannes and Luckow, Andr{\'e} and Stollenwerk, Tobias and Wilhelm, Frank K.},
+  journal   = {Physical Review Research},
+  title     = {Quantum-inspired fluid simulation of two-dimensional turbulence with {GPU} acceleration},
+  year      = {2025},
+  number    = {1},
+  pages     = {013112},
+  volume    = {7},
+  doi       = {10.1103/PhysRevResearch.7.013112},
+  publisher = {American Physical Society},
+}
+
+% Curvilinear coordinates and a fractional-step TN solver: body-fitted geometry.
+@Article{Huelst2025,
+  author  = {van H{\"u}lst, Nis-Luca and Siegl, Pia and Over, Paul and Bengoechea, Sergio and Hashizume, Tomohiro and Cecile, Mario Guillaume and Rung, Thomas and Jaksch, Dieter},
+  journal = {arXiv preprint arXiv:2507.05222},
+  title   = {Quantum-inspired tensor-network fractional-step method for incompressible flow in curvilinear coordinates},
+  year    = {2025},
+  doi     = {10.48550/arXiv.2507.05222},
+}
+
+% Finite elements in TT format: an alternative discretization route.
+@Article{Kornev2024,
+  author    = {Kornev, Egor and Dolgov, Sergey and Perelshtein, Michael and Melnikov, Artem},
+  journal   = {Mathematics},
+  title     = {{TetraFEM}: numerical solution of partial differential equations using tensor train finite element method},
+  year      = {2024},
+  number    = {20},
+  pages     = {3277},
+  volume    = {12},
+  doi       = {10.3390/math12203277},
+  publisher = {MDPI},
+}
+
+@Article{Kornev2023,
+  author  = {Kornev, Egor and Dolgov, Sergey and Pinto, Karan and Pflitsch, Markus and Perelshtein, Michael and Melnikov, Artem},
+  journal = {arXiv preprint arXiv:2305.10784},
+  title   = {Numerical solution of the incompressible {Navier--Stokes} equations for chemical mixers via quantum-inspired tensor train finite element method},
+  year    = {2023},
+  doi     = {10.48550/arXiv.2305.10784},
+}
+
+% Multigrid seen as a tensor-network renormalization: the bridge to classical solvers.
+@Article{Lubasch2018,
+  author    = {Lubasch, Michael and Moinier, Pierre and Jaksch, Dieter},
+  journal   = {Journal of Computational Physics},
+  title     = {Multigrid renormalization},
+  year      = {2018},
+  pages     = {587--602},
+  volume    = {372},
+  doi       = {10.1016/j.jcp.2018.06.065},
+  publisher = {Elsevier},
+}
+
+% Neutron transport in TT form: same machinery, different physics.
+@Article{Truong2023,
+  author  = {Truong, Duc P. and Ortega, Mario I. and Boureima, Ismael and Manzini, Gianmarco and Rasmussen, Kim {\O}. and Alexandrov, Boian S.},
+  journal = {arXiv preprint arXiv:2309.03347},
+  title   = {Tensor networks for solving realistic time-independent {Boltzmann} neutron transport equation},
+  year    = {2023},
+  doi     = {10.48550/arXiv.2309.03347},
+}
+
+% Space-time spectral collocation in TT: the all-at-once route, spectral flavour.
+@Article{Adak2024,
+  author    = {Adak, Dibyendu and Truong, Duc P. and Manzini, Gianmarco and Rasmussen, Kim {\O}. and Alexandrov, Boian S.},
+  journal   = {Mathematics},
+  title     = {Tensor network space-time spectral collocation method for time-dependent convection-diffusion-reaction equations},
+  year      = {2024},
+  number    = {19},
+  pages     = {2988},
+  volume    = {12},
+  doi       = {10.3390/math12192988},
+  publisher = {MDPI},
+}
+
+@Article{Adak2025,
+  author    = {Adak, Dibyendu and Danis, M. Engin and Truong, Duc P. and Rasmussen, Kim {\O}. and Alexandrov, Boian S.},
+  journal   = {Journal of Scientific Computing},
+  title     = {Tensor network space-time spectral collocation method for solving the nonlinear convection diffusion equation},
+  year      = {2025},
+  number    = {2},
+  pages     = {35},
+  volume    = {103},
+  doi       = {10.1007/s10915-025-02849-6},
+  publisher = {Springer},
+}
+
+% Parabolic problems in QTT, with the Fokker-Planck equation as the test case.
+@Article{Dolgov2012,
+  author    = {Dolgov, Sergey V. and Khoromskij, Boris N. and Oseledets, Ivan V.},
+  journal   = {SIAM Journal on Scientific Computing},
+  title     = {Fast solution of parabolic problems in the tensor train/quantized tensor train format with initial application to the {Fokker--Planck} equation},
+  year      = {2012},
+  number    = {6},
+  pages     = {A3016--A3038},
+  volume    = {34},
+  doi       = {10.1137/120864210},
+  publisher = {SIAM},
+}
+
+% Nonlinear space-time TT: differential Riccati equations solved all at once.
+@Article{Breiten2021,
+  author    = {Breiten, Tobias and Dolgov, Sergey and Stoll, Martin},
+  journal   = {Numerical Algebra, Control and Optimization},
+  title     = {Solving differential {Riccati} equations: a nonlinear space-time method using tensor trains},
+  year      = {2021},
+  number    = {3},
+  pages     = {407--429},
+  volume    = {11},
+  doi       = {10.3934/naco.2020034},
+}
+
+% Quantics tensor trains for space-time correlation functions.
+@Article{Shinaoka2023,
+  author    = {Shinaoka, Hiroshi and Wallerberger, Markus and Murakami, Yuta and Nogaki, Kosuke and Sakurai, Rihito and Werner, Philipp and Kauch, Anna},
+  journal   = {Physical Review X},
+  title     = {Multiscale space-time ansatz for correlation functions of quantum systems based on quantics tensor trains},
+  year      = {2023},
+  number    = {2},
+  pages     = {021015},
+  volume    = {13},
+  doi       = {10.1103/PhysRevX.13.021015},
+  publisher = {American Physical Society},
+}
+
+% Spatio-temporal TN for open and closed system dynamics.
+@Article{CerezoRoquebrun2025,
+  author    = {Cerezo-Roquebr{\'u}n, Sergio and Bou-Comas, Aleix and Schneider, Jan T. and L{\'o}pez, Esperanza and Tagliacozzo, Luca and Carignano, Stefano},
+  journal   = {Frontiers in Quantum Science and Technology},
+  title     = {Spatio-temporal tensor-network approaches to out-of-equilibrium dynamics bridging open and closed systems},
+  year      = {2025},
+  pages     = {1568471},
+  volume    = {4},
+  doi       = {10.3389/frqst.2025.1568471},
+}
+
+% Flexible quantum-inspired ODE/PDE solvers with data integration.
+@Article{Arenstein2025,
+  author  = {Arenstein, Lucas and Mikkelsen, Martin and Kastoryano, Michael},
+  journal = {arXiv preprint arXiv:2505.17046},
+  title   = {Fast and flexible quantum-inspired differential equation solvers with data integration},
+  year    = {2025},
+  doi     = {10.48550/arXiv.2505.17046},
+}
+
+
+% ===========================================================================
+%  7. DATA-DRIVEN DYNAMICS: DMD, KOOPMAN, ROM             [Part IV]
+% ===========================================================================
+
+% DMD as it is normally taught.
+@Article{Schmid2010,
+  author    = {Schmid, Peter J.},
+  journal   = {Journal of Fluid Mechanics},
+  title     = {Dynamic mode decomposition of numerical and experimental data},
+  year      = {2010},
+  pages     = {5--28},
+  volume    = {656},
+  doi       = {10.1017/S0022112010001217},
+  publisher = {Cambridge University Press},
+}
+
+% The Koopman connection: why a linear method describes nonlinear dynamics.
+@Article{Rowley2009,
+  author    = {Rowley, Clarence W. and Mezi{\'c}, Igor and Bagheri, Shervin and Schlatter, Philipp and Henningson, Dan S.},
+  journal   = {Journal of Fluid Mechanics},
+  title     = {Spectral analysis of nonlinear flows},
+  year      = {2009},
+  pages     = {115--127},
+  volume    = {641},
+  doi       = {10.1017/S0022112009992059},
+  publisher = {Cambridge University Press},
+}
+
+@Article{Mezic2005,
+  author    = {Mezi{\'c}, Igor},
+  journal   = {Nonlinear Dynamics},
+  title     = {Spectral properties of dynamical systems, model reduction and decompositions},
+  year      = {2005},
+  number    = {1-3},
+  pages     = {309--325},
+  volume    = {41},
+  doi       = {10.1007/s11071-005-2824-x},
+  publisher = {Springer},
+}
+
+% The exact-DMD formulation used in the notebooks.
+@Article{Tu2014,
+  author  = {Tu, Jonathan H. and Rowley, Clarence W. and Luchtenburg, Dirk M. and Brunton, Steven L. and Kutz, J. Nathan},
   journal = {Journal of Computational Dynamics},
+  title   = {On dynamic mode decomposition: theory and applications},
   year    = {2014},
-  volume  = {1},
   number  = {2},
   pages   = {391--421},
-  doi     = {10.3934/jcd.2014.1.391}
+  volume  = {1},
+  doi     = {10.3934/jcd.2014.1.391},
 }
 
-@article{klus2018tdmd,
-  author  = {Klus, Stefan and Gel{\ss}, Patrick and Peitz, Sebastian and
-             Sch{\"u}tte, Christof},
-  title   = {Tensor-based dynamic mode decomposition},
-  journal = {Nonlinearity},
-  year    = {2018},
-  volume  = {31},
-  number  = {7},
-  pages   = {3359--3380},
-  doi     = {10.1088/1361-6544/aabc8f}
+% Extended DMD: dictionaries of observables, and where TT dictionaries fit.
+@Article{Williams2015,
+  author    = {Williams, Matthew O. and Kevrekidis, Ioannis G. and Rowley, Clarence W.},
+  journal   = {Journal of Nonlinear Science},
+  title     = {A data-driven approximation of the {Koopman} operator: extending dynamic mode decomposition},
+  year      = {2015},
+  number    = {6},
+  pages     = {1307--1346},
+  volume    = {25},
+  doi       = {10.1007/s00332-015-9258-5},
+  publisher = {Springer},
 }
 
-@article{brunton2016sindy,
+% The variant zoo, mapped. Useful for the "which DMD" slide.
+@InCollection{Colbrook2024,
+  author    = {Colbrook, Matthew J.},
+  booktitle = {Handbook of Numerical Analysis},
+  publisher = {Elsevier},
+  title     = {The multiverse of dynamic mode decomposition algorithms},
+  year      = {2024},
+  pages     = {127--230},
+  volume    = {25},
+  doi       = {10.1016/bs.hna.2024.05.004},
+}
+
+@Article{Schmid2022,
+  author    = {Schmid, Peter J.},
+  journal   = {Annual Review of Fluid Mechanics},
+  title     = {Dynamic mode decomposition and its variants},
+  year      = {2022},
+  number    = {1},
+  pages     = {225--254},
+  volume    = {54},
+  doi       = {10.1146/annurev-fluid-030121-015835},
+}
+
+@Book{Kutz2016,
+  author    = {Kutz, J. Nathan and Brunton, Steven L. and Brunton, Bingni W. and Proctor, Joshua L.},
+  publisher = {SIAM},
+  title     = {Dynamic Mode Decomposition: Data-Driven Modeling of Complex Systems},
+  year      = {2016},
+  doi       = {10.1137/1.9781611974508},
+}
+
+@Article{Kutz2016a,
+  author    = {Kutz, J. Nathan and Fu, Xing and Brunton, Steven L.},
+  journal   = {SIAM Journal on Applied Dynamical Systems},
+  title     = {Multiresolution dynamic mode decomposition},
+  year      = {2016},
+  number    = {2},
+  pages     = {713--735},
+  volume    = {15},
+  doi       = {10.1137/15M1023543},
+  publisher = {SIAM},
+}
+
+% Equation discovery: the identification task, sparse-regression flavour.
+@Article{Brunton2016,
   author  = {Brunton, Steven L. and Proctor, Joshua L. and Kutz, J. Nathan},
-  title   = {Discovering governing equations from data by sparse identification
-             of nonlinear dynamical systems},
   journal = {Proceedings of the National Academy of Sciences},
+  title   = {Discovering governing equations from data by sparse identification of nonlinear dynamical systems},
   year    = {2016},
-  volume  = {113},
   number  = {15},
   pages   = {3932--3937},
-  doi     = {10.1073/pnas.1517384113}
+  volume  = {113},
+  doi     = {10.1073/pnas.1517384113},
 }
+
+% POD/PCA: the linear baseline every ROM is compared against.
+@Article{Sirovich1987,
+  author  = {Sirovich, Lawrence},
+  journal = {Quarterly of Applied Mathematics},
+  title   = {Turbulence and the dynamics of coherent structures. {Part I}: coherent structures},
+  year    = {1987},
+  number  = {3},
+  pages   = {561--571},
+  volume  = {45},
+  doi     = {10.1090/qam/910462},
+}
+
+@Article{Berkooz1993,
+  author  = {Berkooz, Gal and Holmes, Philip and Lumley, John L.},
+  journal = {Annual Review of Fluid Mechanics},
+  title   = {The proper orthogonal decomposition in the analysis of turbulent flows},
+  year    = {1993},
+  number  = {1},
+  pages   = {539--575},
+  volume  = {25},
+  doi     = {10.1146/annurev.fl.25.010193.002543},
+}
+
+% TT-DMD: the tensor-format predecessor of MPS-DMD.
+@Article{Klus2018,
+  author    = {Klus, Stefan and Gel{\ss}, Patrick and Peitz, Sebastian and Sch{\"u}tte, Christof},
+  journal   = {Nonlinearity},
+  title     = {Tensor-based dynamic mode decomposition},
+  year      = {2018},
+  number    = {7},
+  pages     = {3359--3380},
+  volume    = {31},
+  doi       = {10.1088/1361-6544/aabc8f},
+  publisher = {IOP Publishing},
+}
+
+% MANDy: SINDy-style identification with tensor-product dictionaries in TT.
+@Article{Gelss2019,
+  author  = {Gel{\ss}, Patrick and Klus, Stefan and Eisert, Jens and Sch{\"u}tte, Christof},
+  journal = {Journal of Computational and Nonlinear Dynamics},
+  title   = {Multidimensional approximation of nonlinear dynamical systems},
+  year    = {2019},
+  number  = {6},
+  pages   = {061006},
+  volume  = {14},
+  doi     = {10.1115/1.4043148},
+}
+
+% Data-driven analysis of non-Markovian dynamics: DMD outside fluids.
+@Article{Luchnikov2022,
+  author    = {Luchnikov, Ilia A. and Kiktenko, E. O. and Gavreev, M. A. and Ouerdane, H. and Filippov, S. N. and Fedorov, A. K.},
+  journal   = {Physical Review Research},
+  title     = {Probing non-{Markovian} quantum dynamics with data-driven analysis: beyond black-box machine-learning models},
+  year      = {2022},
+  number    = {4},
+  pages     = {043002},
+  volume    = {4},
+  doi       = {10.1103/PhysRevResearch.4.043002},
+  publisher = {American Physical Society},
+}
+
+% DMD used as a predictor inside a TT solver: hybrid data/physics stepping.
+@Article{Sroda2025,
+  author  = {{\'S}roda, Maksymilian and Inayoshi, Ken and Sch{\"u}ler, Michael and Shinaoka, Hiroshi and Werner, Philipp},
+  journal = {arXiv preprint arXiv:2509.22177},
+  title   = {Predictor-corrector method based on dynamic mode decomposition for tensor-train nonequilibrium {Green's} function calculations},
+  year    = {2025},
+  doi     = {10.48550/arXiv.2509.22177},
+}
+
+% Neural surrogates: the comparison class for interpretability claims.
+@Article{Raissi2019,
+  author    = {Raissi, Maziar and Perdikaris, Paris and Karniadakis, George E.},
+  journal   = {Journal of Computational Physics},
+  title     = {Physics-informed neural networks: a deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations},
+  year      = {2019},
+  pages     = {686--707},
+  volume    = {378},
+  doi       = {10.1016/j.jcp.2018.10.045},
+  publisher = {Elsevier},
+}
+
+@Article{Lu2021,
+  author    = {Lu, Lu and Jin, Pengzhan and Pang, Guofei and Zhang, Zhongqiang and Karniadakis, George Em},
+  journal   = {Nature Machine Intelligence},
+  title     = {Learning nonlinear operators via {DeepONet} based on the universal approximation theorem of operators},
+  year      = {2021},
+  number    = {3},
+  pages     = {218--229},
+  volume    = {3},
+  doi       = {10.1038/s42256-021-00302-5},
+}
+
+@Article{Li2021,
+  author  = {Li, Zongyi and Kovachki, Nikola and Azizzadenesheli, Kamyar and Liu, Burigede and Bhattacharya, Kaushik and Stuart, Andrew and Anandkumar, Anima},
+  journal = {arXiv preprint arXiv:2010.08895},
+  title   = {{Fourier} neural operator for parametric partial differential equations},
+  year    = {2021},
+  doi     = {10.48550/arXiv.2010.08895},
+}
+
+@Article{Sirignano2018,
+  author    = {Sirignano, Justin and Spiliopoulos, Konstantinos},
+  journal   = {Journal of Computational Physics},
+  title     = {{DGM}: a deep learning algorithm for solving partial differential equations},
+  year      = {2018},
+  pages     = {1339--1364},
+  volume    = {375},
+  doi       = {10.1016/j.jcp.2018.08.029},
+  publisher = {Elsevier},
+}
+
+
+% ===========================================================================
+%  8. TENSOR NETWORKS FOR LEARNING AND DATA               [Part IV]
+% ===========================================================================
+
+% Supervised learning with MPS: the entry point to TN machine learning.
+@InProceedings{Stoudenmire2016,
+  author    = {Stoudenmire, E. Miles and Schwab, David J.},
+  booktitle = {Advances in Neural Information Processing Systems},
+  title     = {Supervised learning with tensor networks},
+  year      = {2016},
+  pages     = {4799--4807},
+  volume    = {29},
+}
+
+% Generative modelling with MPS, including exact sampling.
+@Article{Han2018,
+  author    = {Han, Zhao-Yu and Wang, Jun and Fan, Heng and Wang, Lei and Zhang, Pan},
+  journal   = {Physical Review X},
+  title     = {Unsupervised generative modeling using matrix product states},
+  year      = {2018},
+  number    = {3},
+  pages     = {031012},
+  volume    = {8},
+  doi       = {10.1103/PhysRevX.8.031012},
+  publisher = {American Physical Society},
+}
+
+@Article{Ferris2012,
+  author    = {Ferris, Andrew J. and Vidal, Guifre},
+  journal   = {Physical Review B},
+  title     = {Perfect sampling with unitary tensor networks},
+  year      = {2012},
+  number    = {16},
+  pages     = {165146},
+  volume    = {85},
+  doi       = {10.1103/PhysRevB.85.165146},
+  publisher = {American Physical Society},
+}
+
+% Expressivity of TN factorizations as probabilistic models.
+@Article{Glasser2019,
+  author    = {Glasser, Ivan and Sweke, Ryan and Pancotti, Nicola and Eisert, Jens and Cirac, Ignacio},
+  journal   = {Advances in Neural Information Processing Systems},
+  title     = {Expressive power of tensor-network factorizations for probabilistic modeling},
+  year      = {2019},
+  volume    = {32},
+}
+
+% Learning quantum states and processes with TNs: the inverse problem elsewhere.
+@Article{Torlai2023,
+  author    = {Torlai, Giacomo and Wood, Christopher J. and Acharya, Atithi and Carleo, Giuseppe and Carrasquilla, Juan and Aolita, Leandro},
+  journal   = {Nature Communications},
+  title     = {Quantum process tomography with unsupervised learning and tensor networks},
+  year      = {2023},
+  number    = {1},
+  pages     = {2858},
+  volume    = {14},
+  doi       = {10.1038/s41467-023-38332-9},
+}
+
+@Article{Carrasquilla2019,
+  author    = {Carrasquilla, Juan and Torlai, Giacomo and Melko, Roger G. and Aolita, Leandro},
+  journal   = {Nature Machine Intelligence},
+  title     = {Reconstructing quantum states with generative models},
+  year      = {2019},
+  number    = {3},
+  pages     = {155--161},
+  volume    = {1},
+  doi       = {10.1038/s42256-019-0028-1},
+}
+
+@Article{Kurmapu2023,
+  author    = {Kurmapu, Murali K. and Tiunova, V. V. and Tiunov, E. S. and Ringbauer, Martin and Maier, Christine and Blatt, Rainer and Monz, Thomas and Fedorov, Aleksey K. and Lvovsky, A. I.},
+  journal   = {PRX Quantum},
+  title     = {Reconstructing complex states of a 20-qubit quantum simulator},
+  year      = {2023},
+  number    = {4},
+  pages     = {040345},
+  volume    = {4},
+  doi       = {10.1103/PRXQuantum.4.040345},
+  publisher = {American Physical Society},
+}
+
+% Option pricing in TT: a non-fluid application with the same cost argument.
+@Article{Kastoryano2022,
+  author  = {Kastoryano, Michael and Pancotti, Nicola},
+  journal = {arXiv preprint arXiv:2203.02804},
+  title   = {A highly efficient tensor network algorithm for multi-asset {Fourier} options pricing},
+  year    = {2022},
+  doi     = {10.48550/arXiv.2203.02804},
+}
+
+@Article{Luchnikov2024,
+  author  = {Luchnikov, Ilia A. and Tiunov, Egor S. and Haug, Tobias and Aolita, Leandro},
+  journal = {arXiv preprint arXiv:2409.12240},
+  title   = {Large-scale quantum annealing simulation with tensor networks and belief propagation},
+  year    = {2024},
+  doi     = {10.48550/arXiv.2409.12240},
+}
+
+
+% ===========================================================================
+%  9. QUANTUM ALGORITHMS: THE HAND-OFF                    [Parts III-IV]
+% ===========================================================================
+
+% Variational quantum algorithms built on the same encoding.
+@Article{Lubasch2020,
+  author    = {Lubasch, Michael and Joo, Jaewoo and Moinier, Pierre and Kiffner, Martin and Jaksch, Dieter},
+  journal   = {Physical Review A},
+  title     = {Variational quantum algorithms for nonlinear problems},
+  year      = {2020},
+  number    = {1},
+  pages     = {010301},
+  volume    = {101},
+  doi       = {10.1103/PhysRevA.101.010301},
+  publisher = {American Physical Society},
+}
+
+@Article{Jaksch2023,
+  author  = {Jaksch, Dieter and Givi, Peyman and Daley, Andrew J. and Rung, Thomas},
+  journal = {AIAA Journal},
+  title   = {Variational quantum algorithms for computational fluid dynamics},
+  year    = {2023},
+  number  = {5},
+  pages   = {1885--1894},
+  volume  = {61},
+  doi     = {10.2514/1.J062426},
+}
+
+@Article{Pool2024,
+  author    = {Pool, Albert J. and Somoza, Alejandro D. and Mc Keever, Conor and Lubasch, Michael and Horstmann, Birger},
+  journal   = {Physical Review Research},
+  title     = {Nonlinear dynamics as a ground-state solution on quantum computers},
+  year      = {2024},
+  number    = {3},
+  pages     = {033257},
+  volume    = {6},
+  doi       = {10.1103/PhysRevResearch.6.033257},
+  publisher = {American Physical Society},
+}
+
+@Article{Bagherimehrab2023,
+  author  = {Bagherimehrab, Mohsen and Nakaji, Kouhei and Wiebe, Nathan and Aspuru-Guzik, Al{\'a}n},
+  journal = {arXiv preprint arXiv:2306.11802},
+  title   = {Fast quantum algorithm for differential equations},
+  year    = {2023},
+  doi     = {10.48550/arXiv.2306.11802},
+}
+
+@Article{Tosta2023,
+  author  = {Tosta, Allan and de Lima Silva, Thais and Camilo, Giancarlo and Aolita, Leandro},
+  journal = {arXiv preprint arXiv:2307.11824},
+  title   = {Randomized semi-quantum matrix processing},
+  year    = {2023},
+  doi     = {10.48550/arXiv.2307.11824},
+}
+
+% How far classical TN simulation of quantum computers reaches.
+@Article{Zhou2020,
+  author    = {Zhou, Yiqing and Stoudenmire, E. Miles and Waintal, Xavier},
+  journal   = {Physical Review X},
+  title     = {What limits the simulation of quantum computers?},
+  year      = {2020},
+  number    = {4},
+  pages     = {041038},
+  volume    = {10},
+  doi       = {10.1103/PhysRevX.10.041038},
+  publisher = {American Physical Society},
+}
+
+@Article{Tindall2024,
+  author    = {Tindall, Joseph and Fishman, Matthew and Stoudenmire, E. Miles and Sels, Dries},
+  journal   = {PRX Quantum},
+  title     = {Efficient tensor network simulation of {IBM}'s {Eagle} kicked {Ising} experiment},
+  year      = {2024},
+  number    = {1},
+  pages     = {010308},
+  volume    = {5},
+  doi       = {10.1103/PRXQuantum.5.010308},
+  publisher = {American Physical Society},
+}
+
+
+% ===========================================================================
+%  10. DATASETS
+% ===========================================================================
+
+@Misc{Tencer2020,
+  author    = {Tencer, John},
+  publisher = {Harvard Dataverse},
+  title     = {Cylinder in Crossflow},
+  year      = {2020},
+  doi       = {10.7910/DVN/G5MNYF},
+  version   = {V1},
+}
+
+@Comment{jabref-meta: databaseType:bibtex;}

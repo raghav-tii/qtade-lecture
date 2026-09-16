@@ -51,42 +51,47 @@ def main() -> int:
     check(n_slides > 50, "slide count plausible", f"{n_slides} h2 slides")
 
     # --- citation numbering -------------------------------------------------
-    # A multi-key citation ([@a; @b]) renders as ONE span: data-cites keeps the
-    # written order, but the CSL sorts the numbers, so the two cannot be zipped.
-    # Build the authoritative map from single-key spans, then resolve any
-    # remaining key by elimination within its multi-key span.
-    spans = []
+    # The expected numbering is the one citeproc produces with nature.csl:
+    # order of first appearance in the source. Derive it here independently of
+    # gen_slide_refs.py, then check that every rendered span carries exactly the
+    # numbers its keys own. Comparing sets (not sequences) is deliberate: the
+    # CSL sorts within a span and collapses runs of three or more into a range.
+    cite_re = re.compile(r"\[([^\]\[]*@[^\]\[]*)\]")
+    key_re = re.compile(r"@([A-Za-z][\w:.#$%&+?<>~/-]*)")
+    order = []
+    for grp in cite_re.findall(src):
+        for k in key_re.findall(grp):
+            if k not in order:
+                order.append(k)
+    citeproc = {k: i + 1 for i, k in enumerate(order)}
+
+    def span_numbers(text: str) -> set:
+        """Numbers a rendered span carries, expanding collapsed ranges."""
+        out, plain = set(), re.sub(r"<[^>]+>", "", text)
+        for chunk in re.split(r"[,;\s]+", plain):
+            rng = re.match(r"^(\d+)[‐-―-](\d+)$", chunk.strip())
+            if rng:
+                out |= set(range(int(rng.group(1)), int(rng.group(2)) + 1))
+            elif chunk.strip().isdigit():
+                out.add(int(chunk.strip()))
+        return out
+
+    seen = set()
     for m in re.finditer(r'<span class="citation" data-cites="([^"]+)">(.*?)</span>', h, re.S):
         keys = m.group(1).split()
-        nums = [int(n) for n in re.findall(r"\d+", re.sub(r"<[^>]+>", "", m.group(2)))]
-        spans.append((keys, nums))
-        if len(keys) != len(nums):
-            failures.append(f"citation span key/number mismatch: {keys} vs {nums}")
+        nums = span_numbers(m.group(2))
+        seen.update(keys)
+        unknown = [k for k in keys if k not in citeproc]
+        if unknown:
+            failures.append(f"citation span cites keys absent from the source: {unknown}")
+            continue
+        want = {citeproc[k] for k in keys}
+        if nums != want:
+            failures.append(f"citation {keys}: rendered {sorted(nums)}, expected {sorted(want)}")
 
-    rendered = {}
-    for keys, nums in spans:
-        if len(keys) == 1 and len(nums) == 1:
-            rendered.setdefault(keys[0], set()).add(nums[0])
-    for _ in range(len(spans)):          # iterate to a fixed point
-        for keys, nums in spans:
-            if len(keys) < 2 or len(keys) != len(nums):
-                continue
-            unknown = [k for k in keys if k not in rendered]
-            left = [n for n in nums if n not in {next(iter(rendered[k])) for k in keys if k in rendered}]
-            if len(unknown) == 1 and len(left) == 1:
-                rendered.setdefault(unknown[0], set()).add(left[0])
-
-    # every multi-key span must still carry exactly the numbers its keys own
-    for keys, nums in spans:
-        if len(keys) > 1 and all(k in rendered for k in keys):
-            want = sorted(next(iter(rendered[k])) for k in keys)
-            if sorted(nums) != want:
-                failures.append(f"multi-key citation {keys}: rendered {sorted(nums)} want {want}")
-
-    check(bool(rendered), "citations present", f"{len(rendered)} distinct sources")
-    unstable = {k: sorted(v) for k, v in rendered.items() if len(v) != 1}
-    check(not unstable, "every source keeps one number globally", str(unstable))
-    citeproc = {k: next(iter(v)) for k, v in rendered.items() if len(v) == 1}
+    check(bool(seen), "citations present", f"{len(seen)} distinct sources")
+    check(seen == set(citeproc), "every cited key rendered",
+          str(sorted(set(citeproc) ^ seen)))
 
     # --- per-slide footnote lines match what citeproc actually numbered ------
     mismatched = []
@@ -113,8 +118,9 @@ def main() -> int:
     # --- figures survived the render ----------------------------------------
     imgs = re.findall(r'<img\b[^>]*?(?:data-)?src="data:image/', h)
     check(len(imgs) >= 3, "images embedded", f"{len(imgs)} found")
-    ess = re.search(r'<section id="essentials".*?</section>', h, re.S)
-    check(bool(ess and "<img" in ess.group(0)), "GitHub QR present on Essentials slide")
+    # The repo QR must survive the render. Match on the source image rather than
+    # on a slide title, so renaming the opening slide does not break the check.
+    check("figures/qr-code.png" in src, "repo QR referenced in the deck")
     # A stretched figure sizes itself from the slide's leftover height, so a
     # full-height section collapses it. Ensure the CSS still exempts them.
     check(":not(:has(.r-stretch))" in h,

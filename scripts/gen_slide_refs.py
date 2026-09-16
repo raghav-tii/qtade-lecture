@@ -42,11 +42,17 @@ def delatex(s: str) -> str:
 
 
 def parse_bib(text: str) -> dict:
-    """Very small bibtex reader: enough for this repo's uniform entries."""
+    """Very small bibtex reader: enough for this repo's uniform entries.
+
+    Records the entry type alongside the fields, so books and chapters can be
+    rendered with a publisher instead of an empty journal slot.
+    """
     entries = {}
-    for m in re.finditer(r"@\w+\s*\{\s*([^,]+),(.*?)\n\}", text, re.S):
-        key, body = m.group(1).strip(), m.group(2)
-        fields = {}
+    for m in re.finditer(r"@(\w+)\s*\{\s*([^,]+),(.*?)\n\}", text, re.S):
+        etype, key, body = m.group(1).lower(), m.group(2).strip(), m.group(3)
+        if etype == "comment":
+            continue
+        fields = {"_type": etype}
         for fm in re.finditer(r"(\w+)\s*=\s*\{(.*?)\}\s*,?\s*(?=\n\s*\w+\s*=|\s*$)", body, re.S):
             fields[fm.group(1).lower()] = " ".join(fm.group(2).split())
         entries[key] = fields
@@ -90,12 +96,26 @@ def full_ref(e: dict) -> str:
     who = au[0] if len(au) == 1 else (
         " & ".join(au) if len(au) == 2 else f"{au[0]} *et al.*")
     title = delatex(e.get("title", ""))
-    journal = delatex(e.get("journal", ""))
+    # Books, chapters and theses have no journal; name the venue they do have.
+    journal = delatex(
+        e.get("journal")
+        or e.get("booktitle")
+        or e.get("school")
+        or e.get("institution")
+        or e.get("publisher", ""))
     year, vol, pages = e.get("year", ""), e.get("volume", ""), delatex(e.get("pages", ""))
 
     if journal.lower().startswith("arxiv preprint"):
         arxiv = journal.split("arXiv:")[-1].strip()
         return f"{who}, *{title}*, arXiv:{arxiv} ({year})."
+
+    if e.get("_type") in {"book", "phdthesis", "mastersthesis"}:
+        bits = f"{who}, *{title}*"
+        if journal:
+            bits += f" ({journal}, {year})."
+        else:
+            bits += f" ({year})."
+        return bits
 
     bits = f"{who}, *{title}*, {journal}"
     if vol:

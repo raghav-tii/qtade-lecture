@@ -14,7 +14,7 @@ full so the main text can refer to them without interrupting its argument.
 % bounds, computational cost.
 
 TT-cross builds a tensor train for a black-box $f$ from $O(n\chi^2)$
-evaluations, never forming the full array~\cite{oseledets2010ttcross}. It is
+evaluations, never forming the full array~\cite{Oseledets2010}. It is
 what makes \cref{subsec:finding-qtt,subsec:tt-cross-geometry} possible.
 
 \paragraph{The matrix case first.}
@@ -74,7 +74,7 @@ column multi-indices $\mathcal{J}_k$. Then:
   \item \textbf{Rectangular maxvol} keeps more than $\chi$ pivots, improving
     robustness at modest extra cost. Generally worth switching on.
   \item \textbf{Rank-adaptive variants} insert pivots where the local error is
-    largest, rather than fixing $\chi$ in advance~\cite{nunez2025tci}.
+    largest, rather than fixing $\chi$ in advance~\cite{Nunez2025}.
   \item Convergence is heuristic. There is no guarantee for adversarial or noisy
     black boxes, and the failure modes of \cref{subsec:finding-qtt} are all
     observed in practice. Always validate on points the cross never sampled.
@@ -86,7 +86,7 @@ column multi-indices $\mathcal{J}_k$. Then:
 % local optimization/eigensolver, sweeping schedule, connection to
 % variational MPS optimization, adaptive bond-dimension growth.
 
-DMRG~\cite{white1992,schollwoeck2011} is the variational optimization of an MPS
+DMRG~\cite{White1992,Schollwoeck2011} is the variational optimization of an MPS
 by local updates. In these notes it appears as the linear solver of
 \cref{subsec:linear-solvers}, as the pressure-Poisson step of
 \cref{subsec:qtt-cfd-frameworks}, and as the all-at-once space--time solve of
@@ -127,7 +127,7 @@ by local updates. In these notes it appears as the linear solver of
   \item \textbf{Escaping local minima.} Two-site updates explore directions
     unavailable to any single tensor, so they escape stalls that trap one-site
     sweeps. AMEn recovers most of this at one-site cost by enriching the update
-    with residual directions~\cite{dolgov2014amen,holtz2012als}.
+    with residual directions~\cite{Dolgov2014,Holtz2012}.
   \item \textbf{Sweeping schedule.} Start with a loose tolerance and a low rank
     cap, then tighten both over successive sweeps. Two or three sweeps usually
     suffice from a warm start.

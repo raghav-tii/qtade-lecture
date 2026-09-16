@@ -33,7 +33,7 @@ bond dimension $\chi$.
   \item Direct inversion is meaningless here. $A^{-1}$ has no reason to be
     low-rank even when $A$ and $x$ both are. (The QTT Laplacian is the
     instructive exception: its inverse \emph{does} admit an explicit low-rank
-    representation~\cite{kazeev2012laplace}, which is precisely why that case is
+    representation~\cite{Kazeev2012}, which is precisely why that case is
     remarked upon.)
   \item Instead \textbf{recast the problem as a minimization over the MPS
     manifold},
@@ -59,7 +59,7 @@ adaptivity against local cost.}
   \item \textbf{ALS, or one-site DMRG.} Freeze every tensor but one. With the
     chain in mixed canonical form centred on that tensor, the problem collapses
     to a small dense linear system of size $\chi^2 d$, solved exactly. Sweep
-    left to right and back~\cite{holtz2012als}.
+    left to right and back~\cite{Holtz2012}.
   \item Each local solve is exact, so the global objective decreases
     monotonically. Convergence to a global optimum is not guaranteed; ALS can
     stall in a local minimum of the fixed-rank manifold.
@@ -75,7 +75,7 @@ adaptivity against local cost.}
 
 \paragraph{AMEn and Krylov alternatives.}
 \begin{itemize}
-  \item \textbf{AMEn}~\cite{dolgov2014amen} --- one-site sweeps enriched with
+  \item \textbf{AMEn}~\cite{Dolgov2014} --- one-site sweeps enriched with
     directions taken from the current residual $b - Ax$. This recovers rank
     adaptivity at roughly one-site cost, and is often the best default.
   \item \textbf{Krylov methods in TT format} --- CG or GMRES with a rounding
@@ -97,7 +97,7 @@ adaptivity against local cost.}
 \paragraph{What the solve actually costs.}
 This is not a peripheral concern. In our incompressible CFD solver the
 DMRG-type Poisson solve dominates every other part of the
-pipeline~\cite{peddinti2024cfd}:
+pipeline~\cite{Peddinti2024}:
 
 \begin{center}
   \begin{tabular}{ll}
@@ -158,7 +158,7 @@ Return to the heat equation~\eqref{eq:heat} of
 \begin{itemize}
   \item Build $A = \mathbb{1} - \alpha \Delta t\, L$ directly as an MPO. Its
     rank is $\approx 3$ and the cores are written down
-    analytically~\cite{kazeev2012laplace}; there is no numerical construction
+    analytically~\cite{Kazeev2012}; there is no numerical construction
     step and no assembly error.
   \item The right-hand side is simply the previous state MPS.
   \item Solve with DMRG or AMEn, \textbf{warm-started from $u^k$}. Consecutive
@@ -216,13 +216,13 @@ method scales. There are three routes.
 \begin{itemize}
   \item \textbf{Analytic.} For the families tabulated in
     \cref{subsec:qtt-functions-operators} the small cores are written down by
-    hand~\cite{oseledets2013functions}. Exact: no sampling, no error.
+    hand~\cite{Oseledets2013}. Exact: no sampling, no error.
   \item \textbf{From a full array (TT-SVD).} Exact and quasi-optimal
     (\cref{subsec:mps}), but it needs the dense $2^n$ vector, so it is viable
     only for small $n$.
   \item \textbf{Black-box (TT-cross, or TCI).} Build the MPS from $O(n\chi^2)$
     \textbf{evaluations} of $f$, never forming the full
-    tensor~\cite{oseledets2010ttcross}.
+    tensor~\cite{Oseledets2010}.
 \end{itemize}
 
 The third route is the one that scales, and the one that makes the method
@@ -241,8 +241,8 @@ it you would need the $2^n$-vector in order to compress the $2^n$-vector.}
     row swaps.
   \item Quantics combined with cross interpolation gives \textbf{QTCI}:
     parsimonious representations of multivariate functions at very high
-    resolution~\cite{ritter2024qtci}. Mature implementations exist in
-    \texttt{xfac} and \texttt{Tensor\-Cross\-Inter\-polation.jl}~\cite{nunez2025tci}.
+    resolution~\cite{Ritter2024}. Mature implementations exist in
+    \texttt{xfac} and \texttt{Tensor\-Cross\-Inter\-polation.jl}~\cite{Nunez2025}.
 \end{itemize}
 
 The algorithm is spelled out in \cref{subsec:appendix-tt-cross}.
@@ -260,8 +260,11 @@ The working recipe is short:
 
 \begin{remark}[Failure modes to expect]
   \begin{itemize}
-    \item A discontinuous $f$ causes rank blow-up: a step edge has singular
-      values decaying like $1/k$, so no finite $\chi$ captures it well.
+    \item A feature narrower than the pivots can reach is missed entirely. A
+      Gaussian spike of width $10^{-3}$ is recovered to machine precision; the
+      same spike at width $10^{-5}$, placed at an irrational position, comes
+      back as \emph{identically zero} at every rank we tried --- with a reported
+      cross error that stays small throughout.
     \item Poorly placed pivots cause features to be missed entirely. The method
       never samples them, so it never learns they exist, and the reported cross
       error stays small while the answer is wrong.
@@ -288,11 +291,26 @@ genuine modelling decision rather than an implementation detail.
   \item The natural object is an indicator function $\theta(q(x))$: one inside
     the body, zero outside, where $q$ is a level-set function vanishing on the
     boundary.
-  \item That is exactly the wrong thing for a tensor network. A step edge has
-    \textbf{slowly decaying singular values}, so $\chi$ explodes. This is the
-    failure mode of \cref{subsec:mps} in its purest form: the indicator is
-    maximally non-smooth exactly where the physics happens.
+  \item The reflex at this point is to say that a sharp edge has slowly decaying
+    singular values, so $\chi$ explodes. \emph{That reflex is wrong}, and it is
+    worth being precise about why, because it sends you looking for the wrong
+    fix.
 \end{itemize}
+
+\margintext{Measure it before you believe either story. A one-dimensional
+Heaviside is rank~2 at any resolution; a disc indicator on a $2^n\times2^n$ grid
+needs $\chi = 17, 50, 128$ at $N = 64, 256, 1024$.}
+A one-dimensional step function has quantics rank~\textbf{2}, at any resolution
+and wherever the jump sits: quantics never sees the jump, it sees the comparison
+$\mathbb{1}[i > m]$, which a two-state automaton decides digit by digit
+(\cref{subsec:qtt-functions-operators}). Sharpness alone is free.
+
+What is expensive is a boundary that is \emph{curved}, and therefore not aligned
+with the binary index. A circle cuts across every length scale at once, so every
+bond has to carry information about where it is --- and unlike everything else in
+\cref{subsec:qtt-functions-operators}, the cost grows as the grid is refined. A
+straight edge stays at $\chi=2$ from $N=64$ to $N=1024$; a disc goes from
+$\chi=17$ to $\chi=128$ over the same range.
 
 The fix is to give up the sharp edge \emph{deliberately}, and then bound what
 that costs.
@@ -302,7 +320,7 @@ that costs.
 $\sqrt{\ell_0^{D-2}/\alpha}$ bound is that the approximation is a modelling
 choice with an error bar, not an undocumented hack.}
 Replace the indicator by a smooth mask, with $q$ vanishing on the object
-boundary $\partial\Omega$~\cite{peddinti2024cfd}:
+boundary $\partial\Omega$~\cite{Peddinti2024}:
 \begin{equation}
   m(x) = 1 - e^{-\alpha\left(q(x) + \abs{q(x)}\right)},
   \qquad q|_{\partial\Omega} = 0 .
@@ -313,13 +331,39 @@ boundary $\partial\Omega$~\cite{peddinti2024cfd}:
   \item The combination $q + \abs{q}$ vanishes identically wherever $q < 0$, so
     $m$ is exactly zero inside the body and rises smoothly outside it. No
     approximation is made in the interior.
-  \item $\alpha$ trades sharpness against rank: large $\alpha$ approaches the
-    true indicator and costs bond dimension.
   \item The $\ell_2$ distance to the true indicator scales as
     $\sqrt{\ell_0^{D-2}/\alpha}$ in $D$ dimensions, where $\ell_0$ is the
     boundary length scale. The error is therefore controlled by a single knob
-    and decays as $\alpha^{-1/2}$.
+    and decays as $\alpha^{-1/2}$ --- a fit on a disc at $N=512$ gives an
+    exponent of $-0.53$.
 \end{itemize}
+
+\begin{remark}[What the smoothing does and does not buy]
+  It is tempting to summarise \eqref{eq:smoothed-mask} as \enquote{sharp edges
+  have high rank, so smooth them}. The measurement does not support that. On a
+  disc at $N=512$:
+
+  \begin{center}
+    \begin{tabular}{@{}lrrrr@{}}
+      \toprule
+      & $\chi$ at $10^{-1}$ & $\chi$ at $10^{-2}$ & $\chi$ at $10^{-6}$
+        & $\ell_2$ to indicator \\
+      \midrule
+      sharp indicator  & 33 & 75 & 80 & 0 \\
+      $\alpha = 50$    & 13 & 34 & 92 & 0.28 \\
+      $\alpha = 1000$  & 27 & 74 & 94 & 0.059 \\
+      $\alpha = 5000$  & 31 & 78 & 88 & 0.023 \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+
+  At \emph{tight} tolerance the smoothed mask is no cheaper --- it is simply a
+  different function with its own structure. The saving appears at the accuracy
+  you actually want, and the defensible statement is therefore: \textbf{$\alpha$
+  prices geometric fidelity against rank, and the price is known.} That the
+  price is known is the whole point; it is what separates this from an
+  undocumented hack.
+\end{remark}
 
 \paragraph{Putting it together.}
 \begin{itemize}
@@ -333,6 +377,27 @@ boundary $\partial\Omega$~\cite{peddinti2024cfd}:
   \item Demonstrated on a \textbf{NACA 0040 airfoil}: $\chi = 45$, $18{,}800$
     parameters, a compression factor of $27.9$.
 \end{itemize}
+
+\begin{exercise}[Companion notebooks]
+  \texttt{02-walkthrough-linear-algebra.ipynb} and
+  \texttt{02-exercises-linear-algebra.ipynb}. Four things to do:
+
+  \begin{enumerate}
+    \item Implement Crank--Nicolson on top of the same solver and measure the
+      convergence order. Compare against the \emph{semi-discrete} exact solution,
+      not the continuous one --- otherwise a spatial error floor hides the
+      second order completely. (This is not a pedantic point; it is the most
+      common way a convergence study lies to you.)
+    \item Solve the two-dimensional Poisson problem, sweep $\chi_{\max}$, and
+      time the solve at $m = 5,6,7,8$. Is the growth in $m$ or in $4^m$?
+    \item Cross-interpolate a black box you are not allowed to look inside, and
+      read its complexity off the rank at which the error stops improving.
+    \item Set $\alpha$ in \eqref{eq:smoothed-mask} from a stated requirement
+      (\enquote{geometry accurate to $5\%$}) rather than by taste, and confirm
+      the $\alpha^{-1/2}$ law. Then check whether the smoothing bought you any
+      rank at that accuracy, and be honest about the answer.
+  \end{enumerate}
+\end{exercise}
 
 \subsection{Open Problems}
 \label{subsec:part2-open-problems}

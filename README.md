@@ -8,27 +8,49 @@ LaTeX notes, Quarto/reveal.js slides, companion Python notebooks, and a shared b
 
 ```text
 .
-├── bibliography.bib        # SHARED bibliography — single source of truth (see below)
+├── bibliography.bib         # SHARED bibliography — single source of truth (see below)
+├── bibliography-keymap.md   # how the three pre-merge .bib files map onto it
 │
-├── notes/                  # LaTeX lecture notes
-│   ├── main.tex            # top-level document, \input's the section files
-│   ├── preamble.tex        # shared packages/macros
-│   ├── sections/           # one .tex file per section (edit here or in Overleaf)
-│   └── figures/            # figures used in the notes
+├── notes/                   # LaTeX lecture notes
+│   ├── main.tex             # top-level document, \input's the section files
+│   ├── preamble.tex         # shared packages/macros
+│   ├── sections/            # one .tex file per part (edit here or in Overleaf)
+│   └── figures/             # figures used in the notes
 │
-├── slides/                 # Quarto (reveal.js) slide deck
+├── slides/                  # Quarto (reveal.js) slide deck
 │   ├── slides.qmd
+│   ├── styles.css           # incl. the .q / .breaks / .lab / .hero teaching blocks
 │   └── _quarto.yml
 │
-├── notebooks/               # Companion Python/Jupyter notebooks
+├── notebooks/               # Companion Python/Jupyter notebooks — two per part
+│   ├── qtade_tn.py          # the from-scratch NumPy toolkit (Parts I–II)
+│   ├── qtade_quimb.py       # quimb layer (Parts III–IV)
+│   ├── qtade_cfd.py         # Chorin projection entirely in tensor-train format
+│   ├── qtade_dmd.py         # exact DMD, space-time trains, MPS-DMD
+│   ├── test_qtade_*.py      # fast checks against dense reference implementations
 │   ├── environment.yml      # conda/mamba environment for reproducibility
 │   └── requirements.txt     # pip alternative
 │
 ├── scripts/
+│   ├── gen_slide_refs.py    # regenerate slide footnotes + reference slides
+│   ├── check_slides_build.py# verify the rendered deck before it is published
+│   ├── rekey.py             # one-shot audit trail for the 2026 bibliography merge
 │   └── sync_overleaf.sh     # push/pull this repo to/from the linked Overleaf project
 │
 └── .github/workflows/       # CI: compile notes to PDF, render slides, (optional) Overleaf sync
 ```
+
+## Course structure
+
+Four 90-minute parts. Parts I and II build the tensor-network toolkit *from inside a PDE
+solver* — every notion arrives when a numerical method needs it. Parts III and IV spend
+that toolkit on the forward and inverse problems of CFD, and map the surrounding
+literature.
+
+Each part has a walkthrough notebook (follows the slides cell by cell) and an exercise
+notebook (~30 minutes, solutions at the bottom). **Every quantitative claim in the slides
+and notes is measured in the notebooks, on a laptop** — if a number looks wrong, rerun the
+cell and tell us.
 
 ## Overleaf setup
 
@@ -70,9 +92,21 @@ mainly for live/collaborative editing sessions, then push back with the script a
 ## Bibliography — single source of truth
 
 `bibliography.bib` at the repo root is the only bibliography file. `notes/main.tex` pulls it
-in as `\bibliography{../bibliography}`; `slides/_quarto.yml` as `bibliography: ../bibliography.bib`.
-Add new references only to the root file — both the notes and the slides pick them up
-automatically.
+in via `\addbibresource{../bibliography.bib}`; `slides/_quarto.yml` as
+`bibliography: ../bibliography.bib`. Add new references only to the root file — both the
+notes and the slides pick them up automatically.
+
+Keys are **JabRef style**: `Surname` + `Year`, disambiguated `a`, `b`, `c`. JabRef
+regenerates them with *Quality → Generate BibTeX key*, so they stay stable if the file is
+edited there. Entries are grouped by their role in the course, in the order the course
+uses them, with a one-line comment above each saying what it is cited *for* — that habit
+is what keeps a 150-entry file navigable. Abstracts, `file`, `keywords` and `urldate`
+fields are deliberately stripped: they break both citation processors and no one reads
+them.
+
+`bibliography-keymap.md` records how the three pre-merge files (the old root
+`bibliography.bib`, `references.bib`, `master_database.bib`) map onto the merged one,
+which duplicates were collapsed, and what was added.
 
 The slides cite with `nature.csl`: superscript numbers, numbered globally by order of first
 appearance, so a source keeps the same number throughout the deck. Each citing slide also
@@ -128,9 +162,21 @@ settings these require.
 2. In the repo settings, enable **GitHub Pages** → source: "GitHub Actions" (only needed if you
    want the slides auto-published to a public URL).
 3. Create an Overleaf project, get its git URL, and follow "Overleaf setup" above to link it.
-4. Fill in `notebooks/environment.yml` / `requirements.txt` with the actual tensor-network /
-   scientific-computing packages you use (left as placeholders here).
-5. Decide on a license (not set yet — see `LICENSE.md` placeholder) and author list.
+4. Decide on a license (not set yet — see `LICENSE.md` placeholder) and author list.
+
+## Local builds
+
+```bash
+# notes  (LuaLaTeX + biber)
+latexmk -lualatex notes/main.tex
+
+# slides (Quarto), then verify before publishing
+quarto render slides/slides.qmd
+python3 scripts/check_slides_build.py slides/index.html
+
+# notebooks: the module checks are the fastest install smoke test
+cd notebooks && python3 test_qtade_tn.py && python3 test_qtade_quimb.py
+```
 
 ## Collaborators
 

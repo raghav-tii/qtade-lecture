@@ -38,7 +38,7 @@ literature. A method can be excellent at one and useless at the other.}
   \item Methods strong at one are often weak at the other. Neural surrogates are
     the clean illustration: they predict well and explain nothing.
   \item The classical toolkit spans both: POD and PCA, DMD and Koopman
-    operators, SINDy~\cite{brunton2016sindy}, operator learning, and data
+    operators, SINDy~\cite{Brunton2016}, operator learning, and data
     assimilation.
 \end{itemize}
 
@@ -74,7 +74,7 @@ Assume the dynamics are approximately linear in the state,
   \label{eq:dmd-linear}
 \end{equation}%
 find the best such $A$ from the data, and read off its
-eigenpairs~\cite{schmid2010dmd}. Each eigenvalue gives a \textbf{growth rate and
+eigenpairs~\cite{Schmid2010}. Each eigenvalue gives a \textbf{growth rate and
 a frequency}; each eigenvector gives a \textbf{spatial mode}. That is the whole
 appeal: the output is a set of individually interpretable physical structures.
 
@@ -95,7 +95,7 @@ modes are the columns of $\Phi$.
 
 \begin{remark}[Koopman view]
   Equation~\eqref{eq:dmd-recipe} is a finite-rank approximation of the linear,
-  infinite-dimensional Koopman operator acting on observables~\cite{tu2014dmd}.
+  infinite-dimensional Koopman operator acting on observables~\cite{Tu2014}.
   The nonlinear dynamics are linear in the space of observables, but that space
   is infinite-dimensional; DMD truncates it to $r$ dimensions. That is why a
   linear method can describe nonlinear dynamics without contradiction, and also
@@ -107,7 +107,7 @@ modes are the columns of $\Phi$.
 consequence is large: once time is just more legs, there is no time loop to
 parallelize and no step-to-step error accumulation along it.}
 \begin{itemize}
-  \item The idea~\cite{peddinti2025spacetime}: binarize \textbf{both} $x$ and
+  \item The idea~\cite{Peddinti2025a}: binarize \textbf{both} $x$ and
     $t$, into one MPS of $\log_2 N_x + \log_2 N_t$ tensors.
   \item Time stops being a loop and becomes more legs on the same chain.
   \item \textbf{Ordering matters here too.} Space-then-time works generally;
@@ -128,7 +128,7 @@ parallelize and no step-to-step error accumulation along it.}
 \end{itemize}
 
 \noindent
-On a $1024 \times 1024$ space--time grid~\cite{peddinti2025spacetime}:
+On a $1024 \times 1024$ space--time grid~\cite{Peddinti2025a}:
 
 \begin{center}
   \begin{tabular}{@{}llp{0.38\textwidth}@{}}
@@ -147,14 +147,14 @@ Standard DMD needs an SVD of an $N_x \times N_t$ matrix. That is the bottleneck
 --- and, once the data is already a space--time MPS, it is unnecessary.
 
 \begin{itemize}
-  \item \textbf{MPS-DMD}~\cite{peddinti2025spacetime}: run the entire DMD
+  \item \textbf{MPS-DMD}~\cite{Peddinti2025a}: run the entire DMD
     pipeline \emph{inside} the space--time MPS, never forming the snapshot
     matrix.
   \item The key observation is that the MPS already contains the SVD. It only
     has to be gauged into the right form (\cref{subsec:mps}).
   \item Same modes, same eigenvalues, same predictions, at exponentially lower
     cost. Earlier tensor-based DMD variants compressed space but stayed linear
-    in $N_t$~\cite{klus2018tdmd}.
+    in $N_t$~\cite{Klus2018}.
 \end{itemize}
 
 \noindent
@@ -213,9 +213,9 @@ the regime it was fitted in whereas an equation is not.
   \item \textbf{System identification.} Fit a sparse combination of candidate
     terms from a dictionary --- $u_x$, $u u_x$, $u_{xx}$, and so on --- and
     select among them by sparse regression. SINDy is the canonical
-    example~\cite{brunton2016sindy}. The dictionary is a tensor product over
+    example~\cite{Brunton2016}. The dictionary is a tensor product over
     candidate terms, so it grows exponentially with the number of terms
-    considered; TT-based variants keep it manageable~\cite{klus2018tdmd}.
+    considered; TT-based variants keep it manageable~\cite{Klus2018}.
   \item \textbf{Data assimilation.} Combine a known but imperfect model with
     sparse observations. The tensor network carries the state, and the model is
     the Part~\partref{3} solver.
@@ -284,7 +284,7 @@ space--time work, and lifting it brings back the index-ordering questions of
   \item \textbf{Nonlinear and Koopman extensions.} Extended DMD with tensor-train
     dictionaries, and kernel DMD in compressed form.
   \item \textbf{Equation discovery.} SINDy over tensor-product dictionaries kept
-    in TT form~\cite{brunton2016sindy,klus2018tdmd}.
+    in TT form~\cite{Brunton2016,Klus2018}.
   \item \textbf{Noise and sparsity.} How TT truncation interacts with
     measurement noise is not settled; it can denoise, or it can fit the noise,
     and there is no theory saying which.
@@ -302,5 +302,30 @@ space--time work, and lifting it brings back the index-ordering questions of
     \cref{subsec:part2-open-problems}.
   \item \textbf{Interpretability is the edge} over neural surrogates.
   \item \textbf{Software and reproducibility.} Shared TT/MPS
-    tooling~\cite{nunez2025tci}, standard benchmarks, and open datasets.
+    tooling~\cite{Nunez2025}, standard benchmarks, and open datasets.
 \end{itemize}
+
+\begin{exercise}[Companion notebooks]
+  \texttt{04-walkthrough-inverse-problem.ipynb} and
+  \texttt{04-exercises-inverse-problem.ipynb}. Four things to do:
+
+  \begin{enumerate}
+    \item Read the temporal complexity of six datasets off the space/time bond,
+      predicting each first. A standing wave gives 1, a travelling wave 2, white
+      noise saturates. Then add $10^{-3}$ of noise to the standing wave and
+      measure the bond at tolerance $10^{-10}$ and at $10^{-2}$: it goes from
+      saturated back to 1. The bond measures complexity \emph{at the accuracy you
+      asked for}, which is the only kind there is.
+    \item Break MPS-DMD on purpose --- a standing wave, a frequency sweep, a
+      saturating nonlinearity. Note that it fails silently in every case: the
+      algorithm returns eigenvalues and modes regardless, and only the in-sample
+      reconstruction gives it away.
+    \item Use truncation as a denoiser and find the optimal rank as a function of
+      noise amplitude. Then answer the question that matters: in a real problem
+      you have no ground truth to optimize against, so what do you monitor?
+    \item Assemble the entire space-time system for the heat equation as one MPO
+      and solve it with a single DMRG call --- no time loop at all. Then swap the
+      initial condition for a narrow Gaussian and watch the space/time bond go
+      from 1 to 16. That bond is the price of removing the loop.
+  \end{enumerate}
+\end{exercise}

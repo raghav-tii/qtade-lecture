@@ -39,8 +39,10 @@ is awkward for a tensor network in a \emph{different} way:
     products of MPSs, so ranks multiply.
   \item \textbf{A nonlocal pressure constraint}: a global elliptic solve at
     every step.
-  \item \textbf{Boundary conditions on complex geometry}: sharp features, hence
-    high rank.
+  \item \textbf{Boundary conditions on complex geometry}: curved interfaces
+    couple every length scale at once, hence high rank
+    (\cref{subsec:tt-cross-geometry} --- and note that it is the curvature, not
+    the sharpness, that costs).
 \end{enumerate}
 
 \noindent
@@ -108,7 +110,7 @@ the comparison in \cref{subsec:qtt-cfd-results} a fair one.}
 \noindent
 The compressible cousin of~\eqref{eq:navier-stokes} --- the Euler equations,
 with shocks and a nonlinear flux --- is targeted
-separately~\cite{peddinti2025compressible}.
+separately~\cite{Peddinti2025}.
 
 \subsection{QTT Frameworks for CFD}
 \label{subsec:qtt-cfd-frameworks}
@@ -127,14 +129,14 @@ same place, rounding from \cref{subsec:mps}.}
   \item Bits are \textbf{interleaved} across coordinates, so each length scale
     stays local along the chain.
   \item Gradient, divergence and Laplacian are MPOs of rank $2$--$4$, built once
-    in closed form and reused throughout~\cite{kazeev2012laplace}.
+    in closed form and reused throughout~\cite{Kazeev2012}.
   \item Everything downstream is MPO application, Hadamard product, and
     rounding. The solver contains no other operation.
 \end{itemize}
 
 \paragraph{Chorin projection.}
-The scheme is Chorin's projection method~\cite{chorin1968} carried out in tensor
-form~\cite{peddinti2024cfd}. Three moves per timestep:
+The scheme is Chorin's projection method~\cite{Chorin1968} carried out in tensor
+form~\cite{Peddinti2024}. Three moves per timestep:
 
 \begin{enumerate}
   \item \textbf{Predictor} --- ignore pressure and advance momentum,
@@ -162,6 +164,25 @@ form~\cite{peddinti2024cfd}. Three moves per timestep:
   how you find the gradient part in order to discard it.
 \end{remark}
 
+\begin{remark}[Which Laplacian goes in step 2]
+  \margintext{Costs a day to find, ten seconds to fix, and looks exactly like
+  \enquote{the solver is a bit inaccurate} the whole time.}
+  The operator in step~2 must be $\nabla\cdot\nabla$ \emph{assembled from the
+  same difference operators} used for the gradient in step~3 and the divergence
+  in step~2. Substitute the compact three-point Laplacian --- which is the
+  obvious thing to reach for, since \cref{subsec:qtt-functions-operators} built
+  it and it has a lower MPO rank --- and the projection no longer projects.
+
+  The algebra is one line. With $D$ the discrete gradient,
+  $\nabla\cdot\mathbf{v}^{t+1} = D\cdot\mathbf{v}^{*} - \Delta t\,(D\cdot D)p$,
+  which vanishes identically only if the operator inverted in step~2 was
+  $D\cdot D$. With centred differences $D\cdot D \ne L$, and the residual
+  divergence is $O(1)$ rather than $O(\text{solver tolerance})$. Measured on one
+  step of our demonstrator: $\norm{\nabla\cdot\mathbf{v}}$ falls from $7.7$ to
+  $4\times10^{-3}$ when the operators match, and by a factor of a few when they
+  do not.
+\end{remark}
+
 \paragraph{Geometry and readout.}
 \begin{itemize}
   \item \textbf{Geometry.} The smoothed MPS mask of
@@ -187,7 +208,7 @@ form~\cite{peddinti2024cfd}. Three moves per timestep:
 
 \paragraph{Results and scaling.}
 \label{subsec:qtt-cfd-results}
-Incompressible flow past a cylinder~\cite{peddinti2024cfd}:
+Incompressible flow past a cylinder~\cite{Peddinti2024}:
 
 \begin{center}
   \begin{tabular}{ll}
@@ -209,13 +230,55 @@ Runtime is linear in $n$ and therefore \textbf{poly-logarithmic in the mesh
 size} $2^n$. The results were validated against Ansys Fluent on the squared
 geometries.
 
+\begin{remark}[What the teaching demonstrator reproduces, and what it does not]
+  The companion solver in \texttt{notebooks/qtade\_cfd.py} is a few hundred
+  lines of NumPy with homogeneous Dirichlet conditions on every wall, no
+  ghost-cell inlet or outlet, and no immersed geometry. It is not the code that
+  produced the table above, and it is not validated against anything.
+
+  What it does reproduce is the \emph{cost structure}, which is the part worth
+  carrying away. On a $64\times64$ grid over 40 timesteps the pressure solve
+  takes $82\%$ of the runtime, against the $80.1\%$ reported for the full
+  solver. Scaling from $n=5$ to $n=8$ multiplies the cell count by 64 and the
+  runtime by about 20 --- sublinear in cells, and well above the ideal $O(n)$,
+  the excess being interpreter overhead and local conjugate-gradient iterations
+  rather than anything about tensor networks. Take the shape of that curve from
+  the demonstrator and the constant from the paper.
+\end{remark}
+
+\begin{remark}[Truncation does not respect the constraint]
+  SVD truncation is optimal in the Frobenius norm, and the Frobenius norm knows
+  nothing about $\nabla\cdot\mathbf{v}=0$. Every rounding step puts a little
+  divergence back and the next projection removes it again; the balance is set
+  by the rank cap. Measured after 20 steps of the demonstrator:
+
+  \begin{center}
+    \begin{tabular}{@{}lr@{}}
+      \toprule
+      $\chi_{\max}$ & $\norm{\nabla\cdot\mathbf{v}}$ \\
+      \midrule
+      8  & $1.2\times10^{1}$ \\
+      16 & $1.6\times10^{0}$ \\
+      32 & $4.1\times10^{-2}$ \\
+      48 & $5.9\times10^{-4}$ \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+
+  \noindent
+  Structure-preserving rounding --- truncation that conserves mass, energy or
+  the constraint --- is open (\cref{subsec:part2-open-problems}). Until it
+  exists, $\chi_{\max}$ is the knob and the divergence is the diagnostic you
+  watch.
+\end{remark}
+
 \paragraph{Other frameworks in the field.}
 \begin{itemize}
   \item \textbf{Reduced-order models} for wall-bounded flows, at a few percent
-    of the DNS variable count~\cite{kiffner2023rom}.
+    of the DNS variable count~\cite{Kiffner2023}.
   \item \textbf{Turbulence PDFs} computed directly in tensor-network form,
-    rather than by sampling a reconstructed field~\cite{gourianov2025pdf}.
-  \item \textbf{Vlasov--Poisson} for kinetic plasmas~\cite{ye2022vlasov}.
+    rather than by sampling a reconstructed field~\cite{Gourianov2025}.
+  \item \textbf{Vlasov--Poisson} for kinetic plasmas~\cite{Ye2022}.
   \item \textbf{Lattice Boltzmann} in tensor-train form: a different
     discretization, the same compression idea.
 \end{itemize}
@@ -251,7 +314,7 @@ research programme.}
 \begin{itemize}
   \item Turbulence has precisely the structure the ansatz wants: a
     \textbf{cascade} in which well-separated scales couple
-    weakly~\cite{gourianov2022}.
+    weakly~\cite{Gourianov2022}.
   \item Quantics provides a scale-by-scale representation for free
     (\cref{subsec:qtt-functions-operators}), so the natural hierarchy of the
     physics \emph{is} the natural hierarchy of the ansatz. Weak inter-scale
@@ -302,7 +365,7 @@ source of the numbers below.}
 
 \noindent
 That is four orders of magnitude of compression with the energy spectrum
-essentially intact~\cite{pisoni2026turbulence}.
+essentially intact~\cite{Pisoni2026}.
 
 \paragraph{What breaks first.}
 \begin{itemize}
@@ -321,18 +384,51 @@ essentially intact~\cite{pisoni2026turbulence}.
     small-scale fluctuations. Both encodings fail --- differently.
 \end{itemize}
 
+\begin{remark}[The ordering in which diagnostics recover]
+  The claim above is easy to check in two dimensions, and worth checking because
+  the ordering is so lopsided. Compressing a synthetic intermittent field
+  (a $k^{-5/3}$ spectrum modulated by a lognormal multiplicative cascade, true
+  flatness $37.6$):
+
+  \begin{center}
+    \begin{tabular}{@{}lrrr@{}}
+      \toprule
+      $\chi$ & $\ell_2$ error & $E(k)$ error, $k<40$ & flatness \\
+      \midrule
+      16 & $0.61$ & $37\%$   & $119$ \\
+      32 & $0.42$ & $13\%$   & $64$ \\
+      64 & $0.21$ & $1.4\%$  & $44$ \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+
+  \noindent
+  At $\chi = 64$ the spectrum is right to $1.4\%$ while the pointwise error is
+  still $21\%$ and the flatness is $16\%$ high. The diagnostic that survives
+  compression longest is therefore the one least able to tell you that the
+  compression was safe. State this to anyone who shows you a compressed
+  turbulent field and an $E(k)$ plot.
+\end{remark}
+
 \begin{remark}[The honest claim]
   What the evidence supports is that turbulence compresses \emph{well at
   moderate} $\mathrm{Re}$. What it does not support is any claim that turbulence
   is low-rank at arbitrary $\mathrm{Re}$ and at every scale. The $\chi = 100$
   ceiling in the current 3D solver is a memory-bound implementation limit, not a
   physical statement.
+
+  A second, cheaper measurement makes the shape of the dependence visible
+  without a DNS: synthesize fields with an inertial range of increasing width
+  and compress them to a fixed tolerance. With $k_{\max} = 4, 8, 16, 32, 64$ the
+  bond dimension needed at $10^{-2}$ goes $14, 26, 41, 68, 128$. The rank tracks
+  the \emph{width of the inertial range}, which is the thing $\mathrm{Re}$
+  controls --- not the grid, which is the thing quantics already handles.
 \end{remark}
 
 The flip side is genuinely encouraging. Random low-rank tensor trains with
 $\chi = 10$, cascaded across scales, \textbf{synthesize} divergence-free
 turbulent-like snapshots --- correct spectrum, correct flatness --- at
-logarithmic cost~\cite{pisoni2026turbulence}. Whatever the ansatz is missing, it
+logarithmic cost~\cite{Pisoni2026}. Whatever the ansatz is missing, it
 is not the gross statistical structure of turbulence.
 
 \subsection{Outlook}
@@ -349,7 +445,7 @@ is not the gross statistical structure of turbulence.
     nothing else is worth optimizing first.
   \item \textbf{Adaptivity.} Choose $\chi(t)$ and $\Delta t$ from a live error
     estimate rather than a fixed cap; tangent-space integrators supply the
-    machinery~\cite{lubich2015timeint}.
+    machinery~\cite{Lubich2015}.
   \item \textbf{Structure-preserving truncation.} Maintain
     $\nabla\cdot\mathbf{v} = 0$ and the conserved quantities under SVD rounding.
 \end{itemize}
@@ -363,7 +459,7 @@ function of $\mathrm{Re}$.}
     regimes where rank behaviour is essentially unmapped.
   \item \textbf{The theory gap.} No sharp rank bounds for Navier--Stokes
     solutions as a function of $\mathrm{Re}$. Contrast this with
-    \cref{subsec:mps}, where the one-dimensional area law~\cite{hastings2007}
+    \cref{subsec:mps}, where the one-dimensional area law~\cite{Hastings2007}
     gives exactly such a bound for quantum ground states. That is the missing
     foundation beneath every empirical result quoted above.
   \item \textbf{Hybrid tensor networks and machine learning.} Learned closures,
@@ -372,3 +468,29 @@ function of $\mathrm{Re}$.}
   \item \textbf{Quantum hand-off.} The same MPS encoding is the natural
     interface to future quantum CFD algorithms.
 \end{itemize}
+
+\begin{exercise}[Companion notebooks]
+  \texttt{03-walkthrough-forward-problem.ipynb} builds the solver above on a
+  $64\times64$ grid; \texttt{03-exercises-forward-problem.ipynb} is the hands-on
+  half-hour. Keep $n = 6$ unless a cell says otherwise, or you will spend the
+  session watching a progress bar.
+
+  \begin{enumerate}
+    \item Instrument the advection term and watch the bond dimension of
+      $u\,\partial_x u$ \emph{before} rounding. It is $\chi_u \chi_{\partial u}$,
+      exactly. Then compare the advective and conservative forms: identical in
+      exact arithmetic, not identical under truncation.
+    \item Sweep $\chi_{\max}$ and find the smallest value that keeps
+      $\norm{\nabla\cdot\mathbf{v}}$ below $10^{-1}$ for thirty steps --- then
+      look at what that costs relative to the dense field. On a $64\times64$
+      grid the answer is sobering, and the reason is that compression is an
+      asymptotic statement.
+    \item Put a smoothed cylinder in the flow. One extra Hadamard product per
+      step, and no other change. Watch the sign convention on the level set: $q$
+      must be \emph{negative} inside the solid, or you will faithfully simulate a
+      flow that exists only inside the cylinder.
+    \item Compress an intermittent field at several $\chi$ and compare the
+      $\ell_2$ error, the spectrum and the flatness. Convince yourself, with your
+      own numbers, which diagnostic you are allowed to trust.
+  \end{enumerate}
+\end{exercise}

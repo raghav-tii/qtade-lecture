@@ -29,7 +29,7 @@ solver whose cost is logarithmic in the number of grid points
 Index expressions with five or six summations are correct and unreadable.
 Diagrams are the working notation of the field for a concrete reason: they carry
 exactly the same information, and they make the \emph{cost} of a computation
-something you can see~\cite{bridgeman2017}.
+something you can see~\cite{Bridgeman2017}.
 \margintext{Diagrammatic tensor notation is due to Penrose (1971); it entered
 numerical practice through the DMRG community in the 1990s. Bridgeman and Chubb
 (2017) is the readable modern introduction.}
@@ -110,8 +110,8 @@ and \emph{both} vocabularies remain in active use.
 
 \noindent
 The columns denote the same objects and the same algorithms. For a review from
-the physics side see~\cite{orus2014}; from the numerical-linear-algebra side,
-\cite{oseledets2011}.
+the physics side see~\cite{Orus2014}; from the numerical-linear-algebra side,
+\cite{Oseledets2011}.
 
 \paragraph{Where it came from.}
 \margintext{Note the seventeen-year gap between White (1992) and Oseledets
@@ -119,31 +119,31 @@ the physics side see~\cite{orus2014}; from the numerical-linear-algebra side,
 were matched up only afterwards.}
 \begin{itemize}
   \item \textbf{DMRG} --- variational optimization over matrix product states,
-    born in condensed-matter physics~\cite{white1992}.
+    born in condensed-matter physics~\cite{White1992}.
   \item \textbf{MPS formalism} --- the standard reference for canonical forms
-    and sweeping~\cite{schollwoeck2011}.
+    and sweeping~\cite{Schollwoeck2011}.
   \item \textbf{Tensor-train decomposition} --- the same ansatz rederived for
-    numerical linear algebra, with its own error analysis~\cite{oseledets2011}.
+    numerical linear algebra, with its own error analysis~\cite{Oseledets2011}.
   \item \textbf{Quantics} --- binary indexing gives $O(d \log N)$ approximation
-    of $N$-$d$ tensors~\cite{khoromskij2011}.
+    of $N$-$d$ tensors~\cite{Khoromskij2011}.
   \item \textbf{TT-cross} --- build a tensor train from samples, without ever
-    forming the full array~\cite{oseledets2010ttcross}.
+    forming the full array~\cite{Oseledets2010}.
   \item \textbf{Area law} --- the theorem that explains why $\chi$ can stay
-    bounded in one dimension~\cite{hastings2007}.
+    bounded in one dimension~\cite{Hastings2007}.
 \end{itemize}
 
 \paragraph{Tensor networks meet fluids.}
 \begin{itemize}
   \item \textbf{Scale correlations are weak} in turbulence, so $\chi$ stays
-    modest~\cite{gourianov2022}.
+    modest~\cite{Gourianov2022}.
   \item \textbf{Kinetic plasmas.} Vlasov--Poisson solved in MPS
-    form~\cite{ye2022vlasov}.
+    form~\cite{Ye2022}.
   \item \textbf{Reduced-order models.} Wall-bounded flows at a few percent of
-    the DNS variable count~\cite{kiffner2023rom}.
+    the DNS variable count~\cite{Kiffner2023}.
   \item \textbf{Turbulence PDFs} computed directly in tensor-network form,
-    without sampling the full field~\cite{gourianov2025pdf}.
+    without sampling the full field~\cite{Gourianov2025}.
   \item \textbf{A full stack.} Incompressible flow around arbitrary immersed
-    geometry, end to end~\cite{peddinti2024cfd}.
+    geometry, end to end~\cite{Peddinti2024}.
 \end{itemize}
 
 \paragraph{Where the field is now.}
@@ -153,14 +153,14 @@ ranks stretch in 3D; the 2025 space--time paper removed the time loop
 altogether. Parts~\partref{3} and~\partref{4} follow that order.}
 \begin{itemize}
   \item \textbf{3D turbulence} --- compression, simulation and synthesis at
-    $\mathrm{Re}_\lambda = 315$ on a $1024^3$ grid~\cite{pisoni2026turbulence}.
+    $\mathrm{Re}_\lambda = 315$ on a $1024^3$ grid~\cite{Pisoni2026}.
   \item \textbf{Compressible flow} --- a 2D Euler solver, finalist in the
-    Airbus--BMW Quantum Computing Challenge 2024~\cite{peddinti2025compressible}.
+    Airbus--BMW Quantum Computing Challenge 2024~\cite{Peddinti2025}.
   \item \textbf{Space--time and data-driven} --- space and time in a single MPS,
-    together with MPS-DMD~\cite{peddinti2025spacetime}.
+    together with MPS-DMD~\cite{Peddinti2025a}.
   \item \textbf{Tooling} --- mature cross-interpolation libraries, \texttt{xfac}
     (C++) and \texttt{Tensor\-Cross\-Inter\-polation.jl}
-    (Julia)~\cite{nunez2025tci}.
+    (Julia)~\cite{Nunez2025}.
 \end{itemize}
 
 Parts~\partref{3} and~\partref{4} are built directly on the first three.
@@ -236,7 +236,7 @@ grows}. Almost everything that follows is about when that proviso holds.
     between the two halves.
   \item For ground states of gapped one-dimensional local Hamiltonians an
     \textbf{area law} bounds that entanglement independently of system
-    size~\cite{hastings2007}, hence $\chi$ independent of $n$.
+    size~\cite{Hastings2007}, hence $\chi$ independent of $n$.
   \item Smooth, multiscale functions behave the same way. Noise and random data
     do not: their singular values decay slowly or not at all.
 \end{itemize}
@@ -248,7 +248,7 @@ grows}. Almost everything that follows is about when that proviso holds.
   \item Truncating small singular values at each of the $n-1$ cuts is
     \textbf{quasi-optimal}: the result is within a factor $\sqrt{n-1}$ of the
     best rank-$\chi$ approximation in the Frobenius
-    norm~\cite{oseledets2011}. The $\sqrt{n-1}$ comes from accumulating $n-1$
+    norm~\cite{Oseledets2011}. The $\sqrt{n-1}$ comes from accumulating $n-1$
     independent truncation errors in quadrature.
   \item Exact and fully controlled --- but it needs the dense $2^n$ vector in
     memory, so it is practical only for modest $n$.
@@ -313,7 +313,7 @@ correspond to one length scale.
 
 \paragraph{Which functions are low-rank?}
 Several elementary families have exact, resolution-independent QTT
-ranks~\cite{oseledets2013functions}:
+ranks~\cite{Oseledets2013}:
 
 \begin{center}
   \begin{tabular}{@{}ll@{}}
@@ -340,8 +340,35 @@ ranks~\cite{oseledets2013functions}:
     multiply, and then you round.
   \item \textbf{Rank tracks smoothness and scale separation, not resolution.}
     Doubling the resolution adds one tensor, costing $O(n)$ extra parameters
-    rather than $O(2^n)$.
+    rather than $O(2^n)$. Measured on $e^{-3x}+\sin(4\pi x)$ at tolerance
+    $10^{-10}$: $\chi = 3$ at every $n$ from 6 to 20, so the parameter count
+    goes from 58 to 310 while the grid goes from $64$ to $10^6$ points.
 \end{itemize}
+
+\begin{remark}[Sharpness is not the enemy]
+  \margintext{Stated as a warning because the wrong intuition here is both
+  natural and actively misleading: it sends you looking for a fix to a problem
+  you do not have, and past the one you do.}
+  Ask a numerical analyst what a step function costs and the answer is
+  \enquote{a lot} --- discontinuities are the classical enemy of spectral
+  accuracy. In the quantics encoding the answer is $\chi = 2$, at any
+  resolution and wherever the jump sits.
+
+  The reason is that quantics never sees a jump. The indicator
+  $\mathbb{1}[i > m]$ is decided digit by digit, most significant first, by an
+  automaton with two states: \emph{still equal to $m$ so far}, and
+  \emph{already decided}. Two states, bond dimension~2 --- the same counting
+  argument that gives the shift operator its rank in
+  \cref{subsec:qtt-functions-operators}.
+
+  What is expensive is a feature that is not aligned with the binary index: an
+  oscillation the coarse cores cannot resolve ($\sin(1/(x+10^{-2}))$ costs
+  $\chi=12$), or, in two dimensions, a curved boundary. A half-plane
+  $\mathbb{1}[x > 0.3]$ stays at $\chi=2$ from $N=64$ to $N=1024$; a disc of the
+  same size goes $17 \to 50 \to 128$ over that range, because a circle couples
+  every length scale at once. \Cref{subsec:tt-cross-geometry} is about paying
+  that bill.
+\end{remark}
 
 \paragraph{Bit ordering in two and three dimensions.}
 With more than one coordinate there is a genuine choice.
@@ -354,10 +381,34 @@ With more than one coordinate there is a genuine choice.
 \end{itemize}
 
 Interleaving keeps each \emph{scale} local along the chain, which matches the
-physics of a turbulent cascade. Stacking instead places a cut between $x_n$ and
-$y_1$ that every $x$--$y$ correlation must cross, at every scale at once. The
-choice is not cosmetic: it decides whether non-Gaussian turbulence statistics
-survive compression~\cite{pisoni2026turbulence}. The evidence is in
+physics of a turbulent cascade. Stacking instead places a single cut between
+$x_n$ and $y_1$ that every $x$--$y$ correlation must cross, at every scale at
+once.
+
+\begin{remark}[Which ordering wins depends on what you measure]
+  \margintext{The lesson generalises: a compression claim is meaningless until
+  you say whether the tolerance or the rank was held fixed.}
+  There is no universally better ordering, and the folklore in either direction
+  comes from testing on too narrow a class of fields.
+
+  A product $f(x)g(y)$ has rank exactly~1 across the stacked cut, \emph{by
+  definition of a product}. Stacking is therefore optimal for anything
+  separable --- and a great many textbook test functions, including the
+  isotropic Gaussian $e^{-a(x-\frac12)^2}e^{-a(y-\frac12)^2}$, are separable
+  without looking it.
+
+  For genuinely two-dimensional fields the two comparisons disagree. At matched
+  \emph{tolerance} (fix $\varepsilon$, let $\chi$ be what it needs), stacking is
+  more efficient on a synthetic $k^{-5/3}$ field. At matched \emph{bond
+  dimension} (fix $\chi$, measure the error), interleaving is more accurate and
+  degrades more gracefully. In a large simulation you never get to choose the
+  tolerance; you choose $\chi$, because $\chi$ is what fits in memory.
+\end{remark}
+
+The choice is not cosmetic. In three dimensions it decides whether non-Gaussian
+turbulence statistics survive compression~\cite{Pisoni2026}, and the diagnostic
+that separates the orderings is not the $\ell_2$ error at all --- it is the
+probability distribution of velocity increments. The evidence is in
 \cref{subsec:expressivity}.
 
 \paragraph{Operators as MPOs.}
@@ -371,7 +422,7 @@ survive compression~\cite{pisoni2026turbulence}. The evidence is in
   \item Finite-difference shift, first-derivative and Laplacian operators have
     \textbf{exact} QTT representations of rank
     $\chi_{\mathrm{MPO}} = 2\text{--}4$, independent of
-    $n$~\cite{kazeev2012laplace}. The cores are written down in closed form;
+    $n$~\cite{Kazeev2012}. The cores are written down in closed form;
     nothing is fitted or truncated.
   \item Applying an MPO to an MPS costs
     $O(n \chi^2 \chi_{\mathrm{MPO}}^2)$ and returns a state of bond dimension
@@ -450,12 +501,29 @@ both, and always know which one dominates.}
     boundary treatment, or too loose a rounding tolerance.
   \item Beyond first order, tensor-train time integrators based on projection
     onto the tangent space of the fixed-rank manifold give higher order with
-    rank adaptivity~\cite{lubich2015timeint}.
+    rank adaptivity~\cite{Lubich2015}.
 \end{itemize}
 
-\begin{exercise}
-  Run the companion notebook: explicit Euler at $n = 20$, i.e.\ $10^6$ grid
-  points, on a laptop. Then remove the rounding step and count how many
-  timesteps you get before memory runs out. Compare with the $3^k$ estimate
-  above.
+\begin{exercise}[Companion notebooks]
+  \texttt{01-walkthrough-representations.ipynb} reproduces every number in this
+  part; \texttt{01-exercises-representations.ipynb} is the hands-on half-hour.
+  Five things to do there, in increasing order of how much they will surprise
+  you:
+
+  \begin{enumerate}
+    \item Predict the quantics rank of seven functions, then measure. At least
+      one will not do what you expect.
+    \item Sweep the width of a Gaussian bump from wider than the domain to
+      narrower than a grid cell and plot $\chi$. The curve is not monotone ---
+      explain both ends.
+    \item Build the \emph{periodic} shift by changing one line of
+      \texttt{qtt\_shift}. The boundary condition lives entirely in the edge
+      vectors.
+    \item Run explicit Euler without rounding and count the steps before a
+      256\,MiB budget is exhausted. Compare with $\chi_k = 3^k\chi_0$ and with
+      the $9^k$ memory growth that follows from it.
+    \item Compare stacked and interleaved orderings on a separable field, a disc
+      indicator and synthetic turbulence --- at matched tolerance \emph{and} at
+      matched bond dimension. The two comparisons disagree.
+  \end{enumerate}
 \end{exercise}

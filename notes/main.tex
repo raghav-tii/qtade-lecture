@@ -91,10 +91,19 @@ warnings that would interrupt the argument if placed in the main text. They are
 commentary --- nothing in the main development depends on them.
 
 \paragraph{Materials.}
-The companion slides, the notebooks referenced in the exercises, and the shared
-bibliography all live in the course repository. The notebooks are the place to
-check the claims of \cref{subsec:heat-explicit-euler,subsec:heat-implicit-euler}
-for yourself; they are written to run on a laptop.
+The companion slides, the notebooks and the shared bibliography all live in the
+course repository. Every quantitative claim in these notes is measured there,
+on a laptop, and you are encouraged to disagree with any of them by rerunning
+the cell.
+
+Each part has two notebooks: a \emph{walkthrough} that follows the lecture cell
+by cell, and an \emph{exercise} set of roughly thirty minutes with solutions at
+the bottom. Parts~\partref{1} and~\partref{2} build everything from scratch in
+about five hundred lines of NumPy (\texttt{qtade\_tn.py}), because the mechanics
+are the point; Parts~\partref{3} and~\partref{4} move to \texttt{quimb} for the
+representation and compression, and keep the Part~\partref{2} solver, because no
+tensor-network library ships a linear solver for $Ax=b$. That seam is itself
+worth noticing.
 
 \input{sections/01-part1-tn-representations}
 \input{sections/02-part2-linear-algebra}

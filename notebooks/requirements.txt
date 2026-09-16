@@ -4,7 +4,13 @@ scipy
 matplotlib
 jupyterlab
 nbstripout
-# TODO: add the actual tensor-network / TT-SVD / QTT libraries you use, e.g.:
-# tensorly
-# tntorch
-# scikit-tt
+
+# Parts III and IV. quimb supplies canonical forms, compression and fast
+# contraction; the linear solver for A x = b is ours (see qtade_quimb.solve),
+# because no tensor-network library ships one.
+quimb
+
+# Optional, for comparison in the exercises. Not imported by any notebook.
+# xfac / TensorCrossInterpolation.jl are the reference TCI implementations but
+# are C++ and Julia respectively; torchtt gives you AMEn from Python.
+# torchtt

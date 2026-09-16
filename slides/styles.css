@@ -202,3 +202,82 @@
 
 /* Tighter default list rhythm — the deck is deliberately terse. */
 .reveal .slides section.level2 ul { margin-top: 0.35em; }
+
+/* --------------------------------------------------------------------------
+   Teaching furniture.
+
+   Three recurring blocks carry the deck's pedagogy, and each is visually
+   distinct so the audience learns what to expect from it:
+
+     .q       the question the slide answers, stated before the answer
+     .breaks  where the idea stops working — every technique gets one
+     .lab     a pointer into the companion notebooks
+
+   Keeping these as classes rather than ad-hoc formatting means the rhythm is
+   enforced by the stylesheet: a slide that has no question looks wrong.
+   -------------------------------------------------------------------------- */
+
+.reveal .q {
+  font-size: 0.82em;
+  font-weight: 500;
+  color: #107895;
+  border-left: 3px solid #107895;
+  padding-left: 0.6em;
+  margin: 0 0 0.55em;
+  line-height: 1.35;
+}
+
+.reveal .q p { margin: 0; }
+
+.reveal .breaks {
+  font-size: 0.62em;
+  background: rgba(154, 37, 21, 0.07);
+  border-left: 3px solid #9a2515;
+  padding: 0.45em 0.7em;
+  margin-top: 0.7em;
+  line-height: 1.45;
+}
+
+.reveal .breaks p { margin: 0; }
+
+.reveal .breaks::before {
+  content: "Where it breaks — ";
+  font-weight: 600;
+  color: #9a2515;
+}
+
+.reveal .lab {
+  font-size: 0.56em;
+  opacity: 0.85;
+  margin-top: 0.7em;
+  font-weight: 300;
+}
+
+.reveal .lab::before {
+  content: "◆ notebook ";
+  color: #107895;
+  font-weight: 600;
+}
+
+.reveal .lab code {
+  font-size: 0.95em;
+}
+
+/* A number the audience should carry out of the room. */
+.reveal .hero {
+  text-align: center;
+  font-size: 1.5em;
+  font-weight: 600;
+  color: #107895;
+  margin: 0.4em 0 0.25em;
+  line-height: 1.15;
+}
+
+.reveal .hero small {
+  display: block;
+  font-size: 0.38em;
+  font-weight: 300;
+  color: #131516;
+  opacity: 0.75;
+  margin-top: 0.3em;
+}
