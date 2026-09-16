@@ -48,25 +48,10 @@ date: 09-28-2026
 ## Penrose Diagrams: Tensors as Nodes
 
 ::: tn
-<svg viewBox="0 0 620 130" role="img" aria-label="Scalar, vector, matrix and rank-3 tensor as nodes with legs">
-  <circle class="nd" cx="60" cy="55" r="15"/>
-  <text class="lbl" x="60" y="100">s &#183; rank 0</text>
-  <circle class="nd" cx="205" cy="55" r="15"/>
-  <line class="lg" x1="205" y1="70" x2="205" y2="95"/>
-  <text class="lbl" x="205" y="120">vᵢ &#183; rank 1</text>
-  <circle class="nd" cx="360" cy="55" r="15"/>
-  <line class="lg" x1="345" y1="55" x2="315" y2="55"/>
-  <line class="lg" x1="375" y1="55" x2="405" y2="55"/>
-  <text class="lbl" x="360" y="100">Mᵢⱼ &#183; rank 2</text>
-  <circle class="nd" cx="530" cy="55" r="15"/>
-  <line class="lg" x1="515" y1="55" x2="485" y2="55"/>
-  <line class="lg" x1="545" y1="55" x2="575" y2="55"/>
-  <line class="lg" x1="530" y1="70" x2="530" y2="95"/>
-  <text class="lbl" x="530" y="120">Tᵢⱼₖ &#183; rank 3</text>
-</svg>
+<img src="figures/tensornetwork/tensor-ranks.png" alt="Vector, matrix and rank-3 tensor as nodes with legs" />
 :::
 
-- Node = tensor. Leg = index. Rank = leg count
+- Node = tensor. Leg = index. Rank = leg count. A bare node with no legs is a scalar (rank 0)
 - Diagram carries exactly what the index expression carries
 - Gain: structure of a computation becomes visible [@bridgeman2017]
 
@@ -79,22 +64,7 @@ date: 09-28-2026
 ## Penrose Diagrams: Contraction
 
 ::: tn
-<svg viewBox="0 0 600 140" role="img" aria-label="Two matrices joined on a shared index, giving a matrix product">
-  <circle class="nd" cx="120" cy="60" r="15"/><text class="lbl-w" x="120" y="65">M</text>
-  <circle class="nd" cx="230" cy="60" r="15"/><text class="lbl-w" x="230" y="65">N</text>
-  <line class="lg" x1="105" y1="60" x2="70" y2="60"/>
-  <line class="bd" x1="135" y1="60" x2="215" y2="60"/>
-  <line class="lg" x1="245" y1="60" x2="280" y2="60"/>
-  <text class="lbl" x="62" y="48">i</text>
-  <text class="lbl" x="175" y="48">j</text>
-  <text class="lbl" x="288" y="48">k</text>
-  <text class="lbl" x="175" y="110">summed</text>
-  <text class="lbl" x="360" y="65">=</text>
-  <circle class="nd" cx="460" cy="60" r="15"/>
-  <line class="lg" x1="445" y1="60" x2="410" y2="60"/>
-  <line class="lg" x1="475" y1="60" x2="510" y2="60"/>
-  <text class="lbl" x="460" y="110">Σⱼ Mᵢⱼ Nⱼₖ</text>
-</svg>
+<img src="figures/tensornetwork/contractions.png" alt="Matrix-vector product, matrix-matrix product, and trace as joined-leg contractions" />
 :::
 
 - Joined legs = sum over shared index
@@ -190,32 +160,12 @@ Chain of $n$ rank-3 tensors: sequential $O(n\chi^3)$, naive $O(2^n)$.
 ## Matrix Product States: The Ansatz
 
 ::: tn
-<svg viewBox="0 0 640 150" role="img" aria-label="Matrix product state as a chain of rank-3 tensors with physical legs down and bonds between">
-  <line class="bd" x1="95" y1="55" x2="545" y2="55"/>
-  <circle class="nd" cx="95" cy="55" r="15"/><text class="lbl-w" x="95" y="60">A₁</text>
-  <circle class="nd" cx="215" cy="55" r="15"/><text class="lbl-w" x="215" y="60">A₂</text>
-  <circle class="nd" cx="335" cy="55" r="15"/><text class="lbl-w" x="335" y="60">A₃</text>
-  <circle class="nd" cx="455" cy="55" r="15"/><text class="lbl-w" x="455" y="60">…</text>
-  <circle class="nd" cx="545" cy="55" r="15"/><text class="lbl-w" x="545" y="60">Aₙ</text>
-  <line class="lg" x1="95" y1="70" x2="95" y2="100"/>
-  <line class="lg" x1="215" y1="70" x2="215" y2="100"/>
-  <line class="lg" x1="335" y1="70" x2="335" y2="100"/>
-  <line class="lg" x1="455" y1="70" x2="455" y2="100"/>
-  <line class="lg" x1="545" y1="70" x2="545" y2="100"/>
-  <text class="lbl" x="95" y="122">i₁</text>
-  <text class="lbl" x="215" y="122">i₂</text>
-  <text class="lbl" x="335" y="122">i₃</text>
-  <text class="lbl" x="455" y="122">…</text>
-  <text class="lbl" x="545" y="122">iₙ</text>
-  <text class="lbl-sm" x="155" y="42">χ</text>
-  <text class="lbl-sm" x="275" y="42">χ</text>
-  <text class="lbl-sm" x="395" y="42">χ</text>
-</svg>
+<img src="figures/tensornetwork/mps-chain.png" alt="Matrix product state as a chain of rank-3 tensors with physical legs down and bonds between" />
 :::
 
 $$v_{i_1 i_2 \cdots i_n} = A^{(i_1)}_1 A^{(i_2)}_2 \cdots A^{(i_n)}_n$$
 
-- $\chi$ = matrix size on the bonds. Parameters $\le 2n\chi^2$, not $2^n$
+- $\chi$ = matrix size on the bonds ($A_1,\dots,A_n$ left to right). Parameters $\le 2n\chi^2$, not $2^n$
 - Exponential compression **only while $\chi$ stays bounded**
 
 ## Why an MPS Can Work at All
@@ -464,13 +414,30 @@ $$u^{k+1} = \left(\mathbb{1} + \alpha\Delta t\, L\right) u^{k}$$
 - [Part IV: The inverse problem - Data-driven approach](#part-iv){.agenda-item}
 :::
 
+::: {.notes}
+Hello. I am Raghavendra and I hope all of you are comfortable.
+
+After the first part, we can start doing more than arithmetic.
+By the end of this session, we should have all the tools you need for 
+implementing your favorite numerical method. Just to reiterate, our goal
+is to solve a PDE. While the tools themselves are quite sophisticated and
+deserve their own investigations, our focus is to get familiar with them. 
+:::
+
 ## Outline
 
-- Linear system solvers
 - Solving Heat equation (implicit Euler method)
-- How to find QTT of your function?
-- Encoding geometry using TT-Cross
+- Linear system solvers
+- QTT encoding of boundary and initial conditions
+- Encoding functions using TT-Cross
 - Open problems
+
+::: {.notes}
+We will resume right where we left off. Again, we solve the Heat equation.
+This time, we will use an implicit scheme and this will be our motivation to
+develop a linear system solver. We will also encounter the challenge of encoding
+boundary and initial conditions. Let's begin. 
+:::
 
 ## Solving $Ax = b$ in Tensor Format
 
@@ -598,25 +565,10 @@ Three sources, not two:
 ## Cross Interpolation and maxvol
 
 ::: tn
-<svg viewBox="0 0 600 160" role="img" aria-label="Skeleton decomposition: a matrix reconstructed from selected rows and columns">
-  <rect class="box" x="40" y="20" width="150" height="115" rx="3"/>
-  <rect class="nd" x="40" y="50" width="150" height="14" opacity="0.35"/>
-  <rect class="nd" x="40" y="98" width="150" height="14" opacity="0.35"/>
-  <rect class="nd" x="72" y="20" width="14" height="115" opacity="0.35"/>
-  <rect class="nd" x="140" y="20" width="14" height="115" opacity="0.35"/>
-  <text class="lbl" x="115" y="152">F</text>
-  <text class="lbl" x="220" y="82">≈</text>
-  <rect class="nd" x="260" y="20" width="34" height="115" opacity="0.35"/>
-  <text class="lbl" x="277" y="152">C</text>
-  <rect class="nd2" x="310" y="55" width="40" height="40" opacity="0.45"/>
-  <text class="lbl" x="330" y="152">F̂⁻¹</text>
-  <rect class="nd" x="366" y="55" width="150" height="34" opacity="0.35"/>
-  <text class="lbl" x="441" y="152">R</text>
-  <text class="lbl-sm" x="330" y="20">maxvol pivot</text>
-</svg>
+<img src="figures/tensornetwork/skeleton-decomposition.png" alt="Skeleton decomposition: a matrix reconstructed from selected columns, a pivot inverse, and selected rows" />
 :::
 
-- Skeleton (CUR) decomposition applied recursively down the chain
+- $F \approx C\,\hat F^{-1} R$: skeleton (CUR) decomposition, applied recursively down the chain
 - Rank-$r$ matrix is exact from $r$ well-chosen rows and columns
 - **maxvol**: pick submatrix of maximum $|\det|$. Near-optimal, greedy
 - Quantics + TCI = QTCI, high-resolution multivariate functions [@ritter2024qtci; @nunez2025tci]

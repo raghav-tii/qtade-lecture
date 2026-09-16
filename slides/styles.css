@@ -158,10 +158,12 @@
 /* --------------------------------------------------------------------------
    Inline tensor-network schematics.
 
-   Diagrams are hand-authored SVG rather than imported figures: no licensing
-   question, one consistent visual language, and they scale with the slide.
-   Node fill and bond stroke reuse the deck accent so diagrams, citation
-   markers and reference numbers read as one system.
+   Most diagrams are hand-authored SVG: no licensing question, one consistent
+   visual language, and they scale with the slide. Node fill and bond stroke
+   reuse the deck accent so diagrams, citation markers and reference numbers
+   read as one system. A few standard tensor-network diagrams (tensor ranks,
+   contractions, MPS chain, skeleton decomposition) are instead imported PNGs
+   from tensornetwork.org (Apache-2.0) — see slides/figures/tensornetwork/.
    -------------------------------------------------------------------------- */
 
 .reveal .tn {
@@ -169,9 +171,12 @@
   margin: 0.5em 0 0.3em;
 }
 
-.reveal .tn svg {
+.reveal .tn svg,
+.reveal .tn img {
   max-width: 100%;
+  max-height: 260px;
   height: auto;
+  width: auto;
 }
 
 .reveal .tn .nd   { fill: #107895; }
