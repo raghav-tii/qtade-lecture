@@ -16,13 +16,6 @@
 *.vrb
 notes/main.pdf
 
-# --- Quarto ---
-/.quarto/
-slides/.quarto/
-slides/_site/
-/_site/
-slides/*_files/
-slides/*_cache/
 
 # --- Python / Jupyter ---
 __pycache__/

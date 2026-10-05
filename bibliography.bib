@@ -210,6 +210,122 @@
   doi       = {10.48550/arXiv.quant-ph/0510031},
 }
 
+% Finitely correlated states: MPS defined rigorously (history slide, Part I).
+@Article{Fannes1992,
+  author    = {Fannes, Mark and Nachtergaele, Bruno and Werner, Reinhard F.},
+  journal   = {Communications in Mathematical Physics},
+  title     = {Finitely correlated states on quantum spin chains},
+  year      = {1992},
+  number    = {3},
+  pages     = {443--490},
+  volume    = {144},
+  doi       = {10.1007/BF02099178},
+}
+
+% DMRG fixed points are MPS: the link between the algorithm and the ansatz.
+@Article{Ostlund1995,
+  author    = {{\"O}stlund, Stellan and Rommer, Stefan},
+  journal   = {Physical Review Letters},
+  title     = {Thermodynamic limit of density matrix renormalization},
+  year      = {1995},
+  number    = {19},
+  pages     = {3537--3540},
+  volume    = {75},
+  doi       = {10.1103/PhysRevLett.75.3537},
+}
+
+% MERA and wavelets: the multiscale reading of tensor networks (Part I, QTT slide).
+@Article{Evenbly2016,
+  author    = {Evenbly, Glen and White, Steven R.},
+  journal   = {Physical Review Letters},
+  title     = {Entanglement renormalization and wavelets},
+  year      = {2016},
+  number    = {14},
+  pages     = {140403},
+  volume    = {116},
+  doi       = {10.1103/PhysRevLett.116.140403},
+}
+
+% Tree tensor networks for multivariate functions ("other TNs" slide, Part I).
+@Article{Tindall2024a,
+  author    = {Tindall, Joseph and Stoudenmire, E. Miles and Levy, Ryan},
+  journal   = {arXiv preprint arXiv:2410.03572},
+  title     = {Compressing multivariate functions with tree tensor networks},
+  year      = {2024},
+  doi       = {10.48550/arXiv.2410.03572},
+}
+
+% Approximation classes of tensorized functions: QTT is optimal for Sobolev/Besov.
+@Article{Ali2023,
+  author    = {Ali, Mazen and Nouy, Anthony},
+  journal   = {Constructive Approximation},
+  title     = {Approximation theory of tree tensor networks: tensorized univariate functions},
+  year      = {2023},
+  number    = {2},
+  pages     = {463--544},
+  volume    = {58},
+}
+
+% The multivariate companion of Ali2023.
+@Article{Ali2021,
+  author    = {Ali, Mazen and Nouy, Anthony},
+  journal   = {arXiv preprint arXiv:2101.11932},
+  title     = {Approximation theory of tree tensor networks: tensorized multivariate functions},
+  year      = {2021},
+  doi       = {10.48550/arXiv.2101.11932},
+}
+
+% The QFT is a low-rank MPO (Part I, "QFT dequantization" slide).
+@Article{Chen2023,
+  author    = {Chen, Jielun and Stoudenmire, E. Miles and White, Steven R.},
+  journal   = {PRX Quantum},
+  title     = {Quantum {Fourier} transform has small entanglement},
+  year      = {2023},
+  number    = {4},
+  pages     = {040318},
+  volume    = {4},
+  doi       = {10.1103/PRXQuantum.4.040318},
+}
+
+% Interpolative (TCI-free) construction of the DFT as an MPO.
+@Article{Chen2025,
+  author    = {Chen, Jielun and Lindsey, Michael},
+  journal   = {Applied and Computational Harmonic Analysis},
+  title     = {Direct interpolative construction of the discrete {Fourier} transform as a matrix product operator},
+  year      = {2025},
+  pages     = {101817},
+}
+
+% The Laplace transform as a low-rank MPO.
+@Article{Jaseem2026,
+  author    = {Jaseem, N. and Ramos-Calderer, S. and Wang, D. and Latorre, J. I. and Poletti, D.},
+  journal   = {arXiv preprint arXiv:2601.17724},
+  title     = {Quantum-inspired algorithms beyond unitary circuits: the {Laplace} transform},
+  year      = {2026},
+  doi       = {10.48550/arXiv.2601.17724},
+}
+
+% Cost table of quantum-inspired MPS algorithms vs classical and quantum ones.
+@Article{GarciaRipoll2021,
+  author    = {Garc{\'i}a-Ripoll, Juan Jos{\'e}},
+  journal   = {Quantum},
+  title     = {Quantum-inspired algorithms for multivariate analysis: from interpolation to partial differential equations},
+  year      = {2021},
+  pages     = {431},
+  volume    = {5},
+  doi       = {10.22331/q-2021-04-15-431},
+}
+
+% Lecture notes on quantum-inspired TNs; pp. 60-61 solve the heat equation (TCI + FFT-MPO).
+% TODO: check first names of the co-authors against arXiv:2601.03035.
+@Article{Waintal2026,
+  author    = {Waintal, Xavier and Huang and Groth},
+  journal   = {arXiv preprint arXiv:2601.03035},
+  title     = {Who can compete with quantum computers? {Lecture} notes on quantum inspired tensor networks computational techniques},
+  year      = {2026},
+  doi       = {10.48550/arXiv.2601.03035},
+}
+
 
 % ===========================================================================
 %  2. TENSOR TRAINS, QUANTICS, AND APPROXIMATION THEORY   [Parts I-II]
@@ -684,6 +800,70 @@
   pages     = {410},
   volume    = {5},
   doi       = {10.22331/q-2021-03-15-410},
+}
+
+
+% Fixed-rank tensor trains form a manifold: the "useful fact" on the Part II solver slides.
+@Article{Holtz2012a,
+  author    = {Holtz, Sebastian and Rohwedder, Thorsten and Schneider, Reinhold},
+  journal   = {Numerische Mathematik},
+  title     = {On manifolds of tensors of fixed {TT}-rank},
+  year      = {2012},
+  number    = {4},
+  pages     = {701--731},
+  volume    = {120},
+  doi       = {10.1007/s00211-011-0419-7},
+  publisher = {Springer},
+}
+
+% TT-GMRES: the Krylov route, and why intermediate ranks blow up.
+@Article{Dolgov2012a,
+  author    = {Dolgov, Sergey V.},
+  journal   = {arXiv preprint arXiv:1206.5512},
+  title     = {{TT-GMRES}: solution to a linear system in the structured tensor format},
+  year      = {2012},
+}
+
+% Riemannian CG on the fixed-rank manifold: the alternative to sweeping.
+@Article{Kressner2016,
+  author    = {Kressner, Daniel and Steinlechner, Michael and Vandereycken, Bart},
+  journal   = {SIAM Journal on Scientific Computing},
+  title     = {Preconditioned low-rank {Riemannian} optimization for linear systems with tensor product structure},
+  year      = {2016},
+  number    = {4},
+  pages     = {A2018--A2044},
+  volume    = {38},
+  doi       = {10.1137/15M1032909},
+  publisher = {SIAM},
+}
+
+% Open problem: stable low-rank formats and multilevel preconditioning.
+@Article{Bachmayr2020,
+  author    = {Bachmayr, Markus and Kazeev, Vladimir},
+  journal   = {Foundations of Computational Mathematics},
+  title     = {Stability of low-rank tensor representations and structured multilevel preconditioning for elliptic {PDEs}},
+  year      = {2020},
+  number    = {5},
+  pages     = {1175--1236},
+  volume    = {20},
+  doi       = {10.1007/s10208-020-09446-z},
+  publisher = {Springer},
+}
+
+% Open problem: explicit QTT construction by upsampling.
+@Misc{Guzman2026,
+  author    = {Guzman, Siddhartha E. and Tiunov, Egor and Aolita, Leandro},
+  title     = {Efficient upsampling for tensor-network and quantum-state encoded functions},
+  year      = {2026},
+  note      = {Preprint},
+}
+
+% Open problem: TT linear solvers on multicore hardware.
+@Misc{Roehrig2025,
+  author    = {R{\"o}hrig-Z{\"o}llner, Melven and others},
+  title     = {Performance of linear solvers in tensor-train format on current multicore architectures},
+  year      = {2025},
+  note      = {Preprint},
 }
 
 
@@ -1353,6 +1533,100 @@
   doi     = {10.48550/arXiv.2505.17046},
 }
 
+%  --- Part III slides, "Recent literature" and "More papers on turbulence" ---
+
+% Reacting shear flows in MPS form.
+@Article{Pinkston2025,
+  author  = {Pinkston, R. and Gourianov, Nikita and Alipanah, H. and Givi, Peyman and Jaksch, Dieter and others},
+  journal = {arXiv preprint arXiv:2512.13661},
+  title   = {Matrix product state simulation of reacting shear flows},
+  year    = {2025},
+  doi     = {10.48550/arXiv.2512.13661},
+}
+
+% 2D turbulent Rayleigh-Benard convection with QTT.
+@Article{Huelst2026,
+  author  = {van H{\"u}lst, Nis-Luca and Cecile, Mario Guillaume and Van, H. Y. and Hashizume, Tomohiro and de Villiers, E. and Jaksch, Dieter},
+  journal = {arXiv preprint arXiv:2604.16179},
+  title   = {Quantum-inspired simulation of {2D} turbulent {Rayleigh--B{\'e}nard} convection},
+  year    = {2026},
+  doi     = {10.48550/arXiv.2604.16179},
+}
+
+% Vlasov-Maxwell in quantized tensor networks.
+@Article{Ye2024,
+  author  = {Ye, Erika and Loureiro, Nuno F. G.},
+  journal = {Journal of Plasma Physics},
+  title   = {Quantized tensor networks for solving the {Vlasov--Maxwell} equations},
+  year    = {2024},
+  number  = {3},
+  pages   = {805900301},
+  volume  = {90},
+}
+
+% A quantum (not quantum-inspired) algorithm for the collisional Vlasov equation.
+@InProceedings{Ameri2023,
+  author    = {Ameri, Abtin and Ye, Erika and Cappellaro, Paola and Krovi, Hari and Loureiro, Nuno F.},
+  booktitle = {2023 IEEE International Conference on Quantum Computing and Engineering (QCE)},
+  title     = {Quantum algorithm for the linear {Vlasov} equation with collisions},
+  year      = {2023},
+}
+
+% Discontinuous Galerkin in TT format for Vlasov-Maxwell.
+@Article{Chinomona2026,
+  author  = {Chinomona, R. and Adak, Dibyendu and Barham, W. J. and Truong, Duc P. and Roberts, N. V. and others},
+  journal = {arXiv preprint arXiv:2607.08936},
+  title   = {A tensor-train discontinuous {Galerkin} method for the {Vlasov--Maxwell} system},
+  year    = {2026},
+  doi     = {10.48550/arXiv.2607.08936},
+}
+
+% Isogeometric analysis in TT format for large 3D Poisson problems.
+@Article{Tran2026,
+  author  = {Tran, Q. T. and Truong, Duc P. and Rasmussen, Kim {\O}. and Alexandrov, Boian},
+  journal = {Computer Methods in Applied Mechanics and Engineering},
+  title   = {A tensor train-based isogeometric solver for large-scale {3D} {Poisson} problems},
+  year    = {2026},
+  pages   = {118802},
+  volume  = {453},
+}
+
+% Neutron transport for reactor problems in TT format.
+@Article{Ortega2026,
+  author  = {Ortega, Mario I. and Truong, Duc P. and Boureima, Ismael and Rasmussen, Kim {\O}. and Alexandrov, Boian S.},
+  journal = {Nuclear Science and Engineering},
+  title   = {Tensor train neutron transport applied to nuclear reactor problems},
+  year    = {2026},
+  pages   = {1--21},
+}
+
+% Nonstabilizerness ("magic") of fluid-dynamics data.
+@Article{Mello2025,
+  author  = {Mello, A. F. and Collura, Mario and Stoudenmire, E. Miles and Levy, Ryan},
+  journal = {arXiv preprint arXiv:2512.03177},
+  title   = {Magic of the well: assessing quantum resources of fluid dynamics data},
+  year    = {2025},
+  doi     = {10.48550/arXiv.2512.03177},
+}
+
+% Option pricing on the full grid: the same machinery outside physics.
+@Article{Arenstein2025a,
+  author  = {Arenstein, Lucas and Kastoryano, Michael},
+  journal = {arXiv preprint arXiv:2601.00009},
+  title   = {Full grid solution for multi-asset options pricing with tensor networks},
+  year    = {2025},
+  doi     = {10.48550/arXiv.2601.00009},
+}
+
+% How well do TN encodings capture isotropic turbulence, before any simulation.
+@Article{Esmaeili2026,
+  author  = {Esmaeili, M. and Alipanah, H. and Pinkston, R. and Givi, Peyman and Livescu, Daniel and Daley, Andrew J. and others},
+  journal = {arXiv preprint arXiv:2608.28869},
+  title   = {A priori assessment of tensor-network encoding for isotropic turbulent flows},
+  year    = {2026},
+  doi     = {10.48550/arXiv.2608.28869},
+}
+
 
 % ===========================================================================
 %  7. DATA-DRIVEN DYNAMICS: DMD, KOOPMAN, ROM             [Part IV]
@@ -1542,6 +1816,39 @@
   title   = {Predictor-corrector method based on dynamic mode decomposition for tensor-train nonequilibrium {Green's} function calculations},
   year    = {2025},
   doi     = {10.48550/arXiv.2509.22177},
+}
+
+% TT coefficients plus a selection tensor, learned by ALS ("MANDy and more").
+@Article{Goessmann2020,
+  author  = {Goe{\ss}mann, Alex and G{\"o}tte, Michael and Roth, Ingo and Sweke, Ryan and Kutyniok, Gitta and Eisert, Jens},
+  journal = {arXiv preprint arXiv:2002.12388},
+  title   = {Tensor network approaches for learning non-linear dynamical laws},
+  year    = {2020},
+  doi     = {10.48550/arXiv.2002.12388},
+}
+
+% MANDy + weak-form SINDy, all in TT format.
+@Article{Houser2026,
+  author  = {Houser, Will and Dukic, Vanja and Bortz, David M.},
+  journal = {arXiv preprint arXiv:2609.09434},
+  title   = {Tensor-train weak {SINDy}: identifying high-dimensional nonlinear dynamics},
+  year    = {2026},
+  doi     = {10.48550/arXiv.2609.09434},
+}
+
+% POD, DMD and SINDy chained end to end: the application slide of Part IV.
+@Misc{vantHoff2026,
+  author = {van't Hoff, J. A. and others},
+  title  = {Data-driven discovery and model reduction methods for the atmospheric effects of high altitude emissions},
+  year   = {2026},
+}
+
+% Simulation / inverse problems / discovering physics: the task classification.
+@Misc{Mishra2024,
+  author       = {Mishra, Siddhartha and Moseley, Ben},
+  title        = {{AI} in the Sciences and Engineering},
+  howpublished = {Lecture course, ETH Z{\"u}rich, \url{https://camlab.ethz.ch}},
+  year         = {2024},
 }
 
 % Neural surrogates: the comparison class for interpretability claims.
