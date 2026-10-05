@@ -1,6 +1,6 @@
-# Tensor Network Algorithms for Fluid Dynamics — QTADE School, Bilbao
+# Tensor Network Techniques for Differential Equations — QTADE School, Bilbao
 
-Shared repository for the multi-hour lecture "Tensor networks algorithms for fluid dynamics",
+Shared repository for the multi-hour lecture "Tensor network techniques for differential equations",
 presented at the QTADE school in Bilbao. Slides: <https://raghav-tii.github.io/qtade-lecture/>.
 This repo hosts everything for the lecture:
 LaTeX notes, PDF slides (published on GitHub Pages), companion Python notebooks, and a shared bibliography.
@@ -39,14 +39,18 @@ LaTeX notes, PDF slides (published on GitHub Pages), companion Python notebooks,
 
 ## Course structure
 
-Four 90-minute parts. Parts I and II build the tensor-network toolkit *from inside a PDE
-solver* — every notion arrives when a numerical method needs it. Parts III and IV spend
-that toolkit on the forward and inverse problems of CFD, and map the surrounding
-literature.
+Four 90-minute parts:
+
+- **Part I** — Representing fields and operators: tensors and Penrose notation, MPS/TT via
+  SVD, quantics tensor trains, the heat equation with explicit time stepping.
+- **Part II** — Linear algebraic routines: implicit time stepping, encoding boundary and
+  initial conditions, open problems.
+- **Part III** — The forward problem: time evolution of the Navier–Stokes equations.
+- **Part IV** — The inverse problem: data-driven methods.
 
 Each part has one notebook that follows its slides in order, with exercises (and their
-solutions) placed where the concept is introduced. **Every quantitative claim in the slides
-and notes is measured in the notebooks, on a laptop** — if a number looks wrong, rerun the
+solutions) placed where the concept is introduced. **Every quantitative claim in the
+notes is measured in the notebooks, on a laptop** — if a number looks wrong, rerun the
 cell and tell us.
 
 ## Bibliography — single source of truth

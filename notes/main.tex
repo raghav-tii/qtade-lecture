@@ -3,8 +3,8 @@
 % compile with `latexmk -lualatex main.tex` (see notes/README.md).
 
 \input{preamble}
-\title{Tensor network algorithms for computational fluid dynamics}
-\shorttitle{TNs for CFD}
+\title{Tensor network techniques for differential equations}
+\shorttitle{TNs for differential equations}
 
 \author{Raghavendra D. Peddinti\affmark{1,*}, Stefano Pisoni\affmark{1,2}}
 \affiliations{\affmark{1}\, Quantum Research Center, Technology Innovation Institute, Abu Dhabi, UAE\\\affmark{2}\, Institute for Quantum-Inspired and Quantum Optimization, Hamburg University of Technology, Germany\\ \affmark{*}raghavendra.peddinti@tii.ae
@@ -27,37 +27,60 @@
 \label{sec:general-information}
 
 \paragraph{What this course is about.}
-Simulating a fluid means storing a field on a grid and pushing it forward in
-time. Both halves of that sentence scale badly: the storage grows exponentially
-with resolution and dimension, and each timestep touches all of it. These notes
-develop one response to that problem --- represent the field as a
-\textbf{tensor network}, and do the entire computation without ever writing the
-field down in full.
+These notes accompany the lectures and follow the four slide decks
+(\texttt{slides/part1.pdf}--\texttt{part4.pdf}) part by part. The goal is to use
+\textbf{tensor networks} to exploit the low-rank structure of both the
+solutions and the operators that define partial differential equations. Nothing
+here is quantum: the networks are classical data structures, and every
+computation runs on a laptop.
 
 \paragraph{The single idea.}
 A field sampled on $2^n$ points is a vector in a space of dimension $2^n$, but a
 \emph{physical} field is not an arbitrary point in that space. It is smooth, it
 is multiscale, and its well-separated scales are weakly coupled. Such a vector
 lies close to a low-dimensional manifold, described by $O(n\chi^2)$ numbers
-rather than $2^n$. Every part of this course either exploits that fact, tests
+rather than $2^n$, where the bond dimension $\chi$ measures how much the scales
+talk to each other. Every part of this course either exploits that fact, tests
 it, or maps out where it stops being true.
 \margintext{Keep the bet and its price together: exponential memory savings are
 bought with a truncation error that must be monitored at every step. The
 truncation never goes away.}
 
+\paragraph{The pipeline.}
+Solving a PDE with tensor networks is a pipeline of five stages, and each has
+choices of its own:
+\begin{enumerate}
+  \item \textbf{Equation.}
+  \item \textbf{Problem formulation:} the mesh (uniform or not), the coordinate
+    system and the discretization (finite differences, finite elements,
+    finite volumes, \ldots).
+  \item \textbf{TN encoding:} the network architecture, and how initial
+    conditions, boundary conditions and operators are written in it.
+  \item \textbf{Time evolution:} the integration scheme, the algebraic routines
+    it needs, and the physical constraints and geometries it must respect.
+  \item \textbf{Solution retrieval:} reading answers out of a compressed state
+    held in classical memory --- no shots, but memory efficiency is still a
+    question.
+\end{enumerate}
+The bond dimension $\chi$ runs through all five stages: it sets the cost of
+every step and the accuracy of every answer.
+
 \paragraph{How the four parts fit together.}
 \begin{itemize}
-  \item \textbf{Part~\partref{1}} builds the representation: diagrammatic
-    notation, matrix product states, the quantics encoding, and a first PDE
-    solver.
-  \item \textbf{Part~\partref{2}} adds the linear algebra --- solving
-    $Ax = b$ on the manifold, and constructing a tensor train from a function
-    you can only sample.
-  \item \textbf{Part~\partref{3}} spends both on the Navier--Stokes
-    equations: a full incompressible solver, and the empirical question of how
-    far the ranks stretch.
-  \item \textbf{Part~\partref{4}} inverts the problem: given data rather than
-    an equation, recover the dynamics.
+  \item \textbf{Part~\partref{1} --- Representing fields and operators.}
+    Tensors and Penrose notation, matrix product states (tensor trains) built
+    by SVD, a short history of tensor networks, quantics tensor trains for
+    functions and operators, and a first solver: the heat equation with
+    explicit time stepping.
+  \item \textbf{Part~\partref{2} --- Linear algebraic routines.} Implicit time
+    stepping, which turns each step into a linear solve $Ax=b$ on the
+    low-rank manifold; encoding boundary and initial conditions; and the open
+    problems.
+  \item \textbf{Part~\partref{3} --- The forward problem.} Time evolution of the
+    incompressible Navier--Stokes equations: flow initialization, masking
+    arbitrary objects, and how far the ranks stretch.
+  \item \textbf{Part~\partref{4} --- The inverse problem.} Data-driven models:
+    given data rather than an equation, recover the dynamics.
 \end{itemize}
 
 Parts~\partref{1} and~\partref{2} are prerequisites for the rest.
