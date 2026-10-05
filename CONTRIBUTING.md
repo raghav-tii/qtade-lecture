@@ -2,8 +2,6 @@
 
 ## LaTeX notes (`notes/`)
 
-- Edit either in this repo directly, or live in Overleaf — then sync with
-  `./scripts/sync_overleaf.sh push` / `pull` (see `notes/README.md`).
 - Add new sections as new files under `notes/sections/` and `\input` them from `main.tex`.
 - Add references only to `bibliography.bib` at the repo root .
 - Put every figure used in the notes under `notes/figures/`.
@@ -24,6 +22,6 @@
 ## General
 
 - Small edits: commit directly. Larger restructuring: open a pull request so collaborators can
-  review before it's merged (and, if relevant, pushed to Overleaf).
+  review before it's merged.
 - Keep `main` deployable: CI compiles the notes on every push — a red
   build means something doesn't compile/render for everyone else either.

@@ -15,7 +15,7 @@ LaTeX notes, PDF slides (published on GitHub Pages), companion Python notebooks,
 ├── notes/                   # LaTeX lecture notes
 │   ├── main.tex             # top-level document, \input's the section files
 │   ├── preamble.tex         # shared packages/macros
-│   ├── sections/            # one .tex file per part (edit here or in Overleaf)
+│   ├── sections/            # one .tex file per part
 │   └── figures/             # figures used in the notes
 │
 ├── slides/                  # Slides as PDFs, published to GitHub Pages as-is
@@ -32,10 +32,9 @@ LaTeX notes, PDF slides (published on GitHub Pages), companion Python notebooks,
 │   └── requirements.txt     # pip alternative
 │
 ├── scripts/
-│   ├── rekey.py             # one-shot audit trail for the 2026 bibliography merge
-│   └── sync_overleaf.sh     # push/pull this repo to/from the linked Overleaf project
+│   └── rekey.py             # one-shot audit trail for the 2026 bibliography merge
 │
-└── .github/workflows/       # CI: compile notes to PDF, publish slides, (optional) Overleaf sync
+└── .github/workflows/       # CI: compile notes to PDF, publish slides
 ```
 
 ## Course structure
@@ -49,43 +48,6 @@ Each part has one notebook that follows its slides in order, with exercises (and
 solutions) placed where the concept is introduced. **Every quantitative claim in the slides
 and notes is measured in the notebooks, on a laptop** — if a number looks wrong, rerun the
 cell and tell us.
-
-## Overleaf setup
-
-[Overleaf Project](https://www.overleaf.com/8197722423jvcgthhrnbzp#da662e)
-
-The whole repo is linked to a single Overleaf project (simplest option — one thing to sync,
-one git remote, no subtree gymnastics). The tradeoff: Overleaf's file browser will show
-`slides/`, `notebooks/`, `.github/`, etc. alongside `notes/` — you just leave those alone in
-the Overleaf editor and work on them in a normal git client/IDE instead.
-
-**One-time setup:**
-
-1. In Overleaf, create a new project ("Blank Project" is fine) and rename it, e.g.
-   "QTADE tensor networks — lecture".
-2. Open the project → menu (top-left) → **Git** (requires an Overleaf plan with Git access —
-   Overleaf's paid tiers, or a Pro account issued via your institution) → copy the git URL.
-3. Point Overleaf at the right document: Menu → **Settings** → **Main document** →
-   `notes/main.tex`.
-4. In your local clone of this repo:
-
-   ```bash
-   git remote add overleaf https://git.overleaf.com/<your-project-id>
-   ./scripts/sync_overleaf.sh push
-   ```
-
-**Day to day**, from the repo root:
-
-```bash
-./scripts/sync_overleaf.sh pull   # bring in edits made live in Overleaf
-./scripts/sync_overleaf.sh push   # send local commits (e.g. after merging a PR) to Overleaf
-```
-
-Overleaf git projects use a fixed branch name (`master`) independent of whatever your GitHub
-default branch is called — the script handles that mapping so you don't have to think about it.
-
-Treat this repo (not Overleaf) as canonical for anything merged via a pull request; use Overleaf
-mainly for live/collaborative editing sessions, then push back with the script above.
 
 ## Bibliography — single source of truth
 
@@ -125,8 +87,7 @@ artifact) and, on `main`, publishes the slides to GitHub Pages (see above).
 1. Create the GitHub repo and push this scaffold.
 2. In the repo settings, enable **GitHub Pages** → source: "GitHub Actions" (only needed if you
    want the slides published to a public URL).
-3. Create an Overleaf project, get its git URL, and follow "Overleaf setup" above to link it.
-4. Decide on a license (not set yet — see `LICENSE.md` placeholder) and author list.
+3. Decide on a license (not set yet — see `LICENSE.md` placeholder) and author list.
 
 ## Local builds
 

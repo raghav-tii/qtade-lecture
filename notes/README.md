@@ -34,12 +34,3 @@ latexmk -lualatex main.tex
 
 CI does this automatically on every push (see `.github/workflows/build-notes.yml`, which passes
 `latexmk_use_lualatex: true`).
-
-## Editing via Overleaf
-
-This whole repository is linked to a single Overleaf project — see the root `README.md` for
-setup and the push/pull workflow. Overleaf will show every file in the repo (slides, notebooks,
-CI config, etc.), not just `notes/`; that's an accepted tradeoff for keeping a single sync
-target. Just point Overleaf's "Main document" setting at `notes/main.tex` (Overleaf → Menu →
-Settings → Main document) so it compiles the right file. Also set the "Compiler" setting to
-**LuaLaTeX** (Overleaf → Menu → Settings → Compiler) — required by `lecturenotes.cls`.
