@@ -6,7 +6,6 @@
 # Keep bibliography/text diffs sane
 *.bib text
 *.tex text
-*.qmd text
 
 # Uncomment and use Git LFS if figures/notebooks start including large binary files
 # (e.g. large plots, datasets, videos). Requires `git lfs install` once per clone.

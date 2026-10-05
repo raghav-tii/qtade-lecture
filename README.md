@@ -1,8 +1,9 @@
 # Tensor Network Algorithms for Fluid Dynamics — QTADE School, Bilbao
 
 Shared repository for the multi-hour lecture "Tensor networks algorithms for fluid dynamics",
-presented at the QTADE school in Bilbao. This repo hosts everything for the lecture:
-LaTeX notes, Quarto/reveal.js slides, companion Python notebooks, and a shared bibliography.
+presented at the QTADE school in Bilbao. Slides: <https://raghav-tii.github.io/qtade-lecture/>.
+This repo hosts everything for the lecture:
+LaTeX notes, PDF slides (published on GitHub Pages), companion Python notebooks, and a shared bibliography.
 
 ## Repository layout
 
@@ -17,12 +18,11 @@ LaTeX notes, Quarto/reveal.js slides, companion Python notebooks, and a shared b
 │   ├── sections/            # one .tex file per part (edit here or in Overleaf)
 │   └── figures/             # figures used in the notes
 │
-├── slides/                  # Quarto (reveal.js) slide deck
-│   ├── slides.qmd
-│   ├── styles.css           # incl. the .q / .breaks / .lab / .hero teaching blocks
-│   └── _quarto.yml
+├── slides/                  # Slides as PDFs, published to GitHub Pages as-is
+│   ├── part1.pdf … part4.pdf
+│   └── index.html           # Pages landing page linking the four parts
 │
-├── notebooks/               # Companion Python/Jupyter notebooks — two per part
+├── notebooks/               # Companion Python/Jupyter notebooks — one per part
 │   ├── qtade_tn.py          # the from-scratch NumPy toolkit (Parts I–II)
 │   ├── qtade_quimb.py       # quimb layer (Parts III–IV)
 │   ├── qtade_cfd.py         # Chorin projection entirely in tensor-train format
@@ -32,12 +32,10 @@ LaTeX notes, Quarto/reveal.js slides, companion Python notebooks, and a shared b
 │   └── requirements.txt     # pip alternative
 │
 ├── scripts/
-│   ├── gen_slide_refs.py    # regenerate slide footnotes + reference slides
-│   ├── check_slides_build.py# verify the rendered deck before it is published
 │   ├── rekey.py             # one-shot audit trail for the 2026 bibliography merge
 │   └── sync_overleaf.sh     # push/pull this repo to/from the linked Overleaf project
 │
-└── .github/workflows/       # CI: compile notes to PDF, render slides, (optional) Overleaf sync
+└── .github/workflows/       # CI: compile notes to PDF, publish slides, (optional) Overleaf sync
 ```
 
 ## Course structure
@@ -47,8 +45,8 @@ solver* — every notion arrives when a numerical method needs it. Parts III and
 that toolkit on the forward and inverse problems of CFD, and map the surrounding
 literature.
 
-Each part has a walkthrough notebook (follows the slides cell by cell) and an exercise
-notebook (~30 minutes, solutions at the bottom). **Every quantitative claim in the slides
+Each part has one notebook that follows its slides in order, with exercises (and their
+solutions) placed where the concept is introduced. **Every quantitative claim in the slides
 and notes is measured in the notebooks, on a laptop** — if a number looks wrong, rerun the
 cell and tell us.
 
@@ -92,9 +90,7 @@ mainly for live/collaborative editing sessions, then push back with the script a
 ## Bibliography — single source of truth
 
 `bibliography.bib` at the repo root is the only bibliography file. `notes/main.tex` pulls it
-in via `\addbibresource{../bibliography.bib}`; `slides/_quarto.yml` as
-`bibliography: ../bibliography.bib`. Add new references only to the root file — both the
-notes and the slides pick them up automatically.
+in via `\addbibresource{../bibliography.bib}`. Add new references only to the root file.
 
 Keys are **JabRef style**: `Surname` + `Year`, disambiguated `a`, `b`, `c`. JabRef
 regenerates them with *Quality → Generate BibTeX key*, so they stay stable if the file is
@@ -108,59 +104,27 @@ them.
 `bibliography.bib`, `references.bib`, `master_database.bib`) map onto the merged one,
 which duplicates were collapsed, and what was added.
 
-The slides cite with `nature.csl`: superscript numbers, numbered globally by order of first
-appearance, so a source keeps the same number throughout the deck. Each citing slide also
-carries a footnote line naming its sources, and the reference list at the end is split across
-several slides. Both are generated — after adding, removing, or reordering any citation, run:
-
-```bash
-python3 scripts/gen_slide_refs.py
-```
-
-It rewrites the generated blocks in `slides/slides.qmd` in place (they are marked with
-`<!-- BEGIN generated: ... -->` comments) and renumbers everything to match citeproc.
-
 ## Figures
 
-Figures used in the notes live in `notes/figures/`. Slides reference the same files via a
-relative path, e.g. `![](../notes/figures/my-figure.pdf)`, rather than duplicating images.
+Figures used in the notes live in `notes/figures/`.
+
+## Slides and GitHub Pages
+
+The slides are the PDFs in `slides/` (`part1.pdf` … `part4.pdf`). To update a part, replace
+its PDF and push. On pushes to `main` that touch `slides/`,
+`.github/workflows/build-slides.yml` publishes the `slides/` folder — the PDFs plus the
+`index.html` landing page — to GitHub Pages.
 
 ## Continuous integration
 
-On every push, GitHub Actions:
-
-- compiles `notes/main.tex` → `notes.pdf` (uploaded as a build artifact),
-- renders `slides/slides.qmd` → reveal.js HTML (uploaded as a build artifact, and deployed to
-  GitHub Pages from `main`, see `.github/workflows/build-slides.yml`).
-
-The slides workflow does three things beyond a plain render:
-
-1. **Regenerates the citation blocks** (`scripts/gen_slide_refs.py`) before rendering, so the
-   published deck is correct even when an edit arrived through Overleaf, where nobody can run
-   the script. If the committed file was stale, the run still succeeds but leaves a warning
-   asking you to run the script locally and commit the result.
-2. **Stages a single-file site.** `embed-resources: true` inlines fonts, MathJax, images and
-   the reveal.js runtime, so `index.html` stands alone and only that file is deployed — slide
-   sources are not published to Pages.
-3. **Verifies the build** (`scripts/check_slides_build.py`) before publishing: that the deck is
-   genuinely self-contained, and that in-text citation numbers, the per-slide footnote lines and
-   the reference slides all agree. The run fails rather than deploying a broken deck.
-
-You can run that check locally against your own render:
-
-```bash
-quarto render slides/slides.qmd
-python3 scripts/check_slides_build.py slides/index.html
-```
-
-See `.github/workflows/` for details, and the "Setup" section below for the one-time repo
-settings these require.
+On every push, GitHub Actions compiles `notes/main.tex` → `notes.pdf` (uploaded as a build
+artifact) and, on `main`, publishes the slides to GitHub Pages (see above).
 
 ## One-time setup checklist
 
 1. Create the GitHub repo and push this scaffold.
 2. In the repo settings, enable **GitHub Pages** → source: "GitHub Actions" (only needed if you
-   want the slides auto-published to a public URL).
+   want the slides published to a public URL).
 3. Create an Overleaf project, get its git URL, and follow "Overleaf setup" above to link it.
 4. Decide on a license (not set yet — see `LICENSE.md` placeholder) and author list.
 
@@ -169,10 +133,6 @@ settings these require.
 ```bash
 # notes  (LuaLaTeX + biber)
 latexmk -lualatex notes/main.tex
-
-# slides (Quarto), then verify before publishing
-quarto render slides/slides.qmd
-python3 scripts/check_slides_build.py slides/index.html
 
 # notebooks: the module checks are the fastest install smoke test
 cd notebooks && python3 test_qtade_tn.py && python3 test_qtade_quimb.py

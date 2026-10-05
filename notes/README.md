@@ -13,11 +13,11 @@
   `inputenc`/`fontenc` support).
 - `preamble.tex` — extra packages and macros not already provided by the class (`graphicx`,
   `cleveref`, `natbib`, tikz libraries, tensor-network notation macros).
-- `sections/` — one `.tex` file per section of the notes, mirroring the four-part agenda in
-  `slides/slides.qmd`. Add new sections here and `\input` them from `main.tex`.
+- `sections/` — one `.tex` file per section of the notes, mirroring the four parts of the
+  slides (`slides/part1.pdf` … `part4.pdf`). Add new sections here and `\input` them from `main.tex`.
 - `figures/` — figures used in the notes.
 
-The bibliography is shared with the slides and lives at the repo root: `../bibliography.bib`
+The bibliography lives at the repo root: `../bibliography.bib`
 (see the root `README.md`).
 
 ## Building locally
