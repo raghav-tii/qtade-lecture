@@ -1,22 +1,18 @@
 # Notebooks
 
-Companion notebooks for the lecture. Two per part: a **walkthrough** that follows the
-slides cell by cell, and an **exercise** set of roughly thirty minutes with solutions at
-the bottom.
+Companion notebooks for the lecture: **one per part**, following that part's slides
+(`../slides/partN.pdf`) in order. Exercises sit where the concept is introduced, each
+followed directly by its solution.
 
 | notebook | pairs with |
 |---|---|
-| `01-walkthrough-representations.ipynb` | Part I slides / `notes/sections/01-*` |
-| `01-exercises-representations.ipynb` | Part I hands-on |
-| `02-walkthrough-linear-algebra.ipynb` | Part II |
-| `02-exercises-linear-algebra.ipynb` | Part II hands-on |
-| `03-walkthrough-forward-problem.ipynb` | Part III |
-| `03-exercises-forward-problem.ipynb` | Part III hands-on |
-| `04-walkthrough-inverse-problem.ipynb` | Part IV |
-| `04-exercises-inverse-problem.ipynb` | Part IV hands-on |
+| `01-representations.ipynb` | Part I slides / `notes/sections/01-*` |
+| `01-heat-equation-qtmps-quimb.ipynb` | Part I — 1D/2D heat equation in `quimb` (referenced from the slides) |
+| `02-linear-algebra.ipynb` | Part II |
+| `03-forward-problem.ipynb` | Part III |
+| `04-inverse-problem.ipynb` | Part IV |
 
-Everything runs on a laptop. The heaviest cell is a 40-step flow solve in
-`03-walkthrough`, which takes about a minute.
+Everything runs on a laptop; each notebook finishes in a few minutes.
 
 ## The modules
 
