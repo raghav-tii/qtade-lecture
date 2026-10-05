@@ -210,6 +210,122 @@
   doi       = {10.48550/arXiv.quant-ph/0510031},
 }
 
+% Finitely correlated states: MPS defined rigorously (history slide, Part I).
+@Article{Fannes1992,
+  author    = {Fannes, Mark and Nachtergaele, Bruno and Werner, Reinhard F.},
+  journal   = {Communications in Mathematical Physics},
+  title     = {Finitely correlated states on quantum spin chains},
+  year      = {1992},
+  number    = {3},
+  pages     = {443--490},
+  volume    = {144},
+  doi       = {10.1007/BF02099178},
+}
+
+% DMRG fixed points are MPS: the link between the algorithm and the ansatz.
+@Article{Ostlund1995,
+  author    = {{\"O}stlund, Stellan and Rommer, Stefan},
+  journal   = {Physical Review Letters},
+  title     = {Thermodynamic limit of density matrix renormalization},
+  year      = {1995},
+  number    = {19},
+  pages     = {3537--3540},
+  volume    = {75},
+  doi       = {10.1103/PhysRevLett.75.3537},
+}
+
+% MERA and wavelets: the multiscale reading of tensor networks (Part I, QTT slide).
+@Article{Evenbly2016,
+  author    = {Evenbly, Glen and White, Steven R.},
+  journal   = {Physical Review Letters},
+  title     = {Entanglement renormalization and wavelets},
+  year      = {2016},
+  number    = {14},
+  pages     = {140403},
+  volume    = {116},
+  doi       = {10.1103/PhysRevLett.116.140403},
+}
+
+% Tree tensor networks for multivariate functions ("other TNs" slide, Part I).
+@Article{Tindall2024a,
+  author    = {Tindall, Joseph and Stoudenmire, E. Miles and Levy, Ryan},
+  journal   = {arXiv preprint arXiv:2410.03572},
+  title     = {Compressing multivariate functions with tree tensor networks},
+  year      = {2024},
+  doi       = {10.48550/arXiv.2410.03572},
+}
+
+% Approximation classes of tensorized functions: QTT is optimal for Sobolev/Besov.
+@Article{Ali2023,
+  author    = {Ali, Mazen and Nouy, Anthony},
+  journal   = {Constructive Approximation},
+  title     = {Approximation theory of tree tensor networks: tensorized univariate functions},
+  year      = {2023},
+  number    = {2},
+  pages     = {463--544},
+  volume    = {58},
+}
+
+% The multivariate companion of Ali2023.
+@Article{Ali2021,
+  author    = {Ali, Mazen and Nouy, Anthony},
+  journal   = {arXiv preprint arXiv:2101.11932},
+  title     = {Approximation theory of tree tensor networks: tensorized multivariate functions},
+  year      = {2021},
+  doi       = {10.48550/arXiv.2101.11932},
+}
+
+% The QFT is a low-rank MPO (Part I, "QFT dequantization" slide).
+@Article{Chen2023,
+  author    = {Chen, Jielun and Stoudenmire, E. Miles and White, Steven R.},
+  journal   = {PRX Quantum},
+  title     = {Quantum {Fourier} transform has small entanglement},
+  year      = {2023},
+  number    = {4},
+  pages     = {040318},
+  volume    = {4},
+  doi       = {10.1103/PRXQuantum.4.040318},
+}
+
+% Interpolative (TCI-free) construction of the DFT as an MPO.
+@Article{Chen2025,
+  author    = {Chen, Jielun and Lindsey, Michael},
+  journal   = {Applied and Computational Harmonic Analysis},
+  title     = {Direct interpolative construction of the discrete {Fourier} transform as a matrix product operator},
+  year      = {2025},
+  pages     = {101817},
+}
+
+% The Laplace transform as a low-rank MPO.
+@Article{Jaseem2026,
+  author    = {Jaseem, N. and Ramos-Calderer, S. and Wang, D. and Latorre, J. I. and Poletti, D.},
+  journal   = {arXiv preprint arXiv:2601.17724},
+  title     = {Quantum-inspired algorithms beyond unitary circuits: the {Laplace} transform},
+  year      = {2026},
+  doi       = {10.48550/arXiv.2601.17724},
+}
+
+% Cost table of quantum-inspired MPS algorithms vs classical and quantum ones.
+@Article{GarciaRipoll2021,
+  author    = {Garc{\'i}a-Ripoll, Juan Jos{\'e}},
+  journal   = {Quantum},
+  title     = {Quantum-inspired algorithms for multivariate analysis: from interpolation to partial differential equations},
+  year      = {2021},
+  pages     = {431},
+  volume    = {5},
+  doi       = {10.22331/q-2021-04-15-431},
+}
+
+% Lecture notes on quantum-inspired TNs; pp. 60-61 solve the heat equation (TCI + FFT-MPO).
+% TODO: check first names of the co-authors against arXiv:2601.03035.
+@Article{Waintal2026,
+  author    = {Waintal, Xavier and Huang and Groth},
+  journal   = {arXiv preprint arXiv:2601.03035},
+  title     = {Who can compete with quantum computers? {Lecture} notes on quantum inspired tensor networks computational techniques},
+  year      = {2026},
+  doi       = {10.48550/arXiv.2601.03035},
+}
+
 
 % ===========================================================================
 %  2. TENSOR TRAINS, QUANTICS, AND APPROXIMATION THEORY   [Parts I-II]
@@ -684,6 +800,70 @@
   pages     = {410},
   volume    = {5},
   doi       = {10.22331/q-2021-03-15-410},
+}
+
+
+% Fixed-rank tensor trains form a manifold: the "useful fact" on the Part II solver slides.
+@Article{Holtz2012a,
+  author    = {Holtz, Sebastian and Rohwedder, Thorsten and Schneider, Reinhold},
+  journal   = {Numerische Mathematik},
+  title     = {On manifolds of tensors of fixed {TT}-rank},
+  year      = {2012},
+  number    = {4},
+  pages     = {701--731},
+  volume    = {120},
+  doi       = {10.1007/s00211-011-0419-7},
+  publisher = {Springer},
+}
+
+% TT-GMRES: the Krylov route, and why intermediate ranks blow up.
+@Article{Dolgov2012a,
+  author    = {Dolgov, Sergey V.},
+  journal   = {arXiv preprint arXiv:1206.5512},
+  title     = {{TT-GMRES}: solution to a linear system in the structured tensor format},
+  year      = {2012},
+}
+
+% Riemannian CG on the fixed-rank manifold: the alternative to sweeping.
+@Article{Kressner2016,
+  author    = {Kressner, Daniel and Steinlechner, Michael and Vandereycken, Bart},
+  journal   = {SIAM Journal on Scientific Computing},
+  title     = {Preconditioned low-rank {Riemannian} optimization for linear systems with tensor product structure},
+  year      = {2016},
+  number    = {4},
+  pages     = {A2018--A2044},
+  volume    = {38},
+  doi       = {10.1137/15M1032909},
+  publisher = {SIAM},
+}
+
+% Open problem: stable low-rank formats and multilevel preconditioning.
+@Article{Bachmayr2020,
+  author    = {Bachmayr, Markus and Kazeev, Vladimir},
+  journal   = {Foundations of Computational Mathematics},
+  title     = {Stability of low-rank tensor representations and structured multilevel preconditioning for elliptic {PDEs}},
+  year      = {2020},
+  number    = {5},
+  pages     = {1175--1236},
+  volume    = {20},
+  doi       = {10.1007/s10208-020-09446-z},
+  publisher = {Springer},
+}
+
+% Open problem: explicit QTT construction by upsampling.
+@Misc{Guzman2026,
+  author    = {Guzman, Siddhartha E. and Tiunov, Egor and Aolita, Leandro},
+  title     = {Efficient upsampling for tensor-network and quantum-state encoded functions},
+  year      = {2026},
+  note      = {Preprint},
+}
+
+% Open problem: TT linear solvers on multicore hardware.
+@Misc{Roehrig2025,
+  author    = {R{\"o}hrig-Z{\"o}llner, Melven and others},
+  title     = {Performance of linear solvers in tensor-train format on current multicore architectures},
+  year      = {2025},
+  note      = {Preprint},
 }
 
 
