@@ -1,7 +1,7 @@
-name: Publish slides (GitHub Pages)
+name: Publish slides and notes (GitHub Pages)
 
-# The slides are PDFs committed under slides/. This publishes them, together with
-# slides/index.html (a landing page linking the four parts), to GitHub Pages.
+# Publishes the slide PDFs committed under slides/, slides/index.html (the landing
+# page) and the compiled lecture notes (notes.pdf) to GitHub Pages.
 # Requires: Settings -> Pages -> Source = "GitHub Actions" (one-time, see README).
 
 on:
@@ -9,6 +9,8 @@ on:
     branches: [main]
     paths:
       - "slides/**"
+      - "notes/**"
+      - "bibliography.bib"
       - ".github/workflows/build-slides.yml"
   workflow_dispatch: {}
 
@@ -29,8 +31,19 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - name: Compile lecture notes
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: main.tex
+          working_directory: notes
+          latexmk_use_lualatex: true
+      - name: Stage site
+        run: |
+          mkdir -p _site
+          cp slides/index.html slides/*.pdf _site/
+          cp notes/main.pdf _site/notes.pdf
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: slides
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4

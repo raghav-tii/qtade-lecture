@@ -78,13 +78,13 @@ Figures used in the notes live in `notes/figures/`.
 
 The slides are the PDFs in `slides/` (`part1.pdf` … `part4.pdf`). To update a part, replace
 its PDF and push. On pushes to `main` that touch `slides/`,
-`.github/workflows/build-slides.yml` publishes the `slides/` folder — the PDFs plus the
-`index.html` landing page — to GitHub Pages.
+or to `notes/` / `bibliography.bib`, `.github/workflows/build-slides.yml` compiles the notes
+and publishes the slide PDFs, the `index.html` landing page and `notes.pdf` to GitHub Pages.
 
 ## Continuous integration
 
 On every push, GitHub Actions compiles `notes/main.tex` → `notes.pdf` (uploaded as a build
-artifact) and, on `main`, publishes the slides to GitHub Pages (see above).
+artifact) and, on `main`, publishes the slides and the notes PDF to GitHub Pages (see above).
 
 ## One-time setup checklist
 
