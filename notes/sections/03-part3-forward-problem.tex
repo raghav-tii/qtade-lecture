@@ -238,12 +238,8 @@ evaluate, so its MPS is built by TT-cross~\cite{Oseledets2010}
 \end{equation}
 The sharp indicator $\theta(x)$ is a poor target: a curved discontinuity
 couples every scale, and at fixed rank TT-cross leaves blocky $O(1)$ errors
-scattered over the body. The smoothed mask
-\begin{equation}
-  m(x) = 1 - e^{-\alpha\,(q(x) + |q(x)|)}, \qquad q < 0 \text{ inside the body},
-  \label{eq:smoothed-mask}
-\end{equation}
-is exactly zero in the body and relaxes to one over a width $\sim 1/\alpha$
+scattered over the body. The smoothed mask~\eqref{eq:smoothed-mask} of
+Part~\partref{2}, with $q < 0$ inside the body, is exactly zero in the body and relaxes to one over a width $\sim 1/\alpha$
 outside it; its approximation error is confined to a thin ring at the interface.
 For a disc on a $512\times512$ grid at $\chi = 48$, the mean error against
 $\theta$ is $0.026$ for the sharp mask and $0.010$ for the smoothed one, and
