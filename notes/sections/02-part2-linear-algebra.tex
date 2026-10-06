@@ -2,121 +2,97 @@
 \label{sec:part2}
 \lecture{29}{09}{2026}
 
-% Follows the Part II slides, slides/part2.pdf (outline: implicit
-% time-stepping; encoding boundary/initial conditions; open problems).
-% One subsection per slide block, in slide order.
+% Companion deck: slides/part2.pdf. The notes follow their own argument; the
+% deck covers the same material (implicit time stepping, encoding boundary and
+% initial conditions, open problems). The former appendix (TT-cross and DMRG
+% in full) is folded into this part.
 
-\paragraph{Recap.}
-Part~\partref{1} represented functions as quantics tensor trains (QTTs) and
-revisited the heat equation~\eqref{eq:heat} with explicit Euler,
-\begin{equation*}
-  \partial_t u = \alpha\, \partial_x^2 u
-  \qquad\Longrightarrow\qquad
-  u^{k+1} = \left(\mathbb{1} + \alpha \Delta t\, L\right) u^{k},
-\end{equation*}%
-carrying out every operation with two primitives: apply an operator, then round.
-Is an explicit scheme enough? It is not, and the moment a method requires
-\emph{solving} rather than \emph{applying}, we need genuine linear algebra on
-the MPS manifold.
+Part~\partref{1} closed with two debts. The first is stability. Explicit Euler
+for the heat equation is stable only under the Courant
+condition~\eqref{eq:heat-cfl}, which at quantics resolution forces
+$\Delta t \sim 4^{-n}$; the cure is an implicit scheme, and an implicit scheme
+turns each time step into a linear system $Au = b$ that cannot be solved by
+applying an operator and rounding. The second debt is data. Every construction
+in Part~\partref{1} assumed that the initial condition, the boundary data and the
+operator were already available as tensor trains, or that the full $N = 2^n$
+vector could be formed and compressed by SVD. This part pays both debts. It first
+develops the sweeping solvers that solve $Au = b$ directly on the low-rank
+manifold, applies them to the implicit heat equation, and then shows how
+functions, boundary conditions and an immersed geometry are brought into the
+format without ever touching all $N$ grid points. It closes with the problems
+that remain open, the last of which, nonlinearity, leads into
+Part~\partref{3}.
 
-Part~\partref{2} follows the three blocks of the slides. \emph{Implicit
-time-stepping}: why stability forces an implicit scheme
-(\cref{subsec:heat-implicit-euler}), how to solve $Au = b$ in tensor format
-(\cref{subsec:linear-solvers}), what that buys for the heat equation
-(\cref{subsec:heat-implicit-results}), and how to decide on bond dimension and
-stopping criteria (\cref{subsec:error-budget}). \emph{Encoding boundary and
-initial conditions}: constructing an MPS from a function we can only sample
-(\cref{subsec:finding-qtt}), which is what lets us put an immersed body on a
-$2^{30}$-cell mesh without touching $2^{30}$ cells
-(\cref{subsec:tt-cross-geometry}). \emph{Open problems}:
-\cref{subsec:part2-open-problems}.
+\paragraph{Pipeline stages covered:} TN encoding (stage~3: initial and boundary
+conditions, geometry) and time evolution (stage~4: implicit schemes and the
+linear solves they require).
 
 % ===========================================================================
-%  Block 1: implicit time-stepping
+%  Implicit time stepping
 % ===========================================================================
 
-\subsection{Implicit Time-Stepping}
+\subsection{Implicit Time Stepping and Its Price}
 \label{subsec:heat-implicit-euler}
 % Keywords: motivation (stability), CFL/Courant criterion, implicit Euler,
 % A-stability, one linear solve per time step.
 
-\paragraph{Motivation.}
-Two questions, two short answers.
-\begin{itemize}
-  \item \textbf{Why do we need implicit solvers?} Stability.
-  \item \textbf{Why do we need stability?} To decouple the time discretization
-    from the space discretization.
-\end{itemize}
-
-\paragraph{The Courant criterion.}
-Explicit Euler~\eqref{eq:heat-explicit} is stable only under the Courant
-(CFL) condition~\cite{Courant1928}
-\begin{equation}
-  \frac{\alpha\, \Delta t}{\Delta x^{2}} \le \frac{1}{2}.
-  \label{eq:cfl-heat}
-\end{equation}%
-With $\Delta x = 2^{-n}$ this forces $\Delta t \sim 4^{-n}$: memory grows like
-$n$, the number of steps like $4^{n}$. At $n \gtrsim 20$ the bound is unusable,
-and the argument strengthens with every bit of resolution quantics buys.
-Above the bound the highest-frequency mode is amplified by
-$\abs{1 - 4\alpha\Delta t/\Delta x^2} > 1$ per step, so round-off alone is
-enough to destroy the solution.
-
-\begin{remark}
-  Note the shape of the trade. Quantics makes very large $n$ affordable in
-  memory; the explicit stability condition then makes large $n$ unaffordable in
-  time. The compression only pays off in combination with an implicit scheme,
-  which is only affordable because of \cref{subsec:linear-solvers}.
-\end{remark}
+\paragraph{Why stability matters.}
+An implicit solver is needed for stability, and stability is needed because it
+decouples the time discretization from the space discretization. Under the
+Courant condition~\eqref{eq:heat-cfl}~\cite{Courant1928} the time step is tied
+to the grid spacing: with $\Delta x = 2^{-n}$, memory grows like $n$ while the
+number of steps grows like $4^{n}$. At $n \gtrsim 20$ the bound is unusable,
+and every additional bit of resolution that quantics makes affordable in memory
+makes the explicit scheme four times more expensive in time. Compression pays
+off only in combination with an implicit scheme.
 
 \paragraph{Implicit Euler.}
-Backward Euler replaces the update by a linear system,
+Backward Euler replaces the explicit update by a linear system,
 \begin{equation}
   \left(\mathbb{1} - \alpha \Delta t\, L\right) u^{k+1} = u^{k}.
   \label{eq:heat-implicit}
 \end{equation}
+The scheme is A-stable: the amplification factor is
+$(1 + \alpha \Delta t\, \lambda)^{-1}$ for every eigenvalue $\lambda \ge 0$ of
+$-L$, so it never exceeds one, whatever $\Delta t$ is. The choice of $\Delta t$
+therefore affects only accuracy, not stability, and the step is set by the error
+that can be tolerated rather than by $\Delta x^2$.
 
-\begin{itemize}
-  \item It is \textbf{A-stable with respect to $\Delta t$}. The amplification
-    factor is $(1 + \alpha \Delta t\, \lambda)^{-1}$ for every eigenvalue
-    $\lambda \ge 0$ of $-L$, so it never exceeds one whatever $\Delta t$ is.
-  \item Only \textbf{accuracy}, not stability, is affected by the choice of
-    $\Delta t$; the step is set by the error you can tolerate, not by
-    $\Delta x^2$.
-  \item The price: it \textbf{needs a linear system solver for each timestep}
-    instead of a matrix--vector product --- strictly more work per step.
-\end{itemize}
+More generally, a one-step implicit scheme for a linear problem has the form
+\begin{equation}
+  A\, u^{k+1} = B\, u^{k},
+  \label{eq:one-step-scheme}
+\end{equation}
+with $A = \mathbb{1} - \alpha\Delta t\, L$ and $B = \mathbb{1}$ for backward
+Euler. Both $A$ and $B$ are MPOs; applying $B$ is a Part~\partref{1} operation,
+but inverting $A$ is not.
+
+\paragraph{The price.}
+Each time step now requires a linear solve instead of a matrix--vector product,
+which is strictly more work per step. In tensor-train format the solve is also
+harder than it is for dense vectors, because the set on which it must be carried
+out is not a vector space: tensor trains of fixed rank form a smooth
+manifold~\cite{Holtz2012a}, and the sum of two trains of rank $\chi$ has rank up
+to $2\chi$. The next three subsections pay that price.
 
 \subsection{Solving \texorpdfstring{$Au = b$}{Au = b} in Tensor-Train Format}
 \label{subsec:linear-solvers}
 % Keywords: direct / iterative / variational solvers, fixed-rank TT manifold,
-% TT-GMRES, Riemannian solvers, DMRG, ALS, mALS, AMEn, cost.
+% TT-GMRES, Riemannian solvers, DMRG, ALS, mALS, AMEn, two-site sweep, cost.
+
+\paragraph{Ground rules.}
+The operator $A$ is given as an MPO of bond dimension $\chi_A$, the right-hand
+side $b$ as a tensor train, and the solution $u$ is wanted as a tensor train. We
+assume that $A$ and $b$ have low rank, but we do not know the rank of $u$ in
+advance, so the ideal solver finds both the solution and its rank.
 
 \paragraph{Three families of solvers.}
-Classically, linear solvers for $Au = b$ come in three kinds:
-\begin{itemize}
-  \item \textbf{direct} solvers operate on the matrix elements until the matrix
-    is easy to invert (LU, Cholesky);
-  \item \textbf{iterative} solvers recursively improve a guess until
-    convergence, using global operations (CG, GMRES);
-  \item \textbf{variational} solvers vary the parameters of the solution to
-    minimize a loss function.
-\end{itemize}
-
-\paragraph{Ground rules in the MPS representation.}
-The task: $A$ is given as an MPO, $b$ as an MPS, and we want $u$ as an MPS.
-\begin{itemize}
-  \item Assume that the operator $A$ and the vector $b$ admit a low-rank MPS
-    (MPO).
-  \item We might not know the rank of the solution MPS in advance.
-  \item The ideal solver should find the solution \emph{and} its rank.
-\end{itemize}
-A useful fact to keep in mind: MPS of fixed ranks form a smooth
-\textbf{manifold}~\cite{Holtz2012a}. It is not a vector space --- the sum of two
-rank-$\chi$ trains has rank up to $2\chi$ --- which is what makes every family
-above behave differently in tensor format.
-
-\paragraph{Which families survive.}
+Classical linear solvers come in three kinds. Direct solvers operate on the
+matrix elements until the matrix is easy to invert (LU, Cholesky). Iterative
+solvers improve a guess step by step using global operations (CG, GMRES).
+Variational solvers vary the parameters of the solution to minimize a loss
+function. Because the fixed-rank manifold is not a vector space, the three
+families fare differently in tensor format:
 \begin{center}
   \begin{tabular}{@{}lll@{}}
     \toprule
@@ -129,296 +105,332 @@ above behave differently in tensor format.
   \end{tabular}
 \end{center}
 
-\begin{itemize}
-  \item \textbf{Direct inversion is out.} There is no easy access to matrix
-    elements, and $A^{-1}$ has no reason to be low-rank even when $A$ and $u$
-    both are. If you are lucky you can construct an MPO for the inverse
-    explicitly: the QTT Laplacian is the instructive exception, whose inverse
-    admits an explicit low-rank representation~\cite{Kazeev2012}.
-  \item \textbf{Iterative methods are possible, but often not worth it.} For
-    fixed-point (CG) or Krylov-based (GMRES) methods in TT
-    format~\cite{Dolgov2012a,Ballani2013}, with a rounding step after every
-    operation, the rank of the \emph{intermediate} iterates can blow up even
-    though the final solution has low rank: each matrix--vector product
-    multiplies $\chi$ by $\chi_{\mathrm{MPO}}$ and each vector addition adds
-    ranks. Truncation must then be aggressive, and aggressive truncation
-    destroys the orthogonality of the Krylov basis.
-  \item \textbf{Riemannian optimization} over the fixed-rank
-    manifold~\cite{Kressner2016} avoids the rank blow-up by construction. It is
-    quite useful for nonlinear problems, but for linear problems it is unclear
-    whether it is worth the extra effort: it needs well-behaved retraction and
-    vector-transport routines, and it is not rank adaptive by construction.
-\end{itemize}
+Direct inversion is ruled out. There is no easy access to matrix elements, and
+$A^{-1}$ has no reason to be low rank even when $A$ and $u$ both are. In
+favourable cases an MPO for the inverse can be constructed explicitly; the QTT
+Laplacian is the instructive exception, since its inverse admits an explicit
+low-rank representation~\cite{Kazeev2012}.
 
-\paragraph{DMRG in a slide.}
+Iterative methods are possible, but often not worth the effort. Fixed-point
+(CG) and Krylov (GMRES) methods have been carried over to TT
+format~\cite{Dolgov2012a,Ballani2013}, with a rounding step after every
+operation. The difficulty is that the rank of the \emph{intermediate} iterates
+can blow up even when the final solution has low rank: each matrix--vector
+product multiplies $\chi$ by $\chi_A$, and each vector addition adds ranks.
+Truncation must then be aggressive, and aggressive truncation destroys the
+orthogonality of the Krylov basis.
+
+Riemannian optimization over the fixed-rank manifold~\cite{Kressner2016} avoids
+the rank blow-up by construction. It is useful for nonlinear problems, but for
+linear problems it is unclear whether it repays the extra effort: it needs
+well-behaved retraction and vector-transport routines, and it is not rank
+adaptive.
+
+\paragraph{The variational form.}
 \margintext{The one-site/two-site distinction is the same one that separates
-White's original DMRG from its later single-site variants. The trade is rank
-adaptivity against local cost.}
-Reformulate the linear system as a variational problem~\cite{Oseledets2012},
+White's original DMRG from its later single-site variants.}
+The variational route reformulates the linear system as an optimization
+problem~\cite{Oseledets2012},
 \begin{equation}
-  \min_x \norm{Ax - b}^2
+  \min_u \norm{Au - b}^2
   \qquad\text{or}\qquad
-  \min_x \tfrac{1}{2}\, x^{\top}\! A x - x^{\top} b \quad (A \succ 0),
+  \min_u \tfrac{1}{2}\, u^{\top}\! A u - u^{\top} b \quad (A \succ 0),
   \label{eq:tt-linear-min}
 \end{equation}%
-the second form being available when $A$ is symmetric positive definite. Prefer
-it when you can: it avoids squaring the condition number, which the residual
-form does. Then:
-\begin{itemize}
-  \item tensor networks are \textbf{multilinear} objects;
-  \item so \textbf{freeze all tensors but one}, which reduces the problem to a
-    small linear problem in that tensor alone;
-  \item solve the local (reduced) problems by \textbf{sweeping} through the
-    network;
-  \item use the \textbf{gauge freedom} to your advantage: with the chain in
-    mixed canonical form centred on the active tensor, the local problem is a
-    dense system of size $\chi^2 d$ that inherits the conditioning of $A$.
-\end{itemize}
-The derivation of the local problem and its environments is given in
-\cref{subsec:appendix-dmrg}.
+the second form being available when $A$ is symmetric positive definite. It
+should be preferred when available, because the residual form squares the
+condition number and the energy form does not. A tensor train is multilinear in
+its cores, so if all cores but one are frozen, the objective becomes a quadratic
+function of the remaining core, and its minimization is a small linear problem
+in that core alone. Solving these local problems one core after another, and
+sweeping back and forth along the chain, gives the family of \textbf{sweeping
+solvers (ALS, mALS/DMRG, AMEn)}. Their common ancestor is DMRG~\cite{White1992,
+Schollwoeck2011}, the variational optimization of an MPS by local updates.
 
-\paragraph{Variants of DMRG solvers.}
-\begin{itemize}
-  \item \textbf{TT-ALS}~\cite{Holtz2012} --- single-site updates at fixed rank.
-    Each local solve is exact, so the objective decreases monotonically, but
-    $\chi$ is fixed in advance and the method is sensitive to the initial
-    guess; it can stall in a local minimum of the fixed-rank manifold.
-  \item \textbf{TT-mALS}~\cite{Holtz2012} (modified ALS, i.e.\ two-site DMRG)
-    --- optimize a \emph{pair} of neighbouring tensors, then split them by SVD.
-    The truncation tolerance of that SVD sets the new bond dimension, so the
-    method is rank adaptive and escapes local minima that trap one-site sweeps.
-    The price is that local solves are expensive: size $\chi^2 d^2$, cost up to
-    $O(\chi^6)$.
-  \item \textbf{TT-AMEn}~\cite{Dolgov2014} --- single-site updates whose
-    rank is adapted by \textbf{subspace enrichment} with directions taken from
-    the current residual $b - Ax$. This recovers rank adaptivity at roughly
-    one-site cost, comes with convergence guarantees beyond SPD matrices, and
-    is often the best default.
-\end{itemize}
+\paragraph{The two-site sweep.}
+Let $d$ be the dimension of a physical leg ($d = 2$ for quantics). One step of
+the two-site sweep at sites $k$ and $k+1$ proceeds as follows.
+\begin{enumerate}
+  \item Bring the train into mixed canonical form with the orthogonality centre
+    at site $k$ (\cref{subsec:tt-computing}).
+  \item Merge sites $k$ and $k+1$ into a single two-site tensor with
+    $\chi^2 d^2$ entries.
+  \item Solve the local problem in that tensor alone, with every other core held
+    fixed. The effective operator is assembled from cached left and right
+    \textbf{environments}, the partial contractions of the MPO with the frozen
+    parts of the chain; they are updated one site at a time rather than rebuilt.
+  \item Split the result by SVD, truncating to a tolerance $\varepsilon$ or a
+    rank cap $\chi_{\max}$.
+  \item Move the orthogonality centre one site along and repeat, sweeping right
+    and then left.
+\end{enumerate}
+The gauge freedom is what makes this work. Because the canonical form makes the
+environments orthonormal, the local problem in step~3 is an exact restriction of
+the global one rather than an approximation of it, it inherits the conditioning
+of $A$, and the global objective decreases monotonically. Ground-state
+calculations use the same sweep with a local eigenproblem in place of the local
+linear system. The same solver reappears as the pressure-Poisson step of the
+Navier--Stokes solver in Part~\partref{3} and as the all-at-once space--time
+solve in Part~\partref{4}.
+
+\paragraph{Local problem size.}
+A one-site update solves for a core with $\chi^2 d$ unknowns; a two-site update
+solves for $\chi^2 d^2$ unknowns. These are the only two local sizes that occur.
+For fixed $d$, a dense local solve on the two-site block costs up to
+$O(\chi^6)$, and the environment contractions cost
+$O(n \chi^3 d^2 + n \chi^2 d\, \chi_A)$ per sweep.
+
+\paragraph{The three sweeping solvers.}
+The members of the family differ in what they update and in how they adapt the
+rank. \textbf{TT-ALS}~\cite{Holtz2012} updates one core at a time at fixed rank.
+Each local solve is exact, so the objective decreases monotonically, but $\chi$
+must be fixed in advance and the method is sensitive to the initial guess; it
+can stall in a local minimum of the fixed-rank manifold.
+\textbf{TT-mALS}~\cite{Holtz2012} (modified ALS, equivalently two-site DMRG)
+optimizes a pair of neighbouring cores and splits them by SVD, as in the sweep
+above. The truncation tolerance of that SVD sets the new bond dimension, so the
+method is rank adaptive, and because the two-site block explores directions
+unavailable to any single core, it escapes local minima that trap one-site
+sweeps. Its price is the larger local problem. \textbf{TT-AMEn}~\cite{Dolgov2014}
+returns to one-site updates but adapts the rank by \textbf{subspace enrichment}
+with directions taken from the current residual $b - Au$. It recovers rank
+adaptivity at roughly one-site cost, comes with convergence guarantees beyond
+symmetric positive definite matrices, and is often the best default.
+
+\paragraph{Practical settings.}
+The worst-case $O(\chi^6)$ assumes that the local solve runs to full accuracy at
+maximum rank on every site of every sweep, which in practice it rarely does. The
+gap is closed by the practical settings: the sweep count, the local tolerance,
+the rank cap and, above all, the starting guess. A good schedule starts with a
+loose tolerance and a low rank cap and tightens both over successive sweeps. In
+a time-stepping context a \textbf{warm start} from the previous time step
+matters more than any other setting, because consecutive solutions are close;
+from a warm start two or three sweeps usually suffice. Because the SVD in the
+two-site split may return a larger rank than it started with, it is the
+tolerance $\varepsilon$, not $\chi$, that becomes the control parameter.
 
 \begin{remark}[Rule of thumb]
-  Use sweeping methods for structured PDE operators, where the MPO is known in
-  closed form and warm starts are available. Keep Krylov methods for when the
-  operator is effectively a black box.
+  Use sweeping solvers for structured PDE operators, where the MPO is known in
+  closed form and warm starts are available. Keep Krylov methods for operators
+  that are effectively black boxes.
 \end{remark}
 
-\paragraph{What the solve actually costs.}
-This is not a peripheral concern. In our incompressible CFD solver the
-DMRG-type Poisson solve dominates every other part of the
-pipeline~\cite{Peddinti2024}:
+\subsection{Choosing Tolerances}
+\label{subsec:error-budget}
+% Keywords: error sources, error budget, residual vs. error, grid refinement.
 
-\begin{center}
-  \begin{tabular}{ll}
-    \toprule
-    \textsc{Quantity} & \textsc{Value} \\
-    \midrule
-    Share of total runtime  & $80.1\%$ \\
-    Worst-case local cost   & $O(n\chi^6)$ \\
-    Observed total cost     & $O(n\chi^{4.1})$ \\
-    \bottomrule
-  \end{tabular}
-\end{center}
+Before measuring what the implicit solver buys, we need to decide what
+\enquote{solved} means, because the answer fixes both the tolerance and the
+stopping criterion.
 
-\noindent
-\margintext{The measured exponent $4.1$ against a worst case of $6$ is where all
-the practical engineering lives. Warm-starting from the previous timestep is the
-single largest contributor.}
-The gap between the worst case and what is measured is where the practical knobs
-live: sweep count, local tolerance, rank cap, and above all
-\textbf{warm-starting from the previous timestep}. The worst-case $\chi^6$
-assumes the local solve runs to full accuracy at maximum rank on every site of
-every sweep; warm starts mean it almost never does.
+\paragraph{Error sources.}
+With an implicit scheme the error budget has three parts rather than the two of
+Part~\partref{1}:
+\begin{enumerate}
+  \item \textbf{discretization} error, in space $O(\Delta x^2)$ and in time
+    $O(\Delta t)$;
+  \item \textbf{representation} error from truncation, set by $\varepsilon$
+    and $\chi_{\max}$;
+  \item \textbf{solver} error, which is new and entirely under the user's
+    control.
+\end{enumerate}
+The solver error is measured by the relative residual of the one-step
+scheme~\eqref{eq:one-step-scheme},
+\begin{equation}
+  \rho_k = \frac{\norm{A u^{k+1} - B u^{k}}}{\norm{B u^{k}}} ,
+  \label{eq:residual}
+\end{equation}
+and this is the residual meant everywhere in these notes.
+
+\paragraph{Which error should dominate.}
+The discretization error should dominate. If it does not, the solver converges
+efficiently to the wrong answer. In practice this means targeting a relative
+residual~\eqref{eq:residual}, and a truncation tolerance $\varepsilon$, about one
+order of magnitude below the expected discretization error, and no tighter,
+since sweeping beyond that point adds cost without adding accuracy. The rank cap
+$\chi_{\max}$ is then a safeguard on memory rather than an accuracy parameter.
+
+\paragraph{Residual and error.}
+A low residual does not imply a low error. The residual certifies the solve, not
+the solution: the error is bounded by the residual times the condition number of
+$A$, and for the Laplacian the condition number grows like $4^{n}$. The decisive
+test of a numerical solution is therefore convergence under grid refinement.
+Each refinement $n \to n+1$ should reduce the error by the factor the scheme
+promises, $4$ for a second-order spatial discretization. When it stops doing so,
+one of the other two error sources has taken over.
 
 \subsection{Back to the Heat Equation}
 \label{subsec:heat-implicit-results}
 % Keywords: assembling (1 - alpha dt L) as an MPO, warm starts, time to
 % target error, explicit vs implicit comparison.
 
-\paragraph{Assembling and solving.}
-\begin{itemize}
-  \item Build $A = \mathbb{1} - \alpha \Delta t\, L$ directly as an MPO. Its
-    rank is $\approx 3$ and the cores are written down
-    analytically~\cite{Kazeev2012}; there is no numerical construction
-    step and no assembly error.
-  \item The right-hand side is simply the previous state MPS.
-  \item Solve with DMRG or AMEn, \textbf{warm-started from $u^k$}. Consecutive
-    solutions differ by $O(\Delta t)$, so one or two sweeps usually suffice.
-\end{itemize}
+\paragraph{Assembly and solution.}
+The operator $A = \mathbb{1} - \alpha \Delta t\, L$ is built directly as an MPO.
+Its bond dimension is about $3$, and its cores are written down
+analytically~\cite{Kazeev2012}, so there is no numerical construction step and
+no assembly error. The right-hand side $B u^k = u^k$ is simply the previous
+state. The system is solved with DMRG or AMEn, warm-started from $u^k$; since
+consecutive solutions differ by $O(\Delta t)$, one or two sweeps usually suffice.
 
-\paragraph{The comparison.}
-The slides compare explicit Euler at $\alpha\Delta t/\Delta x^2 = 0.4$ with
-backward Euler + DMRG at the largest $\Delta t$ that meets a target error
-$\varepsilon = 10^{-2}$, on grids of $2^n$ points, $n = 5, \dots, 12$.
-\begin{itemize}
-  \item \textbf{Wall-clock time to target error.} Explicit Euler is faster on
-    coarse grids, but its cost grows like $4^n$ through the step count.
-    Backward Euler + DMRG overtakes it around $n = 9$; at $n = 12$ it needs
-    only $32$ steps and is about $89\times$ faster than the (projected)
-    explicit run, which no longer fits a $120\,\mathrm{s}$ budget.
-  \item \textbf{Residual of each step's equation.} The per-step relative
-    residual $\norm{Au^{k+1} - Bu^{k}}/\norm{Bu^{k}}$ of the DMRG solve sits
-    at $10^{-8}$--$10^{-6}$, orders of magnitude above that of the explicit
-    update, yet the implicit solution meets the same error target. A small
-    residual is not what is being bought; see \cref{subsec:error-budget}.
-\end{itemize}
+\paragraph{Explicit against implicit.}
+We compare explicit Euler at $\alpha\Delta t/\Delta x^2 = 0.4$ with backward
+Euler and DMRG at the largest $\Delta t$ that meets a target error of $10^{-2}$,
+on grids of $2^n$ points, $n = 5, \dots, 12$. Measured as wall-clock time to the
+target error, explicit Euler is faster on coarse grids, but its cost grows like
+$4^n$ through the step count. Backward Euler with DMRG overtakes it around
+$n = 9$. At $n = 12$ it needs only $32$ steps and is about $89\times$ faster than
+the projected explicit run, which no longer fits a $120\,\mathrm{s}$ budget. The
+per-step relative residual~\eqref{eq:residual} of the DMRG solve sits at
+$10^{-8}$--$10^{-6}$, well below the target error. As
+\cref{subsec:error-budget} explains, this certifies the solve; whether the
+solution is right is decided by the error target and by refinement.
 
 \begin{remark}[How to compare schemes]
   Compare \textbf{total wall-clock time to a target error}, never cost per step.
   Implicit stepping loses on the second measure and wins on the first, because
   it takes far fewer steps.
 \end{remark}
-\margintext{Forward pointer: this exact solve reappears in
-\cref{subsec:qtt-cfd-frameworks} as the pressure-Poisson step of Chorin
-projection, where it consumes $80\%$ of the runtime.}
 
-Swapping the scheme around the same solver is cheap. Crank--Nicolson,
-$\bigl(\mathbb{1} - \tfrac{\alpha\Delta t}{2}L\bigr)u^{k+1}
-= \bigl(\mathbb{1} + \tfrac{\alpha\Delta t}{2}L\bigr)u^{k}$, is second order and
-still unconditionally stable; the extra MPO application on the right-hand side
-is negligible against the solve.
-
-\subsection{Which Bond Dimension? And When to Stop?}
-\label{subsec:error-budget}
-% Keywords: error sources, error budget, residual vs. error, grid refinement.
-
-\paragraph{Error sources.}
-The budget now has three parts rather than two:
-
-\begin{enumerate}
-  \item \textbf{discretization} error, in space $O(\Delta x^2)$ and time
-    $O(\Delta t)$;
-  \item \textbf{representation} error from truncation, set by $\varepsilon$
-    and $\chi_{\max}$;
-  \item \textbf{solver} error, measured by the residual
-    $\norm{Au^{k+1} - u^{k}}$ --- new, and entirely under your control.
-\end{enumerate}
-
-\paragraph{Rules.}
-\begin{itemize}
-  \item \textbf{Rule of thumb: ensure the discretization error is the dominant
-    error.} Otherwise you converge efficiently to the wrong answer, which is
-    the least useful of all possible outcomes. In practice: target a relative
-    residual (and a truncation tolerance) about one order of magnitude below the
-    expected discretization error, and no tighter, since sweeping past that
-    point is pure cost.
-  \item \textbf{A low residual does not mean a low error.} The residual
-    certifies the \emph{solve}, not the \emph{solution}: use it as a
-    certificate of merit, not as a certificate of authenticity. The error is
-    bounded by the residual times the condition number, and for the Laplacian
-    the condition number grows like $4^{n}$.
-  \item \textbf{The real test of a numerical solution: it should converge under
-    grid refinement.} Each refinement $n \to n+1$ should reduce the error by the
-    factor the scheme promises ($4$ for a second-order spatial
-    discretization). When it stops doing so, one of the other two error
-    sources has taken over.
-\end{itemize}
+\paragraph{Other schemes on the same solver.}
+Changing the scheme around the same solver is inexpensive. Crank--Nicolson,
+\begin{equation*}
+  \bigl(\mathbb{1} - \tfrac{\alpha\Delta t}{2}L\bigr)u^{k+1}
+  = \bigl(\mathbb{1} + \tfrac{\alpha\Delta t}{2}L\bigr)u^{k},
+\end{equation*}
+is the one-step scheme~\eqref{eq:one-step-scheme} with
+$B = \mathbb{1} + \tfrac{\alpha\Delta t}{2}L$. It is second order and still
+unconditionally stable, and the extra MPO application on the right-hand side is
+negligible against the solve.
 
 % ===========================================================================
-%  Block 2: encoding boundary/initial conditions
+%  Encoding initial and boundary conditions
 % ===========================================================================
 
-\subsection{Encoding Boundary and Initial Conditions}
+\subsection{Getting Functions into Tensor-Train Format}
 \label{subsec:finding-qtt}
 % Keywords: explicit QTT constructions, TT-SVD, TT-cross / TCI, matrix cross
 % interpolation, maxvol, nested pivots, variants of TT-cross, failure modes.
 
-So far we assumed that all initial and boundary conditions are easily available
-in MPS form. That assumption has to be discharged, and how it is discharged
-decides whether the method scales. Now we look at how to encode arbitrary
-functions into QTTs.
+So far we have assumed that the initial condition and the right-hand side are
+available as tensor trains. That assumption must now be discharged, and the way
+it is discharged decides whether the method scales.
 
-\paragraph{Encoding functions as QTTs.}
-There are three routes.
-
+\paragraph{Three routes.}
 \begin{center}
   \begin{tabular}{@{}lll@{}}
     \toprule
     \textsc{Route} & \textsc{Cost} & \textsc{Requires} \\
     \midrule
-    Explicit constructions & free                        & closed form for $f$ \\
+    Explicit constructions & none                        & closed form for $f$ \\
     TT-SVD                 & $O(2^n)$                    & $f$ on the entire grid \\
     TT-cross / TCI         & $O(n\chi^2)$ evaluations    & only a black box $f$ \\
     \bottomrule
   \end{tabular}
 \end{center}
-
-\begin{itemize}
-  \item \textbf{Explicit constructions.} Polynomials, sine, cosine,
-    exponential: for the families tabulated in
-    \cref{subsec:qtt-functions-operators} the small cores are written down by
-    hand~\cite{Oseledets2013}. Exact, with no sampling and no error.
-  \item \textbf{TT-SVD.} Requires the function value on the entire grid. It is
-    exact and quasi-optimal (\cref{subsec:mps}) and efficient for reasonable
-    grid sizes, but it needs the dense $2^n$ vector, and in practice it is
-    memory-bound~\cite{Roehrig2022}. Randomized variants exist.
-  \item \textbf{TT-cross (TCI).} Queries the function adaptively and
-    interpolates within the QTT, building the MPS from $O(n\chi^2)$
-    \textbf{evaluations} of $f$ without ever forming the full
-    tensor~\cite{Oseledets2010}. There are no guarantees of convergence, but it
-    is extremely efficient.
-\end{itemize}
-
-The third route is the one that scales, and the one that makes the method
-practical rather than merely elegant.
+For polynomials, sines, cosines, exponentials and the other families tabulated
+in \cref{subsec:qtt-functions-operators}, the cores are written down by
+hand~\cite{Oseledets2013}; the construction is exact and requires no sampling.
+TT-SVD is exact up to the truncation tolerance and quasi-optimal
+(\cref{subsec:mps}), and it is efficient for moderate grids, but it needs the
+dense vector of all $N$ values and is memory-bound in
+practice~\cite{Roehrig2022}; randomized variants exist. TT-cross, also called
+tensor cross interpolation (TCI), queries the function adaptively and builds the
+tensor train from $O(n\chi^2)$ evaluations of $f$, without ever forming the full
+tensor~\cite{Oseledets2010}. It has no convergence guarantee, but it is the
+route that scales, and it is the one developed below.
 \margintext{TT-cross is what keeps the programme from being circular. Without
 it you would need the $2^n$-vector in order to compress the $2^n$-vector.}
 
 \paragraph{Matrix cross interpolation.}
-Write the full row and column index sets of a matrix $A$ as $\mathbb{I}$ and
-$\mathbb{J}$, and select $r$ rows $\mathcal{I} \subset \mathbb{I}$ and $r$
+Write the full row and column index sets of a matrix $M$ as $\mathbb{I}$ and
+$\mathbb{J}$, and select $\chi$ rows $\mathcal{I} \subset \mathbb{I}$ and $\chi$
 columns $\mathcal{J} \subset \mathbb{J}$, called \textbf{pivots}. Then
 \begin{equation}
-  A = A(\mathbb{I}, \mathbb{J})
-  \approx A(\mathbb{I}, \mathcal{J})\, A(\mathcal{I}, \mathcal{J})^{-1}\,
-  A(\mathcal{I}, \mathbb{J}),
+  M = M(\mathbb{I}, \mathbb{J})
+  \approx M(\mathbb{I}, \mathcal{J})\, M(\mathcal{I}, \mathcal{J})^{-1}\,
+  M(\mathcal{I}, \mathbb{J}),
   \label{eq:matrix-ci}
 \end{equation}%
-i.e.\ we keep $r$ columns and $r$ rows and invert the intersecting
-$r \times r$ submatrix, the \textbf{pivot matrix}~\cite{Goreinov2010}. This is
-the skeleton (CUR) decomposition~\eqref{eq:skeleton}.
-\begin{itemize}
-  \item If $A$ has exact rank $r$ and the pivot matrix is nonsingular,
-    \eqref{eq:matrix-ci} is exact, and heuristic pivot searches find such pivots
-    and recover the matrix to machine precision.
-  \item The quality of the pivots decides the stability. \textbf{maxvol}
-    chooses the $r \times r$ submatrix of (near-)maximum volume, i.e.\ largest
-    $\abs{\det}$; it is near-optimal and computable greedily by row swaps, and
-    it bounds the interpolation coefficients
-    $A(\mathbb{I},\mathcal{J})A(\mathcal{I},\mathcal{J})^{-1}$ by about one.
-\end{itemize}
+that is, we keep $\chi$ columns and $\chi$ rows and invert the $\chi \times \chi$
+\textbf{pivot matrix} at their intersection~\cite{Goreinov2010}. This is the
+skeleton, or CUR, decomposition. If $M$ has exact rank $\chi$ and the pivot
+matrix is nonsingular, \eqref{eq:matrix-ci} is exact, and heuristic pivot
+searches find such pivots and recover the matrix to machine precision.
+
+The choice of pivots decides the stability, because the inverse of the pivot
+matrix appears in~\eqref{eq:matrix-ci} and a badly conditioned pivot matrix
+destroys the reconstruction. The \textbf{maxvol} principle chooses the
+$\chi \times \chi$ submatrix of maximum volume, that is, of largest
+$\abs{\det}$.\margintext{The maximum-volume principle is due to Goreinov and
+Tyrtyshnikov (2001); Oseledets and Tyrtyshnikov carried it up to tensor trains
+in 2010.} For that choice the interpolation coefficients
+$M(\mathbb{I},\mathcal{J})M(\mathcal{I},\mathcal{J})^{-1}$ are bounded by one in
+modulus, and for an approximately rank-$\chi$ matrix the error
+of~\eqref{eq:matrix-ci} is within a factor $(\chi+1)$ of the best rank-$\chi$
+approximation in the Chebyshev (entrywise maximum) norm. Finding the true
+maximum-volume submatrix is NP-hard. The practical algorithm swaps rows greedily
+until no single swap increases $\abs{\det}$; it lands within a controlled factor
+of the maximum and costs $O(N\chi^2)$ per sweep for $N$ rows.
 
 \paragraph{Extension to tensor trains.}
-Apply~\eqref{eq:matrix-ci} recursively down the chain. Unfold the tensor as
+Cross interpolation is applied recursively down the chain. Unfold the tensor as
 (first index) $\times$ (all others) and cross-interpolate; the remainder is a
-tensor with one index fewer, unfold it again, and so on. The result is a chain
-of sampled fibres (\enquote{$T$-cores}) separated by inverse pivot matrices,
-which merge into an ordinary MPS. The pivot sets are kept \textbf{nested}: the
-left multi-indices chosen at bond $k+1$ extend those chosen at bond $k$, so that
-the result interpolates $f$ exactly on all sampled fibres. Each core costs
-$O(d\chi^2)$ evaluations, the whole train $O(nd\chi^2)$. Quantics combined with
-cross interpolation gives \textbf{QTCI}: parsimonious representations of
-multivariate functions at very high resolution~\cite{Ritter2024}. The
-algorithm is spelled out in \cref{subsec:appendix-tt-cross}.
+tensor with one index fewer, which is unfolded again, and so on. The result is a
+chain of sampled fibres separated by inverse pivot matrices, which merge into an
+ordinary tensor train. The pivot sets are kept \textbf{nested}: the left
+multi-indices chosen at bond $k+1$ extend those chosen at bond $k$, so that the
+result interpolates $f$ exactly on all sampled fibres. In algorithmic form, keep
+for each bond $k$ a set of row multi-indices $\mathcal{I}_k$ and column
+multi-indices $\mathcal{J}_k$, and proceed as follows.
+\begin{enumerate}
+  \item Initialize $\mathcal{I}_k$ and $\mathcal{J}_k$, either at random or from
+    a coarse pass over the domain.
+  \item Sweeping left to right, form the slice
+    $F_k = f(\mathcal{I}_k,\, i_k,\, \mathcal{J}_k)$, reshaped as a
+    $\chi d \times \chi$ matrix, by varying only the local index $i_k$ while the
+    pivots hold everything else fixed. This is the only place $f$ is called.
+  \item Apply maxvol to $F_k$: select the $\chi$ rows of maximum $\abs{\det}$
+    and use them to update $\mathcal{I}_{k+1}$.
+  \item Set the core to $F_k \hat{F}_k^{-1}$, where $\hat{F}_k$ is the selected
+    maximum-volume submatrix, and carry the remaining factor to the right.
+  \item Sweep back from right to left, and repeat until the cross error,
+    measured on fresh sample points, plateaus.
+\end{enumerate}
+Each core costs $O(d\chi^2)$ evaluations, the whole train $O(nd\chi^2)$
+evaluations and $O(n\chi^3)$ arithmetic, independent of $N = 2^n$. Quantics
+combined with cross interpolation gives \textbf{QTCI}, a parsimonious
+representation of multivariate functions at very high
+resolution~\cite{Ritter2024}.
+
+\begin{remark}[Interpolation property]
+  The resulting tensor train is exact on every fibre it sampled; that is what
+  $\hat{F}_k^{-1}$ in step~4 enforces. This is both the algorithm's main
+  strength and its main weakness: it reproduces sampled values exactly,
+  including sampled noise, and it says nothing about the fibres it never
+  examined.
+\end{remark}
 
 \paragraph{Variants of TT-cross.}
-The variants differ mainly in how pivots are found~\cite{Nunez2025}:
+The variants differ mainly in how the pivots are found~\cite{Nunez2025}:
 \begin{enumerate}
-  \item \textbf{TCI} --- nesting pivots for a global interpolation;
-  \item \textbf{rook search} --- greedily increasing the pivots after each
+  \item \textbf{TCI}: nested pivots for a global interpolation;
+  \item \textbf{rook search}: the pivots are greedily increased after each
     sweep;
-  \item \textbf{informed pivots} --- using the structure of the function to
+  \item \textbf{informed pivots}: the structure of the function is used to
     choose the initial pivots;
-  \item \textbf{DMRG-cross}~\cite{Savostyanov2011} --- creating a two-site
-    block to search for new pivots, which makes the rank adaptive;
-  \item \textbf{AMEn-cross} --- using AMEn residual directions for new pivots;
-  \item \textbf{TT-Opt} --- using TT-cross for grid-search optimization.
+  \item \textbf{DMRG-cross}~\cite{Savostyanov2011}: a two-site block is formed
+    to search for new pivots, which makes the rank adaptive;
+  \item \textbf{AMEn-cross}: AMEn residual directions supply new pivots;
+  \item \textbf{TT-Opt}: TT-cross is used for grid-search optimization.
 \end{enumerate}
-Mature implementations exist in \texttt{xfac} and
+Rectangular maxvol keeps more than $\chi$ pivots and improves robustness at
+modest extra cost; it is generally worth enabling. Rank-adaptive variants insert
+pivots where the local error is largest instead of fixing $\chi$ in
+advance~\cite{Nunez2025}. Mature implementations exist in \texttt{xfac} and
 \texttt{Tensor\-Cross\-Inter\-polation.jl}~\cite{Nunez2025}.
 
 \paragraph{TT-cross in practice.}
 The working recipe is short:
-
 \begin{enumerate}
   \item choose the bit ordering, interleaved or stacked
     (\cref{subsec:qtt-functions-operators});
@@ -426,149 +438,258 @@ The working recipe is short:
   \item sweep until the cross error plateaus;
   \item round.
 \end{enumerate}
+Convergence is heuristic, and there is no guarantee for adversarial or noisy
+black boxes. The result should always be validated on points the cross never
+sampled.
 
 \begin{remark}[Failure modes to expect]
   \begin{itemize}
     \item A feature narrower than the pivots can reach is missed entirely. A
       Gaussian spike of width $10^{-3}$ is recovered to machine precision; the
       same spike at width $10^{-5}$, placed at an irrational position, comes
-      back as \emph{identically zero} at every rank we tried --- with a reported
+      back as \emph{identically zero} at every rank we tried, with a reported
       cross error that stays small throughout.
-    \item Poorly placed pivots cause features to be missed entirely. The method
-      never samples them, so it never learns they exist, and the reported cross
-      error stays small while the answer is wrong. If you know where the
-      interesting region is, tell the algorithm (informed pivots).
+    \item Poorly placed pivots cause features to be missed. The method never
+      samples them, so it never learns that they exist, and the reported cross
+      error stays small while the answer is wrong. If the interesting region is
+      known, the algorithm should be told (informed pivots).
     \item A noisy $f$ is interpolated faithfully, noise included: extra pivots
       fit the noise, so adding rank makes the error worse and the rank is
-      overestimated. Cross interpolation is exact on the fibres it
-      samples, which is a virtue for clean data and a liability for dirty data
+      overestimated. Exact interpolation on the sampled fibres is a virtue for
+      clean data and a liability for noisy data
       (\cref{subsec:part2-open-problems}).
   \end{itemize}
 \end{remark}
 
-\subsection{Encoding Geometry via TT-Cross}
+\subsection{Boundary Conditions in the Operator}
+\label{subsec:boundary-conditions}
+% Keywords: Dirichlet, periodic, Neumann, ghost points, edge cores, lifting,
+% boundary data on the right-hand side.
+
+Initial conditions enter as tensor trains built by the routes above. Boundary
+conditions enter differently: in a finite-difference discretization they are
+part of the operator and of the right-hand side, and each standard
+treatment~\cite{LeVeque2007} has a direct counterpart in the MPO.
+
+\paragraph{Homogeneous Dirichlet conditions.}
+The second-difference matrix $\Delta_{2^n} = \mathrm{tridiag}(-1, 2, -1)$
+of~\eqref{eq:qtt-laplacian} already encodes $u = 0$ at both ends. Its first and
+last rows are the three-point stencil with the boundary value, which is zero,
+removed. No modification is needed, and the MPO keeps bond dimension~$3$.
+
+\paragraph{Periodic conditions.}
+Periodicity couples the first and last grid points, adding $-1$ in the two
+corners of the matrix:
+\begin{equation}
+  \Delta^{\mathrm{per}}_{2^n} = \Delta_{2^n} - J^{\otimes n} - (J^{T})^{\otimes n},
+  \label{eq:periodic-laplacian}
+\end{equation}
+with $J$ as in~\eqref{eq:qtt-laplacian}. The corner matrix $e_N e_1^{T}$ is the
+Kronecker product of $n$ copies of $J^{T} = e_2 e_1^{T}$, because the last grid
+point has all bits equal to one and the first has all bits equal to zero; each
+corner is therefore a rank-1 MPO, and the periodic Laplacian has bond dimension
+at most $3 + 1 + 1 = 5$ before rounding. In the carry-automaton picture of
+Part~\partref{1}, the difference is a single choice in the edge core: the
+non-periodic shift discards a carry that leaves the most significant bit, while
+the periodic shift wraps it around. Only the edge cores change.
+
+\paragraph{Inhomogeneous Dirichlet conditions.}
+For $u(0) = g_0$ and $u(1) = g_1$, standard practice moves the known boundary
+values to the right-hand side. Writing $L$ for the discrete Laplacian with
+homogeneous conditions, the discrete operator applied to $u$ becomes
+$L u + (g_0\, e_1 + g_1\, e_N)/\Delta x^2$, and implicit
+Euler~\eqref{eq:heat-implicit} becomes
+\begin{equation*}
+  \left(\mathbb{1} - \alpha \Delta t\, L\right) u^{k+1}
+  = u^{k} + \frac{\alpha \Delta t}{\Delta x^2}\left(g_0\, e_1 + g_1\, e_N\right).
+\end{equation*}
+The unit vectors $e_1$ and $e_N$ are rank-1 tensor trains (products of one-hot
+bit vectors), so the boundary data raise the bond dimension of the right-hand
+side by at most two and leave the operator unchanged. An equivalent route is
+\emph{lifting}: write $u = w + \ell$ with a known function $\ell$ that satisfies
+the boundary conditions and solve for $w$ with homogeneous conditions. For the
+heat equation with constant $g_0, g_1$, the linear interpolant $\ell$ has bond
+dimension~2 (\cref{subsec:qtt-functions-operators}) and is annihilated by the
+second difference, so $w$ obeys the homogeneous problem.
+
+\paragraph{Neumann conditions and ghost points.}
+A zero-flux condition is imposed through a ghost point outside the domain. With
+the first-order closure $u_0 = u_1$, the ghost value is eliminated and the first
+diagonal entry of $\Delta_{2^n}$ changes from $2$ to $1$. That change is the
+rank-1 MPO $e_1 e_1^{T} = E^{\otimes n}$ with $E = \mathrm{diag}(1,0)$, so the
+corrected operator again has small bond dimension. The same ghost-point device
+folds inflow and outflow conditions into the differential MPOs of the
+Navier--Stokes solver in Part~\partref{3}.
+
+\paragraph{Several dimensions.}
+In $D$ dimensions the Laplacian is a sum of one-dimensional Laplacians in
+Kronecker form, for example $L_x \otimes \mathbb{1} + \mathbb{1} \otimes L_y$ in
+two dimensions. Each one-dimensional factor carries its own boundary condition,
+so mixed conditions such as periodic in $x$ and Dirichlet in $y$ cost nothing
+beyond the one-dimensional constructions above.
+
+\subsection{Case Study: An Immersed-Body Mask}
 \label{subsec:tt-cross-geometry}
 % Keywords: TT-cross for geometry, mapped domains, indicator functions,
 % smoothed MPS masks, curved boundaries, Hadamard product.
 
-Geometry is where TT-cross earns its keep, and the first place where the
-tensor-network constraints force a genuine modelling decision rather than an
-implementation detail. Two uses appear in the literature.
-\begin{itemize}
-  \item \textbf{Mapped domains.} Spectral-collocation and finite-element
-    solvers in TT format map a reference square $[-1,1]^2 \ni (\xi, \eta)$ onto
-    a curved quadrilateral by a map $N(\xi,\eta)$, and need the Jacobian
-    $J = \partial(x,y)/\partial(\xi,\eta)$ and related geometric factors
-    as tensor trains; TT-cross builds them from pointwise
-    evaluations~\cite{Adak2024,Kornev2024}.
-  \item \textbf{Immersed bodies.} Keep a Cartesian grid and encode the body as
-    a \textbf{mask} MPS that is applied to the flow field. This is the route we
-    take in Part~\partref{3}.
-\end{itemize}
+Geometry is the first place where the tensor-network constraints force a
+modelling decision rather than an implementation detail, and it is a hard test
+of TT-cross. The literature uses TT-cross for geometry in two ways. Spectral
+collocation and finite-element solvers in TT format map a reference square
+$[-1,1]^2 \ni (\xi, \eta)$ onto a curved quadrilateral by a map
+$\Phi(\xi,\eta)$, and need the Jacobian $J_\Phi = \partial(x,y)/\partial(\xi,\eta)$
+and related geometric factors as tensor trains; TT-cross builds them from
+pointwise evaluations~\cite{Adak2024,Kornev2024}. Alternatively, the Cartesian
+grid is kept and the body is encoded as a \textbf{mask} tensor train that is
+applied to the field. This is the route taken in Part~\partref{3}, and the
+subject of this case study.
 
-\paragraph{The problem with sharp boundaries.}
-\begin{itemize}
-  \item The goal is to place an arbitrary immersed object --- a cylinder, an
-    airfoil --- on a $2^n$ mesh \textbf{without touching $2^n$ cells}.
-  \item The natural object is an indicator function $\theta(x)$, built from a
-    level-set function $q$ vanishing on the boundary: one in the fluid, zero in
-    the body.
-  \item The reflex at this point is to say that a sharp edge has slowly decaying
-    singular values, so $\chi$ explodes. \emph{That reflex is wrong}, and it is
-    worth being precise about why, because it sends you looking for the wrong
-    fix.
-\end{itemize}
+\paragraph{Sharp boundaries.}
+The goal is to place an arbitrary immersed object, such as a cylinder or an
+airfoil, on a grid of $N$ points per coordinate without touching all of them.
+The natural object is an indicator function $\theta(x)$, built from a level-set
+function $q$ that vanishes on the boundary: $\theta$ is one in the fluid and
+zero in the body. A common expectation is that a sharp edge has slowly decaying
+singular values, so that $\chi$ explodes. That expectation is wrong, and it is
+worth being precise about why, because it points to the wrong fix.
 
-\margintext{Measure it before you believe either story. A one-dimensional
-Heaviside is rank~2 at any resolution; a disc indicator on a $2^n\times2^n$ grid
-needs $\chi = 17, 50, 128$ at $N = 64, 256, 1024$.}
 A one-dimensional step function has quantics rank~\textbf{2}, at any resolution
-and wherever the jump sits: quantics never sees the jump, it sees the comparison
-$\mathbb{1}[i > m]$, which a two-state automaton decides digit by digit
-(\cref{subsec:qtt-functions-operators}). Sharpness alone is free.
+and wherever the jump sits. Quantics never sees the jump; it sees the comparison
+$\mathbb{1}[i > i_0]$, which a two-state automaton decides digit by digit
+(\cref{subsec:qtt-functions-operators}). Sharpness alone costs no rank.
 
 What is expensive is a boundary that is \emph{curved}, and therefore not aligned
 with the binary index. A circle cuts across every length scale at once, so every
-bond has to carry information about where it is --- and unlike everything else in
+bond has to carry information about where it is, and unlike everything else in
 \cref{subsec:qtt-functions-operators}, the cost grows as the grid is refined. A
-straight edge stays at $\chi=2$ from $N=64$ to $N=1024$; a disc goes from
-$\chi=17$ to $\chi=128$ over the same range. Built by TT-cross, a sharp
-indicator also shows the failure modes of \cref{subsec:finding-qtt}: pieces of
-the boundary are missed or misplaced in blocks.
+straight edge stays at $\chi=2$ from $N=64$ to $N=1024$, whereas a disc indicator
+on an $N \times N$ grid needs $\chi = 17, 50, 128$ at $N = 64, 256, 1024$.
 
-The fix is to give up the sharp edge \emph{deliberately}, and then bound what
-that costs.
+\paragraph{Where TT-cross fails.}
+The more serious problem with a sharp indicator is not its rank but its
+behaviour under TT-cross. Built by cross interpolation, a sharp indicator shows
+the failure modes of \cref{subsec:finding-qtt}: pieces of the boundary are
+missed or misplaced in blocks. Measured pointwise, the error
+$\abs{\mathrm{TT}_\theta - \theta(x)}$ of a TT-cross encoding of the sharp
+indicator consists of whole blocks of the circle that are wrong. The remedy is to
+give up the sharp edge deliberately, in a controlled way, so that the function
+handed to TT-cross is one it can sample reliably.
 
-\paragraph{MPS mask generation.}
-\margintext{This construction is from our 2024 framework. The point of the
-$\sqrt{\ell_0^{D-2}/\alpha}$ bound is that the approximation is a modelling
-choice with an error bar, not an undocumented hack.}
+\paragraph{The smoothed mask.}
+\margintext{The smoothed mask is from Peddinti \emph{et al.} (2024).}
 Replace the indicator $\theta$ by a smooth mask $m$, with $q$ vanishing on the
 object boundary $\partial\Omega$~\cite{Peddinti2024},
 \begin{equation}
-  m(x) = 1 - e^{-\alpha\left(q(x) + \abs{q(x)}\right)},
+  m(x) = 1 - e^{-\beta\left(q(x) + \abs{q(x)}\right)},
   \qquad q|_{\partial\Omega} = 0 ,
   \label{eq:smoothed-mask}
 \end{equation}%
-and build it by TT-cross: $m(x) \approx A_1^{i_1} A_2^{i_2} \cdots A_N^{i_N}$.
-On the slides, the pointwise error $\abs{\mathrm{MPS}_\theta - \theta(x)}$ of a
-TT-cross encoding of the sharp indicator shows whole blocks of the circle
-wrong, while $\abs{\mathrm{MPS}_m - \theta(x)}$ for the smoothed mask is
-confined to a thin, uniform band along the boundary.
+where $\beta > 0$ sets the sharpness, and build it by TT-cross as a tensor train
+$m(x) \approx A_1^{i_1} A_2^{i_2} \cdots A_n^{i_n}$. The pointwise error
+$\abs{\mathrm{TT}_m - \theta(x)}$ of this encoding is confined to a thin, uniform
+band along the boundary instead of whole blocks.
 
+The construction has two properties that make its error controllable. First,
+$q + \abs{q}$ vanishes identically wherever $q < 0$, so $m$ is exactly zero
+inside the body and rises smoothly outside it; no approximation is made in the
+interior. Second, the $\ell_2$ distance to the true indicator scales as
+$\sqrt{\ell_0^{D-2}/\beta}$ in $D$ dimensions, where $\ell_0$ is the boundary
+length scale. The error is therefore controlled by a single parameter and decays
+as $\beta^{-1/2}$; a fit on a disc at $N=512$ gives an exponent of $-0.53$. The
+approximation is a modelling choice with a known error bar.
+
+\paragraph{What the smoothing buys.}
+It is tempting to summarize~\eqref{eq:smoothed-mask} as \enquote{sharp edges
+have high rank, so smooth them}. The measurement does not support that. On a
+disc at $N=512$:
+\begin{center}
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    & $\chi$ at $10^{-1}$ & $\chi$ at $10^{-2}$ & $\chi$ at $10^{-6}$
+      & $\ell_2$ to indicator \\
+    \midrule
+    sharp indicator  & 33 & 75 & 80 & 0 \\
+    $\beta = 50$     & 13 & 34 & 92 & 0.28 \\
+    $\beta = 1000$   & 27 & 74 & 94 & 0.059 \\
+    $\beta = 5000$   & 31 & 78 & 88 & 0.023 \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+At tight tolerance the smoothed mask is no cheaper than the sharp indicator; it
+is a different function with its own structure. A rank saving appears only at
+loose tolerance and small $\beta$, where $\beta$ trades geometric fidelity
+against rank at a known price. The main benefit lies elsewhere: the smoothed mask
+makes TT-cross robust. Its errors are confined to a band of known width along the
+boundary rather than scattered in blocks, and the size of that band is set by
+$\beta$. This resolves the apparent tension above. Sharpness costs no rank in
+itself, and the edge is softened not to save rank but to make the encoding
+reliable and its error quantifiable. Part~\partref{3} applies the mask to the
+velocity field by an elementwise (Hadamard) product at every time step.
+
+% ===========================================================================
+%  Open problems
+% ===========================================================================
+
+\subsection{Open Problems}
+\label{subsec:part2-open-problems}
+% Keywords: TT preconditioning, explicit interpolative QTT constructions,
+% distributed TT algorithms, robust TT recovery, rank blow-up, error control,
+% nonlinearity.
+
+The solvers and encodings of this part work well on the heat equation, but
+several questions about them remain open. Four concern the algorithms
+themselves.
 \begin{itemize}
-  \item The combination $q + \abs{q}$ vanishes identically wherever $q < 0$, so
-    $m$ is exactly zero inside the body and rises smoothly outside it. No
-    approximation is made in the interior.
-  \item The $\ell_2$ distance to the true indicator scales as
-    $\sqrt{\ell_0^{D-2}/\alpha}$ in $D$ dimensions, where $\ell_0$ is the
-    boundary length scale. The error is therefore controlled by a single knob
-    and decays as $\alpha^{-1/2}$ --- a fit on a disc at $N=512$ gives an
-    exponent of $-0.53$.
+  \item \textbf{TT preconditioning for stiff problems.} The condition number of
+    the discrete Laplacian grows like $4^n$, so at high quantics resolution the
+    solver error of \cref{subsec:error-budget} is amplified accordingly.
+    Multilevel preconditioners that remain stable in low-rank format exist for
+    elliptic problems~\cite{Bachmayr2020}; a general recipe does not. The
+    difficulty is structural: a good preconditioner approximates $A^{-1}$, and a
+    low-rank $A$ rarely has a low-rank inverse.
+  \item \textbf{Explicit QTT construction from known interpolation schemes.}
+    Instead of sampling adaptively, the cores can be built directly from
+    multiscale interpolation~\cite{Lindsey2023}, or a coarse tensor-network or
+    quantum-state encoding can be upsampled to a finer grid~\cite{Guzman2026}.
+  \item \textbf{Distributed TT algorithms.} Sweeps are inherently sequential.
+    GPU-accelerated solvers~\cite{Hoelscher2025} and multicore studies of TT
+    linear solvers~\cite{Roehrig2025} are a start, not an answer.
+  \item \textbf{Robust TT recovery.} TT-cross overestimates the ranks under
+    noise (\cref{subsec:finding-qtt}). Whether this can be avoided is open.
 \end{itemize}
 
-\begin{remark}[What the smoothing does and does not buy]
-  It is tempting to summarise \eqref{eq:smoothed-mask} as \enquote{sharp edges
-  have high rank, so smooth them}. The measurement does not support that. On a
-  disc at $N=512$:
+\paragraph{Rank blow-up and error control.}
+Two further questions concern the solve as a whole. The first is rank blow-up.
+Non-smooth data, sharp interfaces and shocks push the rank of the solution up,
+and the iterates of a Krylov method or an early sweep can exceed the rank of the
+final solution by a wide margin; it is not known in general where the method
+stops paying for itself. The second is error control. There is no sharp
+a-posteriori bound that links the per-step truncation tolerance $\varepsilon$ to
+the PDE error accumulated over many steps. In practice one assumes linear
+accumulation, $O(K\varepsilon)$ after $K$ steps, and checks it empirically.
 
-  \begin{center}
-    \begin{tabular}{@{}lrrrr@{}}
-      \toprule
-      & $\chi$ at $10^{-1}$ & $\chi$ at $10^{-2}$ & $\chi$ at $10^{-6}$
-        & $\ell_2$ to indicator \\
-      \midrule
-      sharp indicator  & 33 & 75 & 80 & 0 \\
-      $\alpha = 50$    & 13 & 34 & 92 & 0.28 \\
-      $\alpha = 1000$  & 27 & 74 & 94 & 0.059 \\
-      $\alpha = 5000$  & 31 & 78 & 88 & 0.023 \\
-      \bottomrule
-    \end{tabular}
-  \end{center}
+\paragraph{Nonlinearity.}
+The largest open question is nonlinearity, and it is where the course goes next.
+Everything in this part relied on the operator being linear: $A$ is a fixed MPO,
+and each step is one linear solve. A nonlinear term requires products of tensor
+trains, and an elementwise product squares the bond dimension before rounding.
+Picard iteration converges linearly and Newton iteration quadratically, but every
+iteration re-rounds, and the interaction between iteration error and truncation
+error is not understood.
 
-  At \emph{tight} tolerance the smoothed mask is no cheaper --- it is simply a
-  different function with its own structure. The saving appears at the accuracy
-  you actually want, and the defensible statement is therefore: \textbf{$\alpha$
-  prices geometric fidelity against rank, and the price is known.} That the
-  price is known is the whole point; it is what separates this from an
-  undocumented hack.
-\end{remark}
-
-\paragraph{Putting it together.}
-\begin{itemize}
-  \item Build $m$ as an MPS by TT-cross to tolerance $\varepsilon$, at a cost
-    independent of the mesh size.
-  \item Apply it by an \textbf{elementwise (Hadamard) MPS product} on the
-    velocity field each step (the mask-application stage of the solver
-    pipeline: initialization, mask, divergence-free projection, time
-    integration). No-slip is enforced without ever meshing the body, and without
-    an immersed-boundary force term.
-  \item Inlet and outlet conditions fold into the differential MPOs via
-    \textbf{ghost cells}, so open boundary conditions keep the domain small.
-  \item Demonstrated on flow past a cylinder (vortex shedding) and on a
-    \textbf{NACA 0040 airfoil}: $\chi = 45$, $18{,}800$ parameters, a
-    compression factor of $27.9$.
-\end{itemize}
+\paragraph{Summary and hand-off.}
+This part paid the two debts left by Part~\partref{1}. Implicit time stepping
+removes the Courant restriction at the cost of a linear solve per step, and the
+sweeping solvers (ALS, mALS/DMRG, AMEn) carry out that solve on the low-rank
+manifold, with the residual~\eqref{eq:residual} certifying the solve and grid
+refinement certifying the solution. TT-cross brings functions and geometry into
+the format from $O(n\chi^2)$ samples, boundary conditions enter through the edge
+cores of the MPO and the right-hand side, and a smoothed mask makes an immersed
+body a reliable input for TT-cross. Part~\partref{3} takes these tools to the
+incompressible Navier--Stokes equations, where the advection term is nonlinear
+and a linear pressure solve is needed at every step, and asks how far the ranks
+stretch when the scales are strongly coupled.
 
 \begin{exercise}[Companion notebook]
   \texttt{02-linear-algebra.ipynb} follows this part in order, with the
@@ -578,72 +699,19 @@ confined to a thin, uniform band along the boundary.
   \begin{enumerate}
     \item Implement Crank--Nicolson on top of the same solver and measure the
       convergence order. Compare against the \emph{semi-discrete} exact solution,
-      not the continuous one --- otherwise a spatial error floor hides the
-      second order completely. (This is not a pedantic point; it is the most
-      common way a convergence study lies to you.)
+      not the continuous one; otherwise a spatial error floor hides the second
+      order completely. This is the most common way for a convergence study to
+      mislead.
     \item Solve the two-dimensional Poisson problem, sweep $\chi_{\max}$, and
-      time the solve at $m = 5,6,7,8$. Is the growth in $m$ or in $4^m$?
+      time the solve at $n = 5,6,7,8$. Is the growth in $n$ or in $4^n$?
     \item Implement matrix cross interpolation~\eqref{eq:matrix-ci} with
       alternating maxvol, and recover a rank-$5$ matrix to machine precision
       from a few of its rows and columns.
     \item Cross-interpolate a black box you are not allowed to look inside, and
       read its complexity off the rank at which the error stops improving.
-    \item Set $\alpha$ in \eqref{eq:smoothed-mask} from a stated requirement
+    \item Set $\beta$ in~\eqref{eq:smoothed-mask} from a stated requirement
       (\enquote{geometry accurate to $5\%$}) rather than by taste, and confirm
-      the $\alpha^{-1/2}$ law. Then check whether the smoothing bought you any
-      rank at that accuracy, and be honest about the answer.
+      the $\beta^{-1/2}$ law. Then check whether the smoothing bought any rank
+      at that accuracy.
   \end{enumerate}
 \end{exercise}
-
-% ===========================================================================
-%  Block 3: open problems
-% ===========================================================================
-
-\subsection{Open Problems}
-\label{subsec:part2-open-problems}
-% Keywords: TT preconditioning, explicit interpolative QTT constructions,
-% distributed TT algorithms, robust TT recovery, rank blow-up, error control,
-% conservation.
-
-The slides close with four questions.
-
-\begin{itemize}
-  \item \textbf{TT preconditioning for solving stiff problems.} The condition
-    number of the discrete Laplacian grows like $4^n$, so at high quantics
-    resolution the solver error of \cref{subsec:error-budget} is amplified
-    accordingly. Multilevel preconditioners that remain stable in low-rank
-    format exist for elliptic problems~\cite{Bachmayr2020}; a general recipe
-    does not. The difficulty is structural: a good preconditioner approximates
-    $A^{-1}$, and a low-rank $A$ rarely has a low-rank inverse.
-  \item \textbf{Explicit QTT construction using known interpolation schemes.}
-    Instead of sampling adaptively, build the cores directly from multiscale
-    interpolation~\cite{Lindsey2023}, or upsample a coarse tensor-network or
-    quantum-state encoding to a finer grid~\cite{Guzman2026}.
-  \item \textbf{Distributed TT algorithms.} Sweeps are inherently sequential.
-    GPU-accelerated solvers~\cite{Hoelscher2025} and multicore studies of TT
-    linear solvers~\cite{Roehrig2025} are a start, not an answer.
-  \item \textbf{Robust TT recovery.} TT-cross overestimates the ranks under
-    noise (\cref{subsec:finding-qtt}). Can this be solved?
-\end{itemize}
-
-\paragraph{Further open questions.}
-\margintext{Of everything in this subsection, preconditioning has the largest
-immediate payoff. Recall that the Poisson solve is $80\%$ of runtime.}
-\begin{itemize}
-  \item \textbf{Rank blow-up.} Shocks, sharp interfaces, non-smooth data and
-    high-$\mathrm{Re}$ turbulence all push $\chi$ up. Where exactly does the
-    method stop paying for itself?
-  \item \textbf{Nonlinearity.} Products of MPSs square the bond dimension.
-    Picard iteration converges linearly and Newton quadratically, but every
-    iteration re-rounds, and the interaction between iteration error and
-    truncation error is not understood.
-  \item \textbf{Error control.} There is no sharp a-posteriori bound linking the
-    per-step truncation tolerance $\varepsilon$ to the PDE error accumulated
-    over many steps. In practice one assumes linear accumulation, $O(K\varepsilon)$
-    after $K$ steps, and checks it empirically.
-  \item \textbf{Conservation.} SVD truncation preserves neither mass nor energy
-    nor $\nabla\cdot\mathbf{v} = 0$; it is optimal in the Frobenius norm, which
-    knows nothing about the physics. Structure-preserving rounding is wide open.
-  \item \textbf{Fair benchmarking.} Honest comparison against tuned classical
-    CFD --- multigrid, spectral methods --- on equal hardware.
-\end{itemize}

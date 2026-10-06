@@ -11,7 +11,7 @@ from pathlib import Path
 
 NOTES = Path(__file__).resolve().parent.parent / "notes"
 inputs = re.findall(r"^\\input\{(sections/[^}]+)\}", (NOTES / "main.tex").read_text(), re.M)
-files = [NOTES / "main.tex"] + [NOTES / f"{i}.tex" for i in inputs]
+files = [NOTES / "main.tex"] + [NOTES / f"{i}.tex" for i in inputs if (NOTES / f"{i}.tex").exists()]
 
 
 def strip_comments(s):

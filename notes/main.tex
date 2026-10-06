@@ -27,8 +27,10 @@
 \label{sec:general-information}
 
 \paragraph{What this course is about.}
-These notes accompany the lectures and follow the four slide decks
-(\texttt{slides/part1.pdf}--\texttt{part4.pdf}) part by part. The goal is to use
+These notes accompany the lectures and cover the same ground as the four slide
+decks (\texttt{slides/part1.pdf}--\texttt{part4.pdf}), one part per deck. They
+are written to be read rather than presented, so within each part the material
+follows the argument rather than the order of the slides. The goal is to use
 \textbf{tensor networks} to exploit the low-rank structure of both the
 solutions and the operators that define partial differential equations. Nothing
 here is quantum: the networks are classical data structures, and every
@@ -50,7 +52,8 @@ truncation never goes away.}
 Solving a PDE with tensor networks is a pipeline of five stages, and each has
 choices of its own:
 \begin{enumerate}
-  \item \textbf{Equation.}
+  \item \textbf{Equation:} the PDE, or, in Part~\partref{4}, the data that stand
+    in for it.
   \item \textbf{Problem formulation:} the mesh (uniform or not), the coordinate
     system and the discretization (finite differences, finite elements,
     finite volumes, \ldots).
@@ -63,7 +66,9 @@ choices of its own:
     question.
 \end{enumerate}
 The bond dimension $\chi$ runs through all five stages: it sets the cost of
-every step and the accuracy of every answer.
+every step and the accuracy of every answer. Each part opens by naming the
+stages it covers, and the conclusion (\cref{sec:conclusion}) walks the pipeline
+once more to record where $\chi$ stayed small and where it did not.
 
 \paragraph{How the four parts fit together.}
 \begin{itemize}
@@ -72,20 +77,24 @@ every step and the accuracy of every answer.
     by SVD, a short history of tensor networks, quantics tensor trains for
     functions and operators, and a first solver: the heat equation with
     explicit time stepping.
-  \item \textbf{Part~\partref{2} --- Linear algebraic routines.} Implicit time
-    stepping, which turns each step into a linear solve $Ax=b$ on the
-    low-rank manifold; encoding boundary and initial conditions; and the open
-    problems.
+  \item \textbf{Part~\partref{2} --- Linear algebra with tensor networks.}
+    Implicit time stepping, which turns each step into a linear solve $Ax=b$
+    on the low-rank manifold; the sweeping solvers and the cross interpolation
+    that make this possible; encoding boundary and initial conditions; and the
+    open problems, ending with nonlinearity.
   \item \textbf{Part~\partref{3} --- The forward problem.} Time evolution of the
     incompressible Navier--Stokes equations: flow initialization, masking
     arbitrary objects, and how far the ranks stretch.
-  \item \textbf{Part~\partref{4} --- The inverse problem.} Data-driven models:
-    given data rather than an equation, recover the dynamics.
+  \item \textbf{Part~\partref{4} --- Learning dynamics from data.} Given
+    snapshots rather than an equation, recover the dynamics: dynamic mode
+    decomposition and sparse regression, both carried out in tensor-train
+    format.
 \end{itemize}
 
 Parts~\partref{1} and~\partref{2} are prerequisites for the rest.
-Parts~\partref{3} and~\partref{4} are independent of one another and can
-be read in either order.
+Parts~\partref{3} and~\partref{4} can be read in either order: Part~\partref{4}
+reuses the Part~\partref{3} solver as a source of data in a few places, but does
+not depend on its details.
 
 \paragraph{Prerequisites.}
 Linear algebra --- in particular the singular value decomposition and its
@@ -93,18 +102,26 @@ optimality properties --- and a first course in numerical methods for PDEs
 (finite differences, explicit and implicit time stepping, stability). No
 background in quantum mechanics is assumed anywhere; where a quantum-many-body
 term is unavoidable, its numerical-analysis synonym is given alongside it in
-\cref{subsec:literature-survey}.
+\cref{subsec:mps}.
 
 \paragraph{Notation and conventions.}
+The same symbols mean the same things in every part.
 \begin{itemize}
-  \item $n$ is the number of tensors in a chain, so the grid has $N = 2^n$
-    points per encoded coordinate.
-  \item $\chi$ is the bond dimension, written \textsc{tt-rank} in the
-    numerical-analysis literature.
+  \item $n$ is the number of cores (tensors) per encoded coordinate, so the grid
+    has $N = 2^n$ points per coordinate.
+  \item $\chi$ is the bond dimension of a state and $\chi_A$ that of an operator
+    $A$. The numerical-analysis literature calls it the \textsc{tt-rank} and
+    writes it $r$; these notes use $\chi$ throughout.
+  \item $\varepsilon$ is a truncation tolerance. Time steps are indexed by $k$,
+    with $K$ steps in total, and the state is $\mathbf u$.
   \item Physical legs point down in diagrams; virtual legs run horizontally.
-  \item \enquote{MPS} and \enquote{tensor train} are used interchangeably, as are
-    \enquote{bond dimension} and \enquote{rank}; both vocabularies appear in the
-    papers these notes draw on.
+  \item \enquote{Tensor train} (TT) is the name of the format; \enquote{matrix
+    product state} (MPS) is its name in physics and is used for diagrams.
+    \enquote{Quantics tensor train} (QTT) is used only when the binary
+    indexing of the grid matters. \enquote{Bond dimension} and \enquote{rank}
+    are synonyms.
+  \item Terms from quantum many-body physics appear only in margin notes, next
+    to their numerical-analysis equivalents.
 \end{itemize}
 
 \paragraph{Margin notes.}
@@ -119,23 +136,36 @@ course repository. Every quantitative claim in these notes is measured there,
 on a laptop, and you are encouraged to disagree with any of them by rerunning
 the cell.
 
-Each part has one notebook that follows the slides in order, with exercises
---- and their solutions --- placed where the concept is introduced. Parts~\partref{1} and~\partref{2} build everything from scratch in
+Each part has one notebook, with exercises --- and their solutions --- placed
+where each concept is introduced. Parts~\partref{1} and~\partref{2} build everything from scratch in
 about five hundred lines of NumPy (\texttt{qtade\_tn.py}), because the mechanics
 are the point; Parts~\partref{3} and~\partref{4} move to \texttt{quimb} for the
 representation and compression, and keep the Part~\partref{2} solver, because no
 tensor-network library ships a linear solver for $Ax=b$. That seam is itself
 worth noticing.
 
+\paragraph{Where the field is now.}
+\margintext{Our own route through the subject: the 2024 framework fixed the
+encoding and the projection loop; the 2026 turbulence study asked how far the
+ranks stretch in 3D; the 2025 space--time paper removed the time loop
+altogether. Parts~\partref{3} and~\partref{4} follow that order.}
+The subject is moving quickly. Three-dimensional turbulence has been
+compressed, simulated and synthesized at $\mathrm{Re}_\lambda = 315$ on a
+$1024^3$ grid~\cite{Pisoni2026}; a two-dimensional compressible Euler solver
+reached the finals of the Airbus--BMW Quantum Computing Challenge
+2024~\cite{Peddinti2025}; space and time have been encoded in a single MPS,
+which also underlies MPS-DMD~\cite{Peddinti2025a}; and cross interpolation now
+has mature libraries, \texttt{xfac} in C++ and
+\texttt{Tensor\-Cross\-Inter\-polation.jl} in Julia~\cite{Nunez2025}.
+
 \input{sections/01-part1-tn-representations}
 \input{sections/02-part2-linear-algebra}
 \input{sections/03-part3-forward-problem}
 \input{sections/04-part4-inverse-problem}
+\input{sections/05-conclusion}
 
 
 \printbibliography[heading=bibintoc] % heading=bibintoc adds the References section to the ToC
 % shared bibliography.bib lives at the repo root, loaded via biblatex in preamble.tex
 
-\clearpage
-\input{sections/05-appendix}
 \end{document}
