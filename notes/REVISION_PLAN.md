@@ -38,10 +38,10 @@ The individual paragraphs are mostly good. The problem is architectural, and it 
      questions".
    - Nothing closes the course or returns to the single idea.
 4. **Material is duplicated across parts and the appendix, and the copies disagree.**
-   - The sharp-edge / disc-rank passage (17→128) appears three times (I:555–575,
-     II:476–497, III:239–247).
    - Rank inflation under products is stated four times.
-   - The 80% Poisson figure appears three times.
+   - The 80% Poisson figure appears three times, twice in Part II (II:205–230, 272, 631),
+     before the reader has met the Navier–Stokes solver it measures. It belongs to Part III
+     only.
    - DMRG and matrix cross are explained both in Part II and in the appendix, with different
      notation and different numbers:
      - the maxvol bound is "about one" vs "(r+1)";
@@ -197,9 +197,10 @@ bridge to Part III.
    - Define the residual once.
    - Delete "residual of the explicit update" (260–261).
    - Retitle the subsection, e.g. "Choosing tolerances", since χ_max is incidental to it.
-5. **Heat equation, implicit** [232–279]. Introduce `B` before use. Move "What the solve
-   actually costs" (205–230, a CFD measurement) here as a one-line forward pointer, stated
-   once.
+5. **Heat equation, implicit** [232–279]. Introduce `B` before use. **No CFD numbers
+   in Part II:** move "What the solve actually costs" (205–230, a Navier–Stokes measurement,
+   including the 80% Poisson share) to Part III, and delete the 80% margin notes at 272
+   and 631.
 6. **Getting functions and boundary conditions into TT format** [320–448, merged with
    appendix 10–82].
    - Use one cross formula (`eq:matrix-ci` *or* `eq:skeleton`) and one maxvol bound.
@@ -210,7 +211,6 @@ bridge to Part III.
      (table 530–555), but it does make TT-cross robust.
    - That resolves the contradiction between "Sharpness alone is free" (488) and "give up
      the sharp edge" (499).
-   - Cut 476–497 to one sentence citing Part I.
    - Rename the mask parameter to `β`.
    - Move the Navier–Stokes pipeline (557–571) to Part III.
    - Line 514 describes a figure that is not in the notes: insert it or give its numbers.
@@ -233,7 +233,9 @@ honestly how far the ranks stretch.
    - Explain pressure once (merge 266, 284–317).
    - **Add one sentence on why an explicit predictor is acceptable here**, given Part II's
      case against explicit schemes.
-   - Cut the mask to a pointer to Part II.
+   - Cut the smoothed-mask re-derivation to a pointer to `eq:smoothed-mask` in Part II.
+   - Receive "What the solve actually costs" from Part II; this is the one place where the
+     80% Poisson share appears.
    - Rename the paragraph head "Recover the solution." to "Solution retrieval.".
 4. **Laminar validation** [440–477, plus the demonstrator remarks 393–437]. Put Peddinti's
    results and the course's own results side by side.
@@ -295,7 +297,7 @@ Language:
 
 Each phase is one commit. After every phase run `latexmk -lualatex main.tex`; it must build
 with **no undefined references or multiply-defined labels**. The CI workflow
-`build-notes.yml` does the same on push.
+`build-notes.yml` does the same on push; without a TeX install, `python scripts/check_refs.py` catches duplicate labels, dangling refs and unbalanced environments.
 
 | Phase | Work | Size | Risk |
 |---|---|---|---|
@@ -314,14 +316,22 @@ Out of scope: slides and notebooks. The notes will no longer follow slide order 
 the decks must stay in sync, that is a separate pass; the recommendation is to let the notes
 lead.
 
-## 6. Decisions needed from the authors
+## 6. Decisions (resolved)
 
-1. **Notes vs slide order.** This plan breaks slide order in every part. Is that acceptable?
-   (Recommended: yes. The notes are read, the slides are presented.)
-2. **Appendix.** Fold it into Part II (recommended), or keep an appendix holding *only* the
-   algorithms, with the Part II copies cut to pointers?
-3. **Part IV title.** "Learning dynamics from data" (recommended), or keep "The inverse
-   problem" and rewrite IV:40–49 to fit it?
-4. **Part III ↔ IV independence.** Soften the claim in `main.tex` (recommended), or remove
-   Part IV's uses of the Part III solver?
-5. **Conclusion section.** Approve the new ~1-page `05-conclusion.tex`.
+The authors accepted the recommended option in each case.
+
+1. **Notes vs slide order.** The notes follow their own argument. Source comments may still
+   name the matching deck.
+2. **Appendix.** Folded into Part II; `05-appendix.tex` is removed.
+3. **Part IV title.** "Learning Dynamics from Data".
+4. **Part III ↔ IV independence.** The claim in `main.tex` is softened to say that Part IV
+   reuses the Part III solver.
+5. **Conclusion section.** Added as `05-conclusion.tex`.
+
+## 7. Further improvements to be made
+
+Deferred from this pass:
+
+- **Sharp-edge / disc-rank passage.** The passage (rank-2 step automaton; disc χ 17→128)
+  appears three times (I:555–575, II:476–497, III:239–247). Keep one canonical version in
+  Part I and reduce the other two to a sentence and a `\cref`.
