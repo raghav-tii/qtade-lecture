@@ -1,28 +1,37 @@
-\section{Part IV: The Inverse Problem --- Data-Driven Models}
+\section{Part IV: Learning Dynamics from Data}
 \label{sec:part4}
 \lecture{01}{10}{2026}
 
-% Follows slides/part4.pdf (QTADE 2026, Part IV), in slide order:
-% the inverse problem -> DMD -> space-time MPS encoding and the bonus PDE
-% solver -> MPS-DMD -> SINDy, MANDy and more. One subsection per block.
+% Companion deck: slides/part4.pdf (QTADE 2026, Part IV). The notes follow
+% their own argument: from equations to data -> the curse again -> DMD ->
+% data as a space-time TT -> MPS-DMD -> SINDy and MANDy -> closing remark on
+% the space-time solver -> outlook.
 
-Parts~\partref{1}--\partref{3} built a function representation (QTTs), the
-linear algebra on top of it, and spent both on the forward problem: solving the
-Navier--Stokes equations. Part~\partref{4} inverts that assumption. What we have
-instead are \textbf{snapshots} $\{\mathbf u(t_k)\}$ --- from an experiment, from
-DNS output, or from sensors. What we lack is the operator, the closure, and
-sometimes the equation itself.
+Parts~\partref{1}--\partref{3} assumed that the equation was known. They built
+a representation for fields and operators, the linear algebra on top of it, and
+spent both on the forward problem of solving the Navier--Stokes equations. This
+part drops that assumption. What we have instead are \textbf{snapshots}
+$\{\mathbf u_k\}$ of a state, from an experiment, from DNS output or from
+sensors; what we lack is the operator, the closure, and sometimes the equation
+itself. The claim of this part is that the curse of dimensionality that hits PDE
+solvers hits data-driven models just as hard, in the SVD of DMD and in the
+dictionary of SINDy, and that the same compressed format lifts it from both
+without giving up interpretability.
 
-The claim of this part is that the curse of dimensionality that hits PDE solvers
-hits data-driven models just as hard --- in the SVD of DMD and in the dictionary
-of SINDy --- and that the same compressed format lifts it from both, without
-giving up interpretability.
+Pipeline stages covered: the TN encoding (data loaded as a space--time tensor
+train), time evolution (forecasting with the learned operator) and solution
+retrieval (modes, eigenvalues and sparse equations). The first stage, the
+equation, is now the unknown. Part~\partref{4} reuses the Part~\partref{3}
+solver in two places: as the time-stepping alternative in
+\cref{subsec:dmd-space-time}, and as the physical prior in the hybrid methods of
+\cref{subsec:part4-outlook}. Otherwise it depends only on
+Parts~\partref{1} and~\partref{2}.
 
-\subsection{The Inverse Problem}
+\subsection{From Equations to Data}
 \label{subsec:inverse-problem}
 % Keywords: simulation vs. inverse problems vs. discovering physics,
-% motivation, problem statement, prediction vs. learning, the spectrum of
-% data-driven methods.
+% motivation, problem statement, the spectrum of data-driven methods, the
+% curse of dimensionality in data.
 
 \paragraph{A classification of tasks.}
 \margintext{The three-way split follows the ETH course \emph{AI in the Sciences
@@ -47,44 +56,36 @@ the resulting properties. Which symbol is unknown classifies the task:
     \end{equation}%
 \end{itemize}
 This part is about the third task, in the form it takes for dynamical systems.
+It is not about the classical inverse problem of the second item, which is why
+the part is titled \enquote{learning dynamics} rather than \enquote{inverse
+problems}.
 
 \paragraph{Motivation.}
-We just solved PDEs, so why go data-driven? Because measurements vastly
-outnumber models: most real systems are observed far more easily than they are
-written down. And why not simply AI/ML? Because naively using deep learning for
-scientific tasks usually leads to a lack of interpretability, poor
-generalization, and a large demand for training data.
+Data-driven models are worth building after three parts of PDE solvers because
+measurements vastly outnumber models: most real systems are far easier to
+observe than to write down. Deep learning is the obvious candidate, but applied
+naively to scientific tasks it tends to give models that cannot be interpreted,
+generalize poorly, and need large amounts of training data.
 
 \paragraph{Problem statement.}
 We are given measurement data as a time series,
 \begin{equation}
-  \mathcal D = \{\mathbf u_k\}_{k=0}^{N_t}, \qquad
+  \mathcal D = \{\mathbf u_k\}_{k=0}^{K}, \qquad
   \mathbf u_k = \mathbf u(t_k) \in \mathbb R^{N_x}, \qquad
-  t_k = k\,\Delta t .
+  t_k = k\,\Delta t ,
   \label{eq:time-series}
 \end{equation}%
-The continuous dynamics $\mathrm d\mathbf u/\mathrm dt = \mathbf f(\mathbf u)$
-become a discrete map $\mathbf u_{k+1} = \mathbf F(\mathbf u_k)$, and
-\eqref{eq:discover-physics} specializes to
+where $N_x$ is the number of spatial grid points. The continuous dynamics
+$\mathrm d\mathbf u/\mathrm dt = \mathbf f(\mathbf u)$ become a discrete map
+$\mathbf u_{k+1} = \mathbf F(\mathbf u_k)$, and \eqref{eq:discover-physics}
+specializes to
 \begin{equation}
   \hat{\mathbf F} = \arg\min_{\mathbf G\in\mathcal M}
-  \sum_{k=0}^{N_t-1} \bigl\lVert \mathbf u_{k+1} - \mathbf G(\mathbf u_k)\bigr\rVert_2^2 .
+  \sum_{k=0}^{K-1} \bigl\lVert \mathbf u_{k+1} - \mathbf G(\mathbf u_k)\bigr\rVert_2^2 .
   \label{eq:inverse-ls}
 \end{equation}%
-Two tasks follow, and they must be kept separate:
-\margintext{Conflating these two is the most common error in the data-driven
-literature. A method can be excellent at one and useless at the other.}
-\begin{itemize}
-  \item \textbf{Prediction:} forecast future states,
-    $\hat{\mathbf u}_{N_t+k} = \hat{\mathbf F}^{\,k}(\mathbf u_{N_t})$. An
-    interpretable model is not required.
-  \item \textbf{Learning:} characterize the spectrum. For a linear model
-    $\hat{\mathbf F}(\mathbf u) = A\mathbf u$ this means the eigenpairs
-    $A\boldsymbol\phi_j = \lambda_j\boldsymbol\phi_j$ --- and an interpretable
-    model is the entire point.
-\end{itemize}
-Neural surrogates are the clean illustration of the split: they can predict
-well and explain nothing.
+The fitted map can be used to forecast future states, and, if it is
+interpretable, to explain them.
 
 \paragraph{The spectrum of methods.}
 Data-driven methods line up between two extremes:
@@ -94,61 +95,59 @@ Data-driven methods line up between two extremes:
   $\;\to\;$ SINDy $\;\to\;$ solving PDEs \\[2pt]
   \emph{fully data-driven} \hfill \emph{fully physics-driven}
 \end{center}
-Neural networks~\cite{Raissi2019,Lu2021,Li2021} sit at the data end, the
-solvers of Part~\partref{3} at the physics end. DMD and SINDy sit in between:
-they learn from data, but what they return is a model you can read --- modes and
+Neural networks~\cite{Raissi2019,Lu2021,Li2021} sit at the data end; they can
+forecast well and still return nothing that can be read as a model. The solvers
+of Part~\partref{3} sit at the physics end. DMD and SINDy sit in between: they
+learn from data, but what they return is a model you can read --- modes and
 eigenvalues for DMD, a sparse equation for SINDy. They are the two methods of
 this part.
 
 \paragraph{The same curse, again.}
-\begin{itemize}
-  \item Snapshot matrices are $N_x \times N_t$ with $N_x = 2^n$, so even the SVD
-    is prohibitive: $\mathcal O(N_x N_t \min(N_x,N_t))$ work and
-    $\mathcal O(N_x N_t)$ memory. This is the wall of
-    \cref{subsec:numerical-methods-intro} in a new costume.
-  \item SINDy's dictionary of candidate functions grows exponentially with the
-    state dimension (\cref{subsec:sindy-mandy}).
-  \item The data brings its own problems on top: sparse and noisy measurements,
-    short time series, non-stationarity, and no guarantee that a closed model
-    exists at all.
-  \item \textbf{The tensor-network promise:} compress \emph{both} space and
-    time (or every state dimension), do the linear algebra inside the compressed
-    format, and keep the modes interpretable.
-\end{itemize}
+Both methods run into the wall of \cref{subsec:numerical-methods-intro} in a new
+form. A snapshot matrix is $N_x \times K$ with $N_x = 2^n$, so even its SVD is
+prohibitive: it takes $\mathcal O(N_x K \min(N_x,K))$ work and
+$\mathcal O(N_x K)$ memory. SINDy's dictionary of candidate functions grows
+exponentially with the state dimension (\cref{subsec:sindy-mandy}). Data also
+brings problems that equations do not: measurements are sparse and noisy, time
+series are short and may be non-stationary, and there is no guarantee that a
+closed model exists at all. The tensor-network response is the one of
+Parts~\partref{1}--\partref{3}: compress both space and time, or every state
+dimension, carry out the linear algebra inside the compressed format, and keep
+the output interpretable.
 
 \subsection{Dynamic Mode Decomposition}
 \label{subsec:dmd}
 % Keywords: DMD algorithm, snapshot matrices, regression A = X' X^+,
 % diagnostics and future-state prediction, Koopman operator viewpoint.
 
-\paragraph{DMD in one line.}
+\paragraph{The idea.}
 Assume the dynamics are approximately linear in the state,
 $\mathbf u_{k+1} \approx A\,\mathbf u_k$, find the best such $A$ from the data
 --- \eqref{eq:inverse-ls} with $\mathcal M$ the linear maps --- and read off its
-eigenpairs~\cite{Schmid2010,Kutz2016}. Each eigenvalue gives a \textbf{growth
-rate and a frequency}; each eigenvector gives a \textbf{spatial mode}. That is
-the whole appeal: the output is a set of individually interpretable physical
-structures (diagnostics), and the same model forecasts (future-state
-prediction).
+eigenpairs $A\boldsymbol\phi_j = \lambda_j\boldsymbol\phi_j$~\cite{Schmid2010,Kutz2016}.
+Each eigenvalue gives a \textbf{growth rate and a frequency}; each eigenvector
+gives a \textbf{spatial mode}. The output is therefore a set of individually
+interpretable physical structures, and the same linear model also forecasts
+future states.
 
 \paragraph{The standard recipe.}
 Collect the snapshots into two shifted matrices and regress:
 \begin{equation}
-  X  = [\mathbf u_0, \dots, \mathbf u_{N_t-1}], \qquad
-  X' = [\mathbf u_1, \dots, \mathbf u_{N_t}], \qquad
+  X  = [\mathbf u_0, \dots, \mathbf u_{K-1}], \qquad
+  X' = [\mathbf u_1, \dots, \mathbf u_{K}], \qquad
   X' = AX \;\Longrightarrow\; A = X'X^{+} .
   \label{eq:dmd-regression}
 \end{equation}%
 $A$ is $N_x\times N_x$ and is never formed. With the SVD $X = U\Sigma V^\dagger$
-truncated to rank $r$,
+truncated to its leading $\chi$ singular values,
 \begin{equation}
   \tilde{A} = U^{\dagger} X' V \Sigma^{-1}, \qquad
   \tilde{A} W = W\Lambda, \qquad
   \Phi = UW .
   \label{eq:dmd-recipe}
 \end{equation}%
-The matrix $\tilde{A}$ is the projection of $A$ onto the leading $r$ left
-singular vectors, so it is $r \times r$. The DMD modes are the columns of
+The matrix $\tilde{A}$ is the projection of $A$ onto the leading $\chi$ left
+singular vectors, so it is $\chi \times \chi$. The DMD modes are the columns of
 $\Phi$, and the cost is dominated by the SVD.
 
 \begin{remark}[Koopman view]
@@ -156,116 +155,84 @@ $\Phi$, and the cost is dominated by the SVD.
   infinite-dimensional Koopman operator acting on
   observables~\cite{Mezic2005,Rowley2009,Tu2014}. The nonlinear dynamics are
   linear in the space of observables, but that space is infinite-dimensional;
-  DMD truncates it to $r$ dimensions. That is why a linear method can describe
-  nonlinear dynamics without contradiction, and also why it fails when $r$
-  modes do not span the relevant observables~\cite{Williams2015,Colbrook2024}.
+  DMD truncates it to $\chi$ dimensions. That is why a linear method can
+  describe nonlinear dynamics without contradiction, and also why it fails when
+  $\chi$ modes do not span the relevant observables~\cite{Williams2015,Colbrook2024}.
 \end{remark}
 
-\subsection{Space-Time MPS Encoding and a Bonus PDE Solver}
-\label{subsec:dmd-space-time}
-% Keywords: space-time tensorization, binary encoding of x and t, temporal
-% bond dimension, time-stepping vs. space-time methods, all-at-once solve,
-% Newton with space-time Jacobian.
+\subsection{Data as a Space--Time Tensor Train}
+\label{subsec:space-time-data}
+% Keywords: space-time tensorization, binary encoding of x and t, loading
+% measured snapshots, bit ordering, temporal bond dimension.
 
-\paragraph{\#1. Discretization.}
+\paragraph{Discretization.}
 Binarize \textbf{both} coordinates~\cite{Peddinti2025a}, exactly as in
 Part~\partref{1}:
 \begin{equation}
-  x = \sum_{k=1}^{n} i_k\, 2^{-k}, \qquad
-  t = T \sum_{l=1}^{m} j_l\, 2^{-l}, \qquad
-  i_k, j_l \in \{0,1\},
+  x = \sum_{l=1}^{n} i_l\, 2^{-l}, \qquad
+  t = T \sum_{l=1}^{n_t} j_l\, 2^{-l}, \qquad
+  i_l, j_l \in \{0,1\},
   \label{eq:space-time-bits}
 \end{equation}%
-so that $f(x,t) \longleftrightarrow f(i_1,\dots,i_n,j_1,\dots,j_m)$, with
-$N_x = 2^n$ and $N_t = 2^m$.
+so that $f(x,t) \longleftrightarrow f(i_1,\dots,i_n,j_1,\dots,j_{n_t})$, with
+$N_x = 2^n$ spatial grid points and $K = 2^{n_t}$ time samples.
 
-\paragraph{\#2. MPS encoding.}
+\paragraph{Encoding.}
 Put all the bits on one chain, space first and then time:
 \begin{equation}
   f(x,t) \;\to\; A_1^{(i_1)} A_2^{(i_2)} \cdots A_n^{(i_n)}\,
-  A_{n+1}^{(j_1)} A_{n+2}^{(j_2)} \cdots A_{n+m}^{(j_m)} .
+  A_{n+1}^{(j_1)} A_{n+2}^{(j_2)} \cdots A_{n+n_t}^{(j_{n_t})} .
   \label{eq:space-time-mps}
 \end{equation}%
-\margintext{The conceptual move is small and the consequence is large: once time
-is just more legs, there is no time loop to parallelize and no step-to-step
-error accumulation along it.}
-\begin{itemize}
-  \item Time stops being a loop and becomes $m = \log_2 N_t$ more legs on the
-    same chain.
-  \item \textbf{Ordering matters here too.} Space-then-time works generally;
-    time-then-space converged better for the nonlinear Schr\"odinger case,
-    giving smoother vectorized solutions.
-  \item The \textbf{temporal} bond dimension --- the rank across the cut
-    separating space legs from time legs --- is a direct measure of temporal
-    complexity. A standing wave $f(x)g(t)$ has rank $1$ across that cut, a
-    travelling wave rank $2$, white noise saturates. Smooth dynamics means small
-    $\chi$.
-\end{itemize}
+Time stops being a loop and becomes $n_t = \log_2 K$ more legs on the same
+chain. The whole data set is held in $\mathcal O((n+n_t)\chi^2)$ numbers rather
+than $N_x K$.
 
-\paragraph{A bonus PDE solver.}
-Consider
-\begin{equation}
-  \partial_t u + F(u, \partial_x u, \dots, \partial_x^q u) = g(x,t) .
-  \label{eq:generic-evolution}
-\end{equation}%
-There are two ways to use the chain.
-\begin{itemize}
-  \item \textbf{Time-stepping:} $\mathbf u_{t+1} = \mathbf u_t +
-    \mathbb F(\mathbf u_t)\,\Delta t$. One spatial MPS on $n$ sites, updated $N_t$
-    times; this is the Part~\partref{3} solver.
-  \item \textbf{Space-time methods:} assemble the whole history as one linear
-    system on the $n+m$ space-time sites,
-    \begin{equation}
-      (\mathbb I_x \otimes \mathbb D_t + \mathbb F_x \otimes \mathbb I_t)\,
-      \mathbf u = \text{b.c.} + \text{i.c.},
-      \label{eq:space-time-system}
-    \end{equation}%
-    with $\mathbb D_t$ a time-difference MPO and $\mathbb F_x$ the spatial
-    operator, and solve it \textbf{once} with DMRG (\cref{subsec:linear-solvers}).
-    There is no time-stepping loop at all, so the scheme is not subject to a
-    step-size stability condition.
-  \item A nonlinear $F$ requires Newton iterations with the space--time
-    Jacobian, which converge quadratically; Picard iteration is cheaper per step
-    but converges only linearly.
-\end{itemize}
+\paragraph{Loading measured snapshots.}
+Data arrives as snapshots, not as a function that can be queried, so the main
+route into the format is sequential. Compress each snapshot $\mathbf u_k$ into
+an $n$-site train (\cref{subsec:mps}), stack the snapshot trains one after
+another along the time legs, and truncate after each addition. This one-off
+construction is linear in the number of time steps $K$. Everything after it ---
+the decomposition, the projection, the forecast --- works on the compressed
+train. When the data come from a space--time solve instead, the train is
+produced directly and this step disappears (\cref{subsec:dmd-space-time}).
 
-\noindent
-On a $1024 \times 1024$ space--time grid~\cite{Peddinti2025a}:
+\paragraph{Bit ordering.}
+Ordering matters here as it did for several spatial coordinates in
+\cref{subsec:qtt-functions-operators}. Space-then-time is the general choice.
+For the one-dimensional nonlinear Schr\"odinger (NLS) equation,
+$i\,\partial_t\psi = -\partial_x^2\psi + g\,\lvert\psi\rvert^2\psi$ for a
+complex field $\psi(x,t)$ with coupling $g$, one of the test cases
+of~\cite{Peddinti2025a}, the time-then-space ordering converged better in the
+space--time solve and gave smoother solutions.
 
-\begin{center}
-  \begin{tabular}{@{}llp{0.38\textwidth}@{}}
-    \toprule
-    \textsc{Equation} & $\chi$ & \textsc{Compression} \\
-    \midrule
-    Heat, wave                    & $2$--$22$ & $> 99\%$ \\
-    Burgers, nonlinear diffusion  & $10$      & $> 99\%$, residual
-                                                $\sim\!10^{-3}$ \\
-    \bottomrule
-  \end{tabular}
-\end{center}
-
-\noindent
-The space--time MPS that such a solve returns is exactly the input that MPS-DMD
-needs. That is the "bonus": the same data structure serves as solver output and
-as data-driven-model input, with no conversion layer in between.
+\paragraph{The temporal bond as a diagnostic.}
+The \textbf{temporal} bond dimension, the rank across the cut separating space
+legs from time legs, is a direct measure of temporal complexity. A standing wave
+$f(x)g(t)$ has rank $1$ across that cut, a travelling sine wave rank $2$, and
+white noise saturates the bond. Smooth dynamics means small $\chi$ across the
+cut.
 
 \subsection{MPS-DMD}
 \label{subsec:mps-dmd}
 % Keywords: snapshot matrices in MPS form, POD from the mixed-canonical
 % gauge, projection, eigendecomposition, prediction, complexity, prior
-% tensor-based DMD, results.
+% tensor-based DMD, results, noise vs truncation.
 
-Standard DMD needs an SVD of an $N_x \times N_t$ matrix. Once the data is a
-space--time MPS, that SVD is unnecessary: \textbf{MPS-DMD}~\cite{Peddinti2025a}
-runs the entire pipeline \eqref{eq:dmd-regression}--\eqref{eq:dmd-recipe}
-\emph{inside} the train, never forming a snapshot matrix.
+Standard DMD needs an SVD of an $N_x \times K$ matrix. Once the data is a
+space--time train, that SVD is unnecessary: \textbf{MPS-DMD}~\cite{Peddinti2025a}
+runs the entire recipe \eqref{eq:dmd-regression}--\eqref{eq:dmd-recipe}
+\emph{inside} the train and never forms a snapshot matrix. In pipeline terms,
+the encoding stage is the space--time train of \cref{subsec:space-time-data},
+the four steps below replace the dense linear algebra, step~4 is the time
+evolution, and the modes and eigenvalues are what is retrieved.
 
 \paragraph{Snapshot matrices.}
-The space--time MPS \emph{is} the matrix $X = [\mathbf u_0, \dots,
-\mathbf u_{N_t-1}]$ with row index $i = (i_1,\dots,i_n)$ and column index
-$j = (j_1,\dots,j_m)$. The shifted matrix $X' = [\mathbf u_1,\dots,\mathbf u_{N_t}]$
-is obtained by a rank-2 shift MPO on the time legs. The goal is $A$ with
-$X' = AX$.
+The space--time train \emph{is} the matrix $X$ of \eqref{eq:dmd-regression},
+with row index $i = (i_1,\dots,i_n)$ and column index
+$j = (j_1,\dots,j_{n_t})$. The shifted matrix $X'$ is obtained by a rank-2
+shift MPO on the time legs. The goal is $A$ with $X' = AX$.
 
 \begin{enumerate}
   \item \textbf{Proper orthogonal decomposition (POD) of $X$.} Gauge into mixed
@@ -279,64 +246,70 @@ $X' = AX$.
     \end{equation}%
     so the SVD comes for free: $U$ is the left-orthogonal space half of the
     chain, $\Sigma$ the bond singular values, $V$ the right-orthogonal time half.
-  \item \textbf{Project $A$ onto the span of $U$:}
+  \item \textbf{Projection of $A$ onto the span of $U$:}
     \begin{equation}
       \tilde{A} := U^{\dagger} A U = U^{\dagger} X' V \Sigma^{-1},
       \label{eq:mps-project}
     \end{equation}%
     a $\chi \times \chi$ matrix obtained by contracting $U^\dagger$, the shifted
-    train $X'$ and $V$. Here $\chi$ plays the role of the truncation rank $r$
-    in~\eqref{eq:dmd-recipe}.
+    train $X'$ and $V$. The bond dimension $\chi$ plays the role of the
+    truncation rank in~\eqref{eq:dmd-recipe}.
   \item \textbf{Eigendecomposition:}
     $\tilde{A}W = W\Lambda \;\Longrightarrow\; A\,UW = UW\,\Lambda$, so the
     modes $\Phi = UW$ stay in train form.
   \item \textbf{Prediction} by local contractions alone,
     \begin{equation}
-      \mathbf u_{T+k} = A^k \mathbf u_T, \qquad
+      \mathbf u_{K-1+k} = A^k \mathbf u_{K-1}, \qquad
       A^k = U W \Lambda^k W^{-1} U^{\dagger} .
       \label{eq:mps-dmd-predict}
     \end{equation}%
 \end{enumerate}
-
-Raising $\Lambda$ to the power $k$ costs nothing, so forecasting $1000$ steps
-ahead costs the same as forecasting one.
+Since $\Lambda$ is diagonal, raising it to the power $k$ takes $\chi$ scalar
+powers, so forecasting $1000$ steps ahead costs the same as forecasting one.
 
 \begin{remark}[The last snapshot]
-  The non-periodic time shift sends the final snapshot to zero, so the raw
-  contraction in step~2 gives $QP^\top$ rather than the least-squares $QP^{+}$
-  that DMD wants. Writing $v$ for the last column of $V^\dagger$,
-  $PP^\top = I - vv^\top$, and one Sherman--Morrison rank-one correction recovers
-  exact DMD. Skipping it damps every eigenvalue by roughly $1/N_t$ per step ---
-  invisible in the spectrum, ruinous after a few hundred steps of prediction.
+  The train holds $K$ snapshots $\mathbf u_0,\dots,\mathbf u_{K-1}$, and the
+  shift MPO is not periodic: it maps them to
+  $[\mathbf u_1,\dots,\mathbf u_{K-1},0]$. Split the right factor by columns,
+  $V^\dagger = [P \;\; v]$, so that the $\chi\times(K-1)$ block $P$ holds the
+  time coefficients of $\mathbf u_0,\dots,\mathbf u_{K-2}$ and the column $v$
+  those of $\mathbf u_{K-1}$. The pairs DMD should fit are
+  $X_0 = U\Sigma P$ and $X_1 = [\mathbf u_1,\dots,\mathbf u_{K-1}]$, and least
+  squares gives $A = X_1X_0^{+} = X_1P^{+}\Sigma^{-1}U^\dagger$ with
+  $P^{+} = P^\dagger(PP^\dagger)^{-1}$. The raw contraction of step~2 uses
+  $P^\dagger$ in place of $P^{+}$. Because $V^\dagger$ has orthonormal rows,
+  $PP^\dagger = I - vv^\dagger$, and the Sherman--Morrison formula
+  $(I - vv^\dagger)^{-1} = I + vv^\dagger/(1 - v^\dagger v)$ turns the
+  correction into one rank-one update of the $\chi\times\chi$ matrix
+  $\tilde A$, which recovers exact DMD. Skipping it damps every eigenvalue by
+  roughly $1/K$ per step: invisible in the spectrum, ruinous after a few hundred
+  steps of prediction.
 \end{remark}
 
-\paragraph{TTs for DMD.}
+\paragraph{Prior tensor-based DMD.}
 Tensor formats have been used for DMD before. Klus \emph{et
 al.}~\cite{Klus2018} introduced tensor-based DMD using spatial compression,
-leaving the temporal dimension uncompressed, so the cost stays linear in $N_t$.
+leaving the temporal dimension uncompressed, so the cost stays linear in $K$.
 \'Sroda \emph{et al.}~\cite{Sroda2025}, in independent work on tensor-train
 nonequilibrium Green's functions, use DMD as a predictor with the same
 complexity. Compressing time as well changes the scaling:
 \begin{equation}
-  \text{DMD: } \mathcal O\bigl(N_x N_t \min(N_x, N_t)\bigr), \qquad
-  \text{MPS-DMD: } \mathcal O\bigl((n+m)\,\chi^3\bigr), \quad
-  N_x = 2^n,\; N_t = 2^m .
+  \text{DMD: } \mathcal O\bigl(N_x K \min(N_x, K)\bigr), \qquad
+  \text{MPS-DMD: } \mathcal O\bigl((n+n_t)\,\chi^3\bigr), \quad
+  N_x = 2^n,\; K = 2^{n_t} ,
   \label{eq:mps-dmd-cost}
 \end{equation}%
-For externally supplied data, where no space--time solve produced the MPS, stack
-the snapshot MPSs sequentially and truncate after each; that one-off
-construction is linear in the number of timesteps.
+which is logarithmic in both $N_x$ and $K$. The one-off loading of measured
+snapshots (\cref{subsec:space-time-data}) is not included in this count.
 
 \paragraph{Results.}
-\margintext{The headline is the scaling, not the compression ratio: runtime
-logarithmic in \emph{both} $N_x$ and $N_t$, where prior tensor DMD variants are
-linear in $N_t$.}
 On the K\'arm\'an vortex street behind a cylinder~\cite{Peddinti2025a}, MPS-DMD
 trained on the first $\sim\!1000$ steps reproduces the training data and
 continues the oscillation of the $x$-velocity at a probe point into the
-prediction window. The prediction error falls with rank $r$ at essentially the
-same rate as exact DMD, while the wall-clock time stays several times below it
-across ranks $r = 10$--$100$.
+prediction window. The prediction error falls with $\chi$ at essentially the
+same rate as for exact DMD, and in the reported benchmark the wall-clock time of
+MPS-DMD stays several times below that of exact DMD at every bond dimension from
+$\chi = 10$ to $100$.
 \begin{center}
   \begin{tabular}{@{}lp{0.62\textwidth}@{}}
     \toprule
@@ -352,162 +325,207 @@ across ranks $r = 10$--$100$.
   \end{tabular}
 \end{center}
 
-\begin{remark}
-  The truncation that makes MPS-DMD affordable is also, viewed differently, a
-  regularizer: discarding small singular values discards low-amplitude
-  structure, some of which is noise. Whether it denoises or faithfully
-  reproduces the noise depends on where the noise sits in the singular-value
-  spectrum. Broadband noise spreads across all singular values and is partly
-  removed; structured or low-rank noise is retained exactly. Recall from
-  \cref{subsec:finding-qtt} that cross interpolation fits noise faithfully if
-  you let it.
-\end{remark}
+\paragraph{Noise and truncation.}
+The truncation that makes MPS-DMD affordable is also a regularizer: discarding
+small singular values discards low-amplitude structure, some of which is noise.
+Whether it denoises the data or faithfully reproduces the noise depends on where
+the noise sits in the singular-value spectrum. Broadband noise spreads across
+all singular values and is partly removed; structured or low-rank noise is
+retained exactly. Cross interpolation, likewise, fits noise faithfully if it is
+allowed to (\cref{subsec:finding-qtt}). There is at present no theory that
+predicts which of the two outcomes a given data set will produce, so the
+interaction of truncation with measurement noise remains an open problem.
 
-\subsection{SINDy, MANDy and More}
+\subsection{SINDy and MANDy}
 \label{subsec:sindy-mandy}
 % Keywords: sparse identification of nonlinear dynamics, candidate
 % dictionaries, curse of dimensionality, tensor form, MANDy, TT-based
 % learning of dynamical laws, TT-WSINDy, applications.
 
 DMD recovers an operator. The more ambitious task is to recover the
-\emph{equation} --- and the difference matters, because an operator is tied to
-the regime it was fitted in whereas an equation is not.
+\emph{equation}, and the difference matters: an operator is tied to the regime
+in which it was fitted, whereas an equation is not.
 
 \paragraph{SINDy.}
 Sparse identification of nonlinear dynamics~\cite{Brunton2016} starts from
-$\dot{\mathbf x}(t) = \mathbf f(\mathbf x(t))$ and stacks the state and its time
-derivative, one row per sample:
+$\dot{\mathbf u}(t) = \mathbf f(\mathbf u(t))$ for a state
+$\mathbf u\in\mathbb R^p$; we write $p$ for the state dimension to keep $N$ for
+grid sizes. It stacks the state and its time derivative at $K$ sample times,
+one row per sample:
 \begin{equation}
-  \mathbf X = \begin{bmatrix} \mathbf x^T(t_1) \\ \vdots \\ \mathbf x^T(t_m) \end{bmatrix},
+  \mathbf U = \begin{bmatrix} \mathbf u^T(t_1) \\ \vdots \\ \mathbf u^T(t_K) \end{bmatrix},
   \qquad
-  \dot{\mathbf X} = \begin{bmatrix} \dot{\mathbf x}^T(t_1) \\ \vdots \\ \dot{\mathbf x}^T(t_m) \end{bmatrix}.
+  \dot{\mathbf U} = \begin{bmatrix} \dot{\mathbf u}^T(t_1) \\ \vdots \\ \dot{\mathbf u}^T(t_K) \end{bmatrix}.
   \label{eq:sindy-data}
 \end{equation}%
-A library $\Theta(\mathbf X)$ evaluates candidate functions (constant, $x_i$,
-$x_ix_j$, $\sin x_i$, \dots) column by column, and the recovered dynamics are
+A library $\Theta(\mathbf U)$ evaluates candidate functions (constant, $u_i$,
+$u_iu_j$, $\sin u_i$, \dots) column by column, and the recovered dynamics are
 \begin{equation}
-  \dot{\mathbf X} = \Theta(\mathbf X)\,\Xi ,
+  \dot{\mathbf U} = \Theta(\mathbf U)\,\Xi ,
   \label{eq:sindy}
 \end{equation}%
 with $\Xi$ found by sparse regression (sequentially thresholded least squares).
-The nonzero entries of $\Xi$ \emph{are} the equation: on Lorenz data, SINDy
-returns the three Lorenz equations and nothing else.
+The nonzero entries of $\Xi$ \emph{are} the equation. The standard test is a
+trajectory of the Lorenz system, $p = 3$,
+\begin{equation*}
+  \dot u_1 = 10\,(u_2 - u_1), \qquad
+  \dot u_2 = u_1(28 - u_3) - u_2, \qquad
+  \dot u_3 = u_1u_2 - \tfrac{8}{3}\,u_3 ,
+\end{equation*}
+a chaotic three-variable model of convection. From samples of $\mathbf u$ and
+$\dot{\mathbf u}$ along that trajectory and a polynomial library, SINDy returns
+these three equations and nothing else~\cite{Brunton2016}.
 
-\paragraph{SINDy: curse of dimensionality.}
+\paragraph{The curse of dimensionality in SINDy.}
 From here on we use the transposed convention: data
-$\mathbf X\in\mathbb R^{N\times M}$, $\mathbf X[i,m] \approx x_i(t_m)$, with $M$
-the number of time samples and $N$ the state dimension. Choose $J$ univariate
+$\mathbf U\in\mathbb R^{p\times K}$, $\mathbf U[i,k] \approx u_i(t_k)$, with $K$
+the number of time samples and $p$ the state dimension. Choose $J$ univariate
 functions $\psi_1,\dots,\psi_J:\mathbb R\to\mathbb R$ and take all their
 products as candidates,
 \begin{equation}
-  \phi_{\mathbf j}(\mathbf x) = \prod_{i=1}^{N} \psi_{j_i}(x_i), \qquad
-  \Theta[\mathbf j, m] = \phi_{\mathbf j}(\mathbf X[:,m]),
+  \phi_{\mathbf j}(\mathbf u) = \prod_{i=1}^{p} \psi_{j_i}(u_i), \qquad
+  \Theta[\mathbf j, k] = \phi_{\mathbf j}(\mathbf U[:,k]),
   \label{eq:product-dictionary}
 \end{equation}%
 and solve
 \begin{equation}
-  \min_{\Xi}\; \bigl\lVert \dot{\mathbf X} - \Xi\,\Theta_\flat(\mathbf X) \bigr\rVert_F^2
+  \min_{\Xi}\; \bigl\lVert \dot{\mathbf U} - \Xi\,\Theta_\flat(\mathbf U) \bigr\rVert_F^2
   + \mathcal R(\Xi),
   \label{eq:sindy-regularized}
 \end{equation}%
 where $\Theta_\flat$ is $\Theta$ with its $\mathbf j$ indices flattened. Such a
 library needs no guessing about which cross terms matter, but the dictionary
-$\Theta$ has size $J^N\times M$ and the coefficients $\Xi$ size $N\times J^N$:
-one column per candidate, exponential in $N$. In matrix form,
-$\Theta_\flat = \Psi_1 \odot \cdots \odot \Psi_N$ is a Khatri--Rao product
-with $\Psi_i[j,m] = \psi_j(\mathbf X[i,m])$.
+$\Theta$ has size $J^p\times K$ and the coefficients $\Xi$ size $p\times J^p$:
+one column per candidate, exponential in $p$. In matrix form,
+$\Theta_\flat = \Psi_1 \odot \cdots \odot \Psi_p$ is a Khatri--Rao product
+with $\Psi_i[j,k] = \psi_j(\mathbf U[i,k])$.
 
-\paragraph{SINDy: tensor form.}
-Drawn as tensors, $\dot{\mathbf X}$ (legs $i$, $m$) is approximated by
-$\Xi\in\mathbb R^{J\times\cdots\times J\times N}$ contracted with
-$\Theta(\mathbf X)\in\mathbb R^{J\times\cdots\times J\times M}$ over $N$ legs
-$j_1,\dots,j_N$ of size $J$: a sum over $J^N$ terms. This is the same
+Drawn as tensors, $\dot{\mathbf U}$ (legs $i$, $k$) is approximated by
+$\Xi\in\mathbb R^{J\times\cdots\times J\times p}$ contracted with
+$\Theta(\mathbf U)\in\mathbb R^{J\times\cdots\times J\times K}$ over $p$ legs
+$j_1,\dots,j_p$ of size $J$: a sum over $J^p$ terms. This is the same
 exponential wall as a dense $2^n$ vector, and it invites the same response.
 
 \paragraph{MANDy.}
-\margintext{MANDy: multidimensional approximation of nonlinear dynamics.}
-Gel\ss{} \emph{et al.}~\cite{Gelss2019} observe that the Khatri--Rao structure
-makes $\Theta(\mathbf X)$ an \textbf{exact tensor train}: its cores are the
-small matrices $\Psi_1,\dots,\Psi_N$, connected by bonds of size $M$ that carry
+Multidimensional approximation of nonlinear dynamics (MANDy; Gel\ss{} \emph{et
+al.}~\cite{Gelss2019}) rests on the observation that the Khatri--Rao structure
+makes $\Theta(\mathbf U)$ an \textbf{exact tensor train}: its cores are the
+small matrices $\Psi_1,\dots,\Psi_p$, connected by bonds of size $K$ that carry
 the (known) sample index. Orthonormalizing that train gives
-$\Theta_\flat = U\Sigma V^\top$ with $U = U_1\cdots U_N$ in train form, and the
+$\Theta_\flat = U\Sigma V^\top$ with $U = U_1\cdots U_p$ in train form, and the
 unknown, unstructured $\Xi$ is then solved in closed form,
 \begin{equation}
-  \Xi = \dot{\mathbf X}\,\Theta_\flat^{+}
-      = \bigl(\dot{\mathbf X} V \Sigma^{-1}\bigr)\, U^\top ,
+  \Xi = \dot{\mathbf U}\,\Theta_\flat^{+}
+      = \bigl(\dot{\mathbf U} V \Sigma^{-1}\bigr)\, U^\top ,
   \label{eq:mandy}
 \end{equation}%
-itself a tensor train with cores $U_1,\dots,U_N$ and a final $N\times r$ core
-$\dot{\mathbf X}V\Sigma^{-1}$. No $J^N$ object is formed at any stage; the bonds
-are at most $\min(J^k, M)$. The price is that \eqref{eq:mandy} is the
-minimum-norm least-squares solution, not a sparse one.
+itself a tensor train with cores $U_1,\dots,U_p$ and a final $p\times\chi$ core
+$\dot{\mathbf U}V\Sigma^{-1}$, where $\chi$ is the rank of $\Theta_\flat$. No
+$J^p$ object is formed at any stage; the bonds are at most $\min(J^l, K)$ after
+$l$ cores. The price is that \eqref{eq:mandy} is the minimum-norm least-squares
+solution, not a sparse one.
 
-\paragraph{And more.}
-\begin{itemize}
-  \item \textbf{Learned low-rank coefficients.} Goe\ss{}mann \emph{et
-    al.}~\cite{Goessmann2020} represent $\Xi$ itself as a TT with ranks $r$
-    plus a selection tensor $S$ that routes each output $i$ to its relevant
-    cores, and learn it by alternating least squares --- the sweeping machinery
-    of \cref{subsec:linear-solvers}, now as a regression.
-  \item \textbf{Weak form in TT.} TT-WSINDy~\cite{Houser2026} combines MANDy
-    with weak-form SINDy, performing the weak-form transformation, regression and
-    sparsification in TT format, and searches an exponentially large space of
-    candidates without the curse of dimensionality.
-  \item \textbf{An application.} van't Hoff \emph{et al.}~\cite{vantHoff2026}
-    chain the whole toolkit for the atmospheric effects of high-altitude
-    (aviation) emissions: simulate atmospheric chemistry with and without
-    emissions, subtract to isolate the perturbation, organize it in snapshot
-    matrices, discover models by POD, SINDy and DMD, and use them as reduced-order
-    models for ozone columns.
-  \item \textbf{Data assimilation.} Combine a known but imperfect model with
-    sparse observations. The tensor network carries the state, and the model is
-    the Part~\partref{3} solver.
-\end{itemize}
+\paragraph{Further tensor-train methods.}
+Goe\ss{}mann \emph{et al.}~\cite{Goessmann2020} represent $\Xi$ itself as a
+tensor train with a selection tensor that routes each output to its relevant
+cores, and learn it by alternating least squares, the sweeping machinery of
+\cref{subsec:linear-solvers} used as a regression; TT-WSINDy~\cite{Houser2026}
+performs the weak-form transformation, regression and sparsification of
+weak-form SINDy in TT format, so that its cost grows polynomially rather than
+exponentially in the state dimension as long as the TT ranks stay small. As an
+application, van't Hoff \emph{et al.}~\cite{vantHoff2026} isolate the
+atmospheric perturbation due to high-altitude aviation emissions by subtracting
+chemistry simulations with and without them, and discover reduced-order models
+of ozone columns from it by POD, SINDy and DMD.
 
-\begin{remark}[The comparison that matters]
-  Against neural-network surrogates the tensor-network case does not rest on raw
-  accuracy. It rests on two things: modes, frequencies, growth rates and sparse
-  equations come out of the method directly rather than from a post-hoc probe;
-  and rank gives a single monitorable complexity knob with a known meaning ---
-  the number of retained singular values.
-\end{remark}
+\subsection{A Closing Remark: The Same Structure Can Produce the Data}
+\label{subsec:dmd-space-time}
+% Keywords: time-stepping vs. space-time methods, all-at-once solve,
+% space-time solver results. Demoted from the middle of the argument.
+
+The space--time train of \cref{subsec:space-time-data} need not come from
+measurements. Consider
+\begin{equation}
+  \partial_t u + F(u, \partial_x u, \dots, \partial_x^q u) = g(x,t) .
+  \label{eq:generic-evolution}
+\end{equation}%
+\emph{Time-stepping}, $\mathbf u_{k+1} = \mathbf u_k + \Delta t\,
+\mathbb F(\mathbf u_k)$, keeps one spatial train on $n$ sites and updates it
+$K$ times; this is the Part~\partref{3} solver. A \emph{space--time method}
+instead assembles the whole history as one linear system on the $n+n_t$
+space--time sites,
+\begin{equation}
+  (\mathbb I_x \otimes \mathbb D_t + \mathbb F_x \otimes \mathbb I_t)\,
+  \mathbf u = \text{b.c.} + \text{i.c.},
+  \label{eq:space-time-system}
+\end{equation}%
+with $\mathbb D_t$ a time-difference MPO and $\mathbb F_x$ the spatial
+operator, and solves it \textbf{once} with a sweeping solver
+(\cref{subsec:linear-solvers}). Without a time loop there is no step-to-step
+amplification, and hence no stability restriction on $\Delta t$ of the explicit
+kind. The time resolution is still set by accuracy, through $n_t$, and the
+cost reappears as the space--time bond dimension, which grows for sharp initial
+data (Exercise~2 below). A nonlinear $F$ needs an outer Newton or Picard
+iteration, with the questions Part~\partref{2} raised about it.
+
+On a $1024 \times 1024$ space--time grid~\cite{Peddinti2025a}:
+\begin{center}
+  \begin{tabular}{@{}llp{0.38\textwidth}@{}}
+    \toprule
+    \textsc{Equation} & $\chi$ & \textsc{Compression} \\
+    \midrule
+    Heat, wave                    & $2$--$22$ & $> 99\%$ \\
+    Burgers, nonlinear diffusion  & $10$      & $> 99\%$, residual
+                                                $\sim\!10^{-3}$ \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+The space--time train that such a solve returns is exactly the input MPS-DMD
+needs: the same data structure serves as solver output and as input to the
+data-driven model, with no conversion in between.
 
 \subsection{Outlook}
 \label{subsec:part4-outlook}
-% Keywords: one stone, two birds; open challenges in data-driven TN
-% methods, hybrid physics+data approaches, uncertainty quantification.
+% Keywords: open challenges in data-driven TN methods, hybrid physics+data
+% approaches, uncertainty quantification.
 
-\paragraph{One stone, two birds.}
-PDE solvers and data-driven models both live in the land of dynamical systems,
-and the curse of dimensionality hits both: linear systems on the one hand, DMD
-and SINDy on the other. Tensor networks restore hope for both at once, through
-the same $\mathcal O(\log N)$ compression.
-
-\paragraph{Open problems.}
-\margintext{The $(1+1)$D restriction is the most immediate limitation of the
-space--time work, and lifting it brings back the index-ordering questions of
-\cref{subsec:qtt-functions-operators}.}
+The open problems specific to learning dynamics in tensor-train format are the
+following; the interaction of truncation and noise is discussed in
+\cref{subsec:mps-dmd}.
 \begin{itemize}
   \item \textbf{Beyond $(1+1)$D.} The space--time analysis so far is
-    one-dimensional in space. Two and three dimensions plus time --- and the
-    index ordering that goes with them --- is open.
+    one-dimensional in space. Two and three dimensions plus time, and the index
+    ordering that goes with them (\cref{subsec:qtt-functions-operators}), are
+    open.
   \item \textbf{Nonlinear and Koopman extensions.} Extended DMD with
     tensor-train dictionaries~\cite{Williams2015,Klus2018}, and kernel DMD in
     compressed form.
   \item \textbf{Sparsity in TT format.} MANDy's closed form is not sparse;
     combining TT dictionaries with sparse or weak-form regression is active
     work~\cite{Goessmann2020,Houser2026}.
-  \item \textbf{Noise and sparsity of measurements.} How TT truncation interacts
-    with measurement noise is not settled; it can denoise, or it can fit the
-    noise, and there is no theory saying which.
   \item \textbf{Hybrid physics and data.} Use the Part~\partref{3} solver as a
-    prior and learn only the closure or the residual in TT form.
+    prior and learn only the closure or the residual in TT form. Data
+    assimilation is the same idea with observations in place of a learned
+    term: a known but imperfect model, the Part~\partref{3} solver, is combined
+    with sparse observations, and the tensor network carries the state.
   \item \textbf{Uncertainty quantification.} Error bars on tensor-network
     predictions are essentially absent today, which compounds the missing
     a-posteriori bounds of \cref{subsec:part2-open-problems}.
   \item \textbf{Software and reproducibility.} Shared TT/MPS
     tooling~\cite{Nunez2025}, standard benchmarks, and open datasets.
 \end{itemize}
+
+\paragraph{Summary.}
+The snapshot matrix of DMD and the dictionary of SINDy suffer the same
+exponential wall as a dense grid function, and the tensor train removes it in
+both. Loaded as a space--time train, data costs $\mathcal O((n+n_t)\chi^2)$
+numbers; MPS-DMD reads the POD off the space/time bond and forecasts with cost
+logarithmic in both $N_x$ and $K$; MANDy treats the product dictionary as an
+exact tensor train and never forms its $J^p$ columns. The bond dimension again
+measures complexity, here the temporal complexity of the data, and the
+truncation that keeps it small acts as a regularizer whose interaction with
+noise is not yet understood. The conclusion that follows collects what the four
+parts have shown about $\chi$.
 
 \begin{exercise}[Companion notebook]
   \texttt{04-inverse-problem.ipynb} follows this part section by section, with
@@ -533,8 +551,8 @@ space--time work, and lifting it brings back the index-ordering questions of
       noise amplitude. Then answer the question that matters: in a real problem
       you have no ground truth to optimize against, so what do you monitor?
     \item Implement MANDy~\eqref{eq:mandy} for a Fermi--Pasta--Ulam chain with
-      the product dictionary $\{1, x, x^2, x^3\}^{\otimes N}$, check it against
-      dense least squares at $N = 4$, and run $N = 8$ ($4^8$ candidate
+      the product dictionary $\{1, u, u^2, u^3\}^{\otimes p}$, check it against
+      dense least squares at $p = 4$, and run $p = 8$ ($4^8$ candidate
       functions) without ever forming the dictionary.
   \end{enumerate}
 \end{exercise}

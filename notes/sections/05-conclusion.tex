@@ -1,0 +1,111 @@
+\section{Conclusion: What the Bond Dimension Told Us}
+\label{sec:conclusion}
+
+% Closing section of the course: the single idea, the pipeline recap, a tally
+% of where chi stayed small, grew or broke, and the open theoretical question.
+% Every number in the table is stated, with its source, in Parts I-IV.
+
+The course rested on a single idea. A physical field sampled on $N = 2^n$ grid
+points is not an arbitrary vector: its well-separated scales are weakly coupled,
+so it lies close to a manifold described by $\mathcal O(n\chi^2)$ numbers, and
+the bond dimension $\chi$ measures how strongly the scales talk to each other.
+Part~\partref{1} built that manifold and computed on it explicitly,
+Part~\partref{2} learned to solve linear systems on it, Part~\partref{3}
+stress-tested it on turbulence, and Part~\partref{4} showed that the same
+structure tames the curse of dimensionality in data-driven models.
+
+\paragraph{The pipeline, revisited.}
+The \textbf{equation} was the heat equation in Parts~\partref{1}
+and~\partref{2}, the incompressible Navier--Stokes equations in
+Part~\partref{3}, and the unknown itself in Part~\partref{4}. The
+\textbf{formulation} was finite differences on dyadic grids throughout, with a
+projection method for the pressure in Part~\partref{3} and a discretization of
+time as well as space in Part~\partref{4}. The \textbf{TN encoding} was TT-SVD
+and the quantics map in Part~\partref{1}, TT-cross for functions and masks
+and the edge cores of the operator for boundary conditions in
+Part~\partref{2}, and the space--time train of measured
+or computed data in Part~\partref{4}. \textbf{Time evolution} was an MPO--MPS
+product followed by rounding in Part~\partref{1}, a sweeping linear solve per
+implicit step in Part~\partref{2} (\cref{subsec:linear-solvers}), the projection
+loop of Part~\partref{3}, and the diagonal power $\Lambda^k$ of MPS-DMD in
+Part~\partref{4}. \textbf{Solution retrieval} was point evaluation by
+contracting the chain against the digits of an index in Part~\partref{1},
+coarse-grained evaluation and sampling of grid points in Part~\partref{3}, and modes,
+eigenvalues and sparse equations in Part~\partref{4}. Apart from the one-off
+TT-SVD of Part~\partref{1} and the loading of measured snapshots in
+Part~\partref{4}, no stage formed the dense $2^n$ vector.
+
+\paragraph{Where $\chi$ stayed small, grew, or broke.}
+The table collects the rank measurements stated in the notes. It is not a
+benchmark; it is a map of where the single idea held.
+
+\begin{center}
+  \small
+  \begin{tabular}{@{}p{0.13\textwidth}p{0.62\textwidth}p{0.12\textwidth}@{}}
+    \toprule
+    \textsc{$\chi$} & \textsc{Measurement} & \textsc{Where} \\
+    \midrule
+    stayed small
+      & $e^{-3x}+\sin(4\pi x)$ at tolerance $10^{-10}$: $\chi = 3$ for every
+        $n$ from 6 to 20. A straight edge: $\chi = 2$ from $N = 64$ to
+        $N = 1024$. Space--time solves of the heat and wave equations:
+        $\chi = 2$--$22$ on $1024\times1024$; Burgers: $\chi = 10$. Laminar
+        cylinder and square flows at $\chi = 30$, the NACA~0040 airfoil at
+        $\chi = 45$.
+      & Parts~\partref{1}, \partref{3}, \partref{4} \\
+    \addlinespace
+    grew
+      & A disc mask: $\chi = 17, 50, 128$ at $N = 64, 256, 1024$. Synthetic
+        turbulence at tolerance $10^{-2}$: $\chi = 14, 26, 41, 68, 128$ for
+        inertial ranges $k_{\max} = 4, 8, 16, 32, 64$, the proxy for growing
+        $\mathrm{Re}$. A $1024^3$ DNS at $\mathrm{Re}_\lambda = 315$: $\chi =
+        1000$ keeps the inertial range of $E(k)$, $\chi = 100$ runs the solver
+        for 9--10 Kolmogorov time units, and below $\chi \approx 500$ even the
+        interleaved encoding injects spurious small-scale fluctuations.
+      & Parts~\partref{1}--\partref{3} \\
+    \addlinespace
+    broke
+      & White noise saturates the space/time bond. A narrow Gaussian initial
+        condition makes the space/time bond of the all-at-once heat solve grow.
+        Without rounding, explicit heat stepping multiplies $\chi$ by $3$ per
+        step. A noisy function under TT-cross: adding rank makes the error
+        worse.
+      & Parts~\partref{1}, \partref{2}, \partref{4} \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+\noindent
+Two readings follow. First, rank tracks scale coupling, not resolution or
+sharpness: an aligned step costs $\chi = 2$ at any $N$, while a disc and a wide
+inertial range cost rank because they couple every scale at once. Second,
+\enquote{broke} always means \enquote{at the requested accuracy}: the noisy
+standing wave of Part~\partref{4} goes from a saturated bond back to $\chi = 1$
+when the tolerance is loosened from $10^{-10}$ to $10^{-2}$.
+
+\paragraph{One structure, two problems.}
+PDE solvers and data-driven models both describe dynamical systems, and the
+curse of dimensionality hits both: the linear systems of implicit time stepping
+on the one hand, the snapshot SVD of DMD and the dictionary of SINDy on the
+other. The tensor train lifts it from both at once, through the same
+$\mathcal O(n\chi^2)$ representation, and the space--time solve of
+\cref{subsec:dmd-space-time} hands its output to MPS-DMD with no conversion in
+between.
+
+\paragraph{The comparison that matters.}
+Against neural-network surrogates, the case for tensor networks does not rest on
+raw accuracy. It rests on two things. Modes, frequencies, growth rates and
+sparse equations come out of the method directly, not from a post-hoc probe.
+And the rank is a single, monitorable complexity knob with a known meaning: the
+number of retained singular values.
+
+\paragraph{The open question.}
+Every number in the table was measured, none was predicted. For ground states of
+gapped one-dimensional Hamiltonians, the area law~\cite{Hastings2007} bounds
+$\chi$ independently of system size, and for smooth functions rank bounds are
+known~\cite{Lindsey2023}. For the solutions of the PDEs in this course there is
+no comparable result. We have no sharp a-priori bound on $\chi$ for
+Navier--Stokes as a function of $\mathrm{Re}$ (\cref{subsec:expressivity}), none
+for the growth of $\chi$ over a long time integration, and none for the temporal
+bond of measured data. Such a bound would turn the bet of this course into a
+theorem, and it is the central open problem the notes leave behind.

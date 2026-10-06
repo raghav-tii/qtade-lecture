@@ -2,125 +2,120 @@
 \label{sec:part1}
 \lecture{28}{09}{2026}
 
-% Follows slides/part1.pdf ("Representing fields and operators"), in the same
-% order: tensors and Penrose notation; MPS/TT via SVD; historical perspective;
-% quantics TT for functions and operators; heat equation (explicit).
+% Matching deck: slides/part1.pdf ("Representing fields and operators").
+% The notes follow their own argument, not the slide order.
 % Companion notebook: notebooks/01-representations.ipynb.
 
-Everything in this course rests on a single bet. A field sampled on a fine grid
-is an enormous vector, but it is not an \emph{arbitrary} enormous vector: it is
-smooth, it is multiscale, and the coupling between well-separated scales is
-weak. If that is true, the vector lies on a manifold of far lower dimension than
-the space it sits in, and we should compute on the manifold rather than in the
-ambient space. We use tensor networks (TNs) to exploit the low-rank structure of
-both the solutions and the operators that define a PDE --- classically, with no
-quantum hardware involved.
+The general introduction stated the bet on which this course rests: physical
+fields have weak coupling between well-separated scales, and therefore lie close
+to a low-dimensional manifold. Part~\partref{1} makes that bet precise and
+computes on the manifold explicitly. It starts from the exponential cost of
+grids (\cref{subsec:numerical-methods-intro}), introduces tensors and their
+diagrams (\cref{subsec:penrose-notation}), builds the matrix product state by
+repeated SVDs and learns to compute with it (\cref{subsec:mps}), and then shows
+how a binary re-indexing of the grid turns the bond dimension into a measure of
+inter-scale coupling, for functions and for operators
+(\cref{subsec:qtt-functions-operators}). It ends with a working solver for the
+heat equation whose cost per step is logarithmic in the number of grid points
+(\cref{subsec:heat-explicit-euler}), and with a short history of the subject
+(\cref{subsec:literature-survey}).
 
-Part~\partref{1} builds the machinery needed to state that bet precisely, in the
-order of the slides: tensors and a diagrammatic language for them, together
-with the scaling wall they are meant to break
-(\cref{subsec:penrose-notation}); the matrix product state, obtained by
-repeated SVDs (\cref{subsec:mps}); a short account of where the ideas came from
-(\cref{subsec:literature-survey}); the binary re-indexing that makes the ansatz
-multiscale, for functions and for operators
-(\cref{subsec:qtt-functions-operators}); and --- by the end --- a working PDE
-solver whose cost is logarithmic in the number of grid points
-(\cref{subsec:heat-explicit-euler}).
+\textbf{Pipeline stages covered:} TN encoding of fields and operators (stage~3)
+in full; and all five stages once, for the heat equation with explicit time
+stepping.
 
 % ---------------------------------------------------------------------------
-\subsection{Tensors and Penrose Notation}
-\label{subsec:penrose-notation}
-% Keywords: tensor = multidimensional array, curse of dimensionality,
-% structured tensors, diagram notation, contraction, trace, contraction cost.
-
-\paragraph{What is a tensor?}
-A tensor is a multi-dimensional array, the generalisation of a vector ($v_i$, one
-index) and a matrix ($M_{ij}$, two indices) to any number of indices. The
-number of indices is the \textbf{order} of the tensor. Tensors occur wherever
-data is labelled by several independent attributes: images (pixel $x$, pixel
-$y$, colour channel), medical records (age, height, weight, symptom), the
-discretisation of a function of several variables, and many-body quantum
-wavefunctions.
-
-\paragraph{The curse of dimensionality.}
+\subsection{The Exponential Wall and the Way Out}
 \label{subsec:numerical-methods-intro}
-Tensors beyond a few indices become \emph{exponentially} costly to store and to
-manipulate. An order-6 tensor $T_{n_1 n_2 \cdots n_6}$ with $n_j = 1,\dots,10$
-already has $10^6$ entries; $N$ indices give a number of entries exponential in
-$N$. Grid-based PDE solvers meet the same wall:
-\begin{itemize}
-  \item Discretize a field on a mesh with $N = 2^n$ points per dimension: in $d$
-    dimensions that is $2^{nd}$ unknowns.
-  \item A $1024^3$ mesh is $2^{30} \approx 10^9$ unknowns --- \emph{per field,
-    per timestep}.
-  \item Three-dimensional direct numerical simulation needs
-    $\sim\!\mathrm{Re}^{9/4}$ degrees of freedom
-    (\cref{subsec:navier-stokes}). An aircraft at cruise sits near
-    $\mathrm{Re} \sim 10^{7}$, so $\sim\!10^{16}$ degrees of freedom. Exascale
-    hardware does not close a gap of that size; it moves it by a couple of
-    orders of magnitude.
-\end{itemize}
+% Keywords: curse of dimensionality, grid cost, structure, sparsity,
+% sampling, low rank, factorized tensors.
 
-\margintext{Every classical accelerator --- adaptive meshes, multigrid, spectral
-methods, POD and reduced-order models --- exploits structure. The
-tensor-network ansatz is another one, not a different kind of thing.}
-Finite differences, finite volumes and finite elements all change the constant,
-not the scaling. The only way out is \emph{structure}.
+\paragraph{The cost of a grid.}
+Grid-based PDE solvers store one number per grid point. Discretizing a field
+with $N = 2^n$ points per coordinate gives $2^{nD}$ unknowns in $D$ dimensions,
+so a $1024^3$ mesh already holds $2^{30} \approx 10^9$ unknowns --- \emph{per
+field, per timestep}. The physics can demand far more. Three-dimensional direct
+numerical simulation needs $\sim\!\mathrm{Re}^{9/4}$ degrees of freedom
+(\cref{subsec:navier-stokes}); an aircraft at cruise sits near
+$\mathrm{Re} \sim 10^{7}$, which means $\sim\!10^{16}$ degrees of freedom.
+Exascale hardware does not close a gap of that size; it moves it by a couple of
+orders of magnitude.
 
-\paragraph{Structured tensors.}
-Tensor networks are a systematic way of breaking the curse. The smallest
-example: a function $f(x,y,z)$ of three binary variables
-$x,y,z \in \{0,1\}$ is an order-3 tensor with $8$ entries. If it happens to
+The same wall appears for any array labelled by many independent indices. An
+array with six indices, each taking ten values, already has $10^6$ entries, and
+the number of entries grows exponentially with the number of indices. This is
+the \emph{curse of dimensionality}, and the grid of a PDE solver is one instance
+of it: each coordinate, and each time level, is one more index.
+
+\paragraph{Structure as the way out.}
+Finite differences, finite volumes and finite elements change the constant in
+front of this cost, not its scaling. What changes the scaling is
+\emph{structure} in the data. Three kinds of structure can be exploited:
+\emph{sparsity}, when most entries vanish; \emph{sampling}, when a few
+well-chosen entries determine the rest; and \emph{low-rank structure}, when the
+array factorizes into small pieces. Every classical accelerator --- adaptive
+meshes, multigrid, spectral methods, POD and reduced-order models --- exploits
+one of these. Tensor networks take the third route, and are in that sense
+another accelerator of the same kind, not a different kind of method.
+
+\paragraph{A factorized example.}
+The smallest example shows the mechanism. A function $f(x,y,z)$ of three binary
+variables $x,y,z \in \{0,1\}$ is an array of $8$ entries. If it happens to
 factorize, $f(x,y,z) = p(x)\,q(y)\,r(z)$, then $6$ numbers suffice, and any
-entry --- say $f(0,1,0) = p(0)\,q(1)\,r(0)$ --- is recovered by contracting the
-factors. A general order-$N$ tensor is drawn as one node with $N$ legs; a
-tensor network replaces that node by many small nodes joined by bonds, and the
-compression comes from the bonds being narrow.
+entry --- say $f(0,1,0) = p(0)\,q(1)\,r(0)$ --- is recovered by multiplying the
+factors. Tensor networks generalize this: they replace one large array by many
+small ones, joined so that the large array can be reconstructed on demand. The
+rest of this part makes the joining precise and asks when it is cheap.
 
-\paragraph{Tensor diagram notation.}
+% ---------------------------------------------------------------------------
+\subsection{Tensors and Diagram Notation}
+\label{subsec:penrose-notation}
+% Keywords: tensor = multidimensional array, diagram notation, contraction,
+% trace, isometry.
+
+\paragraph{Tensors.}
+A tensor is a multi-dimensional array, the generalization of a vector ($v_i$,
+one index) and a matrix ($M_{ij}$, two indices) to any number of indices. The
+number of indices is the \textbf{order} of the tensor. Tensors occur wherever
+data are labelled by several independent attributes: images (horizontal
+position, vertical position, colour channel), medical records (age, height,
+weight, symptom), the discretization of a function of several variables, and
+the wavefunctions of quantum many-body physics, where the methods of this
+course originated.
+
+\paragraph{Diagram notation.}
 Index expressions with five or six summations are correct and unreadable.
-Diagrams (Penrose, 1971~\cite{Penrose1971}) are the working notation of the
-field for a concrete reason: they carry exactly the same information, and they
-make the \emph{cost} of a computation something you can see~\cite{Bridgeman2017}.
+Diagrams~\cite{Penrose1971} are the working notation of the field for a
+concrete reason: they carry exactly the same information, and they make the
+\emph{cost} of a computation visible~\cite{Bridgeman2017}.
 \margintext{Diagrammatic tensor notation is due to Penrose (1971); it entered
 numerical practice through the DMRG community in the 1990s. Bridgeman and Chubb
 (2017) and \texttt{tensornetwork.org} are readable modern introductions.}
+A tensor is drawn as a \textbf{node}, and each of its indices as a
+\textbf{leg}: a vector $v_j$ has one leg, a matrix $M_{ij}$ two, an order-3
+tensor $T_{ijk}$ three, and a scalar none. The diagram carries precisely what
+the index expression carries, so the names of the indices can be omitted
+without ambiguity. A general tensor of order $n$ is one node with $n$ legs; a
+tensor network replaces that node by many small nodes joined by bonds, and the
+compression of \cref{subsec:numerical-methods-intro} comes from the bonds being
+narrow.
 
-\begin{itemize}
-  \item A tensor is a \textbf{node}; every index is a \textbf{leg}. A vector
-    $v_j$ has one leg, a matrix $M_{ij}$ two, an order-3 tensor $T_{ijk}$ three;
-    a scalar has none.
-  \item There is no ambiguity, and the names of indices can be omitted: the
-    diagram carries precisely what the index expression carries.
-  \item Covariant and contravariant indices can be told apart by ingoing and
-    outgoing arrows; special tensors get special shapes (isometries are drawn
-    as triangles).
-\end{itemize}
+\paragraph{Contraction.}
+Every construction in this course is assembled from two moves: \emph{place
+nodes} and \emph{join legs}. Joining two legs means summing over the shared
+index. The inner product $\sum_j v_j w_j$ is two nodes joined by one bond; the
+matrix--vector product $\sum_j M_{ij} v_j$ and the contraction of an order-3
+tensor with a vector, $\sum_j T_{ijk} v_j$, are drawn the same way. The legs
+left dangling are the free indices of the result, so counting them tells you
+what kind of object the diagram represents. A diagram with no dangling legs is a
+closed loop and represents a number, for instance the trace $\sum_j M_{jj}$ or
+$\sum_{ij} A_{ij}B_{ji} = \operatorname{Tr}[AB]$.
 
-There are only two moves, and every construction in this course is assembled
-from them: \emph{place nodes} and \emph{join legs}.
-
-\begin{itemize}
-  \item \textbf{Joined legs} --- sum over the shared index. Examples: the inner
-    product $\sum_j v_j w_j$ (two nodes, one bond), the matrix--vector product
-    $\sum_j M_{ij} v_j$, and an order-3 tensor contracted with a vector,
-    $\sum_j T_{ijk} v_j$.
-  \item \textbf{Dangling legs} are the free indices of the result. Counting them
-    tells you what object you have built.
-  \item \textbf{Closed loop} --- no free legs, so the diagram is a number: a
-    trace, $\sum_j M_{jj}$ or $\sum_{ij} A_{ij}B_{ji} = \operatorname{Tr}[AB]$.
-\end{itemize}
-
-A small vocabulary of recurring nodes covers most diagrams you will meet.
-
-\begin{itemize}
-  \item \textbf{Identity} --- a bare line.
-  \item \textbf{Copy (or $\delta$) tensor} --- a branching node, one index shared
-    by three legs.
-  \item \textbf{Isometry} --- drawn as a triangle. A tensor $A$ reshaped into a
-    matrix is an isometry when $A^{\dagger}A = \mathbb{1}$, so contracting it
-    with its conjugate collapses to a bare line.
-\end{itemize}
+\paragraph{Recurring nodes.}
+Two special nodes cover most of the diagrams that follow. The identity is a
+bare line. An \textbf{isometry} is drawn as a triangle: a tensor $A$ reshaped
+into a matrix is an isometry when $A^{\dagger}A = \mathbb{1}$, so contracting
+it with its conjugate collapses to a bare line.
 
 \begin{notation}
   Throughout these notes physical legs point \textbf{down} and virtual (bond)
@@ -128,47 +123,30 @@ A small vocabulary of recurring nodes covers most diagrams you will meet.
   only means something once the convention is fixed.
 \end{notation}
 
-\begin{remark}[Order is cost]
-  The diagram fixes \emph{what} is computed, not \emph{in which order}, and the
-  order sets the cost. Contracting the same three-tensor network pairwise in two
-  different orders can cost $O(D^4)+O(D^4)$ or $O(D^5)+O(D^4)$ for bond
-  dimension $D$; for $A_{ij}B_{jk}C_{kl}v_l$ the order $((AB)C)v$ costs
-  $O(D^3)$ while $A(B(Cv))$ costs $O(D^2)$. Take the chain of $n$ order-3
-  tensors of \cref{subsec:mps}, each of bond dimension $\chi$ and physical
-  dimension $d$: contract it sequentially and the cost is $O(n \chi^3)$;
-  contract it by first forming the full $d^{\,n}$-component vector and the cost
-  is $O(d^{\,n})$. Same diagram, same numbers out, exponentially different
-  bills. Finding the optimal order for a \emph{general} network is
-  NP-hard~\cite{Gray2021}; for a chain it is obvious.
-\end{remark}
-
 % ---------------------------------------------------------------------------
-\subsection{MPS or TT via SVD}
+\subsection{Matrix Product States}
 \label{subsec:mps}
 % Keywords: low-rank structure, SVD, Eckart-Young, truncation by rank or by
-% error, recursive SVD (TT-SVD), MPS/tensor train, primitives (sum, product,
-% inner product, MPO), canonical form, rounding.
+% error, recursive SVD (TT-SVD), MPS/tensor train, canonical form, rounding,
+% primitives (sum, product, inner product, MPO), contraction order.
 
-\paragraph{The problem and the ways out.}
-We cannot store or manipulate tensors with many indices. There are three ways
-out: \emph{sparsity} (when applicable), \emph{sampling}, and \emph{low-rank
-structure}. Tensor networks take the third, and for matrices uncovering low-rank
-structure is straightforward: it is the singular value decomposition.
+\subsubsection{From the SVD to the tensor train}
 
-\paragraph{The SVD.}
-Any matrix factorizes as
+\paragraph{The singular value decomposition.}
+For matrices, low-rank structure is uncovered by the singular value
+decomposition. Any matrix factorizes as
 \begin{equation}
-  M = U S V^{\dagger}, \qquad U^{\dagger}U = \mathbb{1}_r, \quad
-  V^{\dagger}V = \mathbb{1}_r,
+  M = U S V^{\dagger}, \qquad U^{\dagger}U = \mathbb{1}_{\chi}, \quad
+  V^{\dagger}V = \mathbb{1}_{\chi},
   \label{eq:svd}
 \end{equation}%
 where $S$ is diagonal and holds the singular values $\lambda_1 \ge \lambda_2
-\ge \dots \ge \lambda_r > 0$: real, non-negative and decreasingly ordered.
+\ge \dots \ge \lambda_{\chi} > 0$: real, non-negative and decreasingly ordered.
 Grouping $A = U\sqrt{S}$ and $B = \sqrt{S}V^{\dagger}$ writes $M$ as two nodes
-joined by a bond that runs over $r = \operatorname{rank}(M)$ values.
+joined by a bond that runs over $\chi = \operatorname{rank}(M)$ values.
 \textbf{Truncating} the smallest singular values, $M \approx U\tilde{S}V^{\dagger}
 = \tilde{A}\tilde{B}$, gives the optimal approximation of that rank in the
-$\ell_2$ (and Frobenius) norm --- the Eckart--Young theorem.
+$\ell_2$ (and Frobenius) norm; this is the Eckart--Young theorem.
 
 \begin{example}[A $4\times 3$ matrix]
   The matrix
@@ -188,180 +166,41 @@ $\ell_2$ (and Frobenius) norm --- the Eckart--Young theorem.
   the squared discarded singular values.
 \end{example}
 
-\paragraph{Two compression strategies.}
-\begin{itemize}
-  \item Fix a \textbf{maximum allowed rank} $\chi$. This defines the
-    approximation error
-    \begin{equation}
-      \epsilon = \Big(\sum_{j > \chi} \lambda_j^2\Big)^{1/2}.
-      \label{eq:trunc-error}
-    \end{equation}
-  \item Fix a \textbf{maximum allowed error} $\epsilon$. This defines the
-    smallest $\chi$ such that
-    $\epsilon \ge \big(\sum_{j > \chi} \lambda_j^2\big)^{1/2}$.
-\end{itemize}
-Both are used in practice, and we write a truncation as $(\chi,\epsilon)$.
+\paragraph{Two truncation strategies.}
+A truncation can be specified in two ways. Fixing a \textbf{maximum allowed
+rank} $\chi$ determines the approximation error,
+\begin{equation}
+  \varepsilon = \Big(\sum_{j > \chi} \lambda_j^2\Big)^{1/2}.
+  \label{eq:trunc-error}
+\end{equation}
+Fixing a \textbf{maximum allowed error} $\varepsilon$ instead determines the
+smallest $\chi$ such that
+$\varepsilon \ge \big(\sum_{j > \chi} \lambda_j^2\big)^{1/2}$. Both are used in
+practice, and we write a truncation as $(\chi,\varepsilon)$.
 
-\paragraph{Recursive SVD on a tensor: TT-SVD.}
-To compress a tensor with $N$ legs of dimension $d$:
-\begin{enumerate}
-  \item reshape the tensor as a matrix (first leg against all the others);
-  \item apply the SVD to the matrix, and keep $U_1$ as the first node;
-  \item glue together (multiply) $S_1 V_1^{T}$ and reshape it (bond and second
-    leg against the rest);
-  \item sweep through the tensor, repeating 2--3 until the last leg.
-\end{enumerate}
-The result is a chain of order-3 tensors.
+\paragraph{TT-SVD.}
+The SVD extends to a tensor with $n$ legs of dimension $d$ by applying it
+repeatedly. Reshape the tensor into a matrix whose rows are indexed by the first
+leg and whose columns are indexed by all the others, apply the SVD, and keep
+$U_1$ as the first node. Then multiply the remainder $S_1 V_1^{\dagger}$ and
+reshape it again, this time with the bond and the second leg as the row index,
+and apply the SVD once more. Sweeping in this way through the tensor until the
+last leg produces a chain of order-3 tensors.
 
 \begin{definition}[Matrix product state / tensor train]
-  A tensor with $N$ legs is written as a chain of order-3 tensors,
+  A tensor with $n$ legs is written as a chain of order-3 tensors,
   \begin{equation}
-    v_{i_1 i_2 \cdots i_N}
-      = A^{(i_1)}_1 A^{(i_2)}_2 \cdots A^{(i_N)}_N ,
+    v_{i_1 i_2 \cdots i_n}
+      = A^{(i_1)}_1 A^{(i_2)}_2 \cdots A^{(i_n)}_n ,
     \label{eq:mps}
   \end{equation}%
   where each $A^{(i_k)}_k$ is a matrix of size at most $\chi \times \chi$, with
-  $A_1$ a row vector and $A_N$ a column vector so the product is a scalar. The
-  \textbf{bond dimension} $\chi$ is the size of the virtual legs. Physicists
-  call~\eqref{eq:mps} a matrix product state (MPS), numerical analysts a tensor
-  train (TT).
+  $A_1$ a row vector and $A_n$ a column vector so that the product is a scalar.
+  The \textbf{bond dimension} $\chi$ is the size of the virtual legs. Numerical
+  analysts call~\eqref{eq:mps} a tensor train (TT); physicists call it a matrix
+  product state (MPS), the name used for its diagrams.
 \end{definition}
 
-The parameter count of~\eqref{eq:mps} is at most $N d\chi^2$ rather than $d^N$.
-That is exponential compression --- \emph{provided $\chi$ stays bounded as $N$
-grows}. Almost everything that follows is about when that proviso holds.
-
-\begin{itemize}
-  \item Truncating small singular values at each of the $N-1$ cuts is
-    \textbf{quasi-optimal}: the result is within a factor $\sqrt{N-1}$ of the
-    best approximation with the same ranks in the Frobenius
-    norm~\cite{Oseledets2011}. The $\sqrt{N-1}$ comes from accumulating $N-1$
-    independent truncation errors in quadrature.
-  \item TT-SVD is exact and fully controlled --- but it needs the dense tensor
-    in memory, so it is practical only for modest sizes.
-    \Cref{subsec:finding-qtt} returns to this with methods that build an MPS
-    \emph{without} ever forming the full array.
-\end{itemize}
-
-\paragraph{Why an MPS can work at all.}
-\begin{itemize}
-  \item Cut the chain at bond $k$. The bond dimension needed there equals the
-    rank of the tensor reshaped into a matrix across that cut.
-  \item That rank is governed by the \textbf{decay of the singular values} of
-    the reshaped matrix. Physicists read the same quantity as the entanglement
-    between the two halves.
-  \item For ground states of gapped one-dimensional local Hamiltonians an
-    \textbf{area law} bounds that entanglement independently of system
-    size~\cite{Hastings2007}, hence $\chi$ independent of $N$.
-  \item Smooth, multiscale functions behave the same way. Noise and random data
-    do not: their singular values decay slowly or not at all.
-\end{itemize}
-
-\paragraph{Primitives.}
-An MPS is useful because it can be manipulated efficiently without ever being
-expanded:
-\begin{enumerate}
-  \item \textbf{sum} --- the cores are stacked block-diagonally, so $\chi$ is
-    sub-additive: $\chi_{a+b} \le \chi_a + \chi_b$;
-  \item \textbf{element-wise multiplication} --- $\chi$ multiplies,
-    $\chi_{a\odot b} \le \chi_a\chi_b$ (recursive sketching algorithms avoid
-    forming the product in full);
-  \item \textbf{perfect sampling} of configurations with probability
-    $\propto |v_{i_1\cdots i_N}|^2$;
-  \item \textbf{linear system solvers} (Part~\partref{2});
-  \item \textbf{inner product} --- zip the two chains together from one end,
-    absorbing one pair of cores at a time into a $\chi\times\chi$ environment,
-    at cost $O(N d\chi^3)$. The inner product of two vectors with a
-    \emph{trillion} entries each ($N=40$ cores with $d=2$) takes about
-    $10\,$ms at $\chi = 100$.
-\end{enumerate}
-
-\begin{definition}[Matrix product operator]
-  The operator analogue of an MPS (a TT operator): a chain in which each tensor
-  carries two physical legs, one incoming and one outgoing, in addition to its
-  two virtual bonds.
-\end{definition}
-
-Contracting an MPO with an MPS leg by leg (the \textbf{MPO--MPS contraction})
-returns an MPS whose bond dimension is the product $\chi\,\chi_{\mathrm{MPO}}$;
-the cost is $O(N d^2 \chi^2 \chi_{\mathrm{MPO}}^2)$.
-
-More advanced algorithms, met later in the course or beyond it:
-canonicalization (fixing the gauge freedom), belief-propagation gauging, tensor
-cross interpolation (TCI: query the tensor to sketch it; \cref{subsec:finding-qtt}),
-the multiscale interpolative construction~\cite{Lindsey2023}, and time
-evolution (TEBD, TDVP; Part~\partref{3}).
-
-\paragraph{Canonical forms and rounding.}
-\margintext{Gauge freedom is not a nuisance to tolerate; fixing it is what makes
-truncation optimal and inner products cheap. In practice you carry the
-orthogonality centre along with the state.}
-\begin{itemize}
-  \item The factorization~\eqref{eq:mps} is not unique: insert $G G^{-1}$ on any
-    bond and nothing changes. Fixing this \textbf{gauge freedom} gives the
-    canonical forms.
-  \item A tensor is \textbf{left-orthogonal} when
-    $\sum_{i} A^{(i)\dagger} A^{(i)} = \mathbb{1}$, and right-orthogonal under
-    the mirror condition. Sweeping QR from the left and from the right produces
-    left, right and \textbf{mixed} canonical form, the last carrying a single
-    non-orthogonal tensor called the orthogonality centre. The $U_k$ produced by
-    TT-SVD are exactly left-orthogonal.
-  \item In mixed canonical form the environment on either side of the centre is
-    the identity. Truncating the centre by SVD is then optimal for that bond.
-  \item \textbf{Rounding is the workhorse of the subject.} Every operation
-    inflates ranks --- a sum to $\chi_1 + \chi_2$, an element-wise product to
-    $\chi_1\chi_2$, an MPO application to $\chi\chi_{\mathrm{MPO}}$ --- so
-    recompress back to $(\chi,\epsilon)$ once per step, every step, at cost
-    $O(N\chi^3)$.
-\end{itemize}
-
-% ---------------------------------------------------------------------------
-\subsection{Historical Perspective on Tensor Networks}
-\label{subsec:literature-survey}
-% Keywords: transfer matrices, finitely correlated states, DMRG, MPS
-% formalism, tensor-train rediscovery, other TNs (TTN, PEPS, MERA),
-% applications, libraries, TNs for fluids.
-
-A short orientation, partly because the subject has an unusual history. MPS
-emerged in \textbf{quantum many-body physics}, to study one-dimensional spin
-chains. The same ansatz was then reinvented in numerical analysis, and
-\emph{both} vocabularies remain in active use.
-
-\paragraph{Early precursors in physics (1940s--1980s).}
-Kramers and Wannier (1941) introduced transfer matrices for the
-two-dimensional Ising model --- early matrix product operators. Baxter
-(1968, 1981) developed corner transfer matrices and variational wavefunctions
-resembling MPS. Fannes, Nachtergaele and Werner (1992) formally defined the
-finitely correlated states of quantum spin chains, establishing mathematically
-what are now called MPS~\cite{Fannes1992}.
-
-\paragraph{The DMRG breakthrough (1992--2000s).}
-\begin{itemize}
-  \item \textbf{DMRG} --- White's density matrix renormalization
-    group~\cite{White1992}: a variational algorithm in the MPS manifold, and a
-    massive numerical breakthrough for ground states of one-dimensional local
-    gapped Hamiltonians.
-  \item Östlund and Rommer (1995) realized that DMRG implicitly assumes the
-    ground state to be an MPS~\cite{Ostlund1995}.
-  \item Vidal, Verstraete and Cirac (2000s) standardized MPS as a language for
-    entanglement, time evolution and one-dimensional many-body
-    systems~\cite{Vidal2003,Vidal2004,Verstraete2008}. The MPS is an
-    \emph{entanglement-informed} ansatz: the area law~\cite{Hastings2007}
-    explains why $\chi$ can stay bounded. The standard reference for canonical
-    forms and sweeping is~\cite{Schollwoeck2011}.
-\end{itemize}
-
-\paragraph{Independent discovery as tensor trains (2000s--present).}
-Oseledets and Tyrtyshnikov independently rediscovered the same structure in
-numerical linear algebra and named it the tensor train
-decomposition~\cite{Oseledets2011}; the quantics variant~\cite{Khoromskij2011}
-and cross approximation~\cite{Oseledets2010} followed. Applied mathematics then
-brought the tools to data science, machine learning and high-dimensional
-differential equations.
-
-\margintext{Note the seventeen-year gap between White (1992) and Oseledets
-(2011). The numerical-analysis rediscovery was independent; the dictionaries
-were matched up only afterwards.}
 \begin{center}
   \begin{tabular}{ll}
     \toprule
@@ -375,86 +214,112 @@ were matched up only afterwards.}
     \bottomrule
   \end{tabular}
 \end{center}
-
 \noindent
-The columns denote the same objects and the same algorithms. For a review from
-the physics side see~\cite{Orus2014}; from the numerical-linear-algebra side,
-\cite{Oseledets2011}.
+The two columns denote the same objects and the same algorithms. For a review
+from the physics side see~\cite{Orus2014}; from the numerical-linear-algebra
+side,~\cite{Oseledets2011}.
 
-\paragraph{Other tensor networks: expressivity versus cost.}
-The MPS is the simplest member of a family, and the family is organised by a
-trade-off between expressivity and computational cost.
-\begin{center}
-  \begin{tabular}{@{}llll@{}}
-    \toprule
-    \textsc{Network} & \textsc{Loops} & \textsc{Correlations} & \textsc{Cost} \\
-    \midrule
-    MPS / TT                     & none: canonical form & exponential decay & $\chi^3$ \\
-    Tree TN / hierarchical Tucker & none: canonical form & critical          & $\chi^4$ \\
-    PEPS, MERA                   & loopy: no canonical form & critical      & up to $\chi^8$ \\
-    \bottomrule
-  \end{tabular}
-\end{center}
-The MPS has by far the largest toolbox of efficient algorithms and known MPOs,
-which is why this course uses it throughout. Tree tensor networks are a natural
-next step for multivariate functions~\cite{Tindall2024a}. A loopy network has no
-canonical form obtainable by single-tensor operations, and its contraction
-becomes a hard optimization problem in its own right~\cite{Gray2021}.
+\paragraph{Parameter count and quasi-optimality.}
+The parameter count of~\eqref{eq:mps} is at most $n d\chi^2$ rather than $d^n$.
+That is exponential compression, \emph{provided $\chi$ stays bounded as $n$
+grows}; almost everything that follows is about when that proviso holds.
+Truncating small singular values at each of the $n-1$ cuts is
+\textbf{quasi-optimal}: the result is within a factor $\sqrt{n-1}$ of the best
+approximation with the same ranks in the Frobenius norm~\cite{Oseledets2011},
+the factor coming from $n-1$ independent truncation errors accumulated in
+quadrature. TT-SVD is therefore exact and fully controlled, but it needs the
+dense tensor in memory and is practical only for modest sizes.
+\Cref{subsec:finding-qtt} returns to this with methods that build an MPS
+\emph{without} ever forming the full array.
 
-\paragraph{Applications and libraries.}
-Tensor networks are used for functions of continuous variables
-(\enquote{quantum-inspired} numerics, the subject of this course), machine
-learning (compressing models, parametrizing networks), probability and
-statistics, quantum physics (simulation, error mitigation, process tensors),
-out-of-equilibrium statistical physics and stochastic chemical kinetics.
-Mature libraries include ITensor, TeNPy, TensorNetwork, \texttt{quimb} (used in
-the notebooks) and \texttt{cotengra} for contraction-order
-optimization~\cite{Gray2021}.
+\subsubsection{Computing in the format}
+\label{subsec:tt-computing}
 
-\paragraph{Tensor networks meet fluids.}
-\begin{itemize}
-  \item \textbf{Scale correlations are weak} in turbulence, so $\chi$ stays
-    modest~\cite{Gourianov2022}.
-  \item \textbf{Kinetic plasmas.} Vlasov--Poisson solved in MPS
-    form~\cite{Ye2022}.
-  \item \textbf{Reduced-order models.} Wall-bounded flows at a few percent of
-    the DNS variable count~\cite{Kiffner2023}.
-  \item \textbf{Turbulence PDFs} computed directly in tensor-network form,
-    without sampling the full field~\cite{Gourianov2025}.
-  \item \textbf{A full stack.} Incompressible flow around arbitrary immersed
-    geometry, end to end~\cite{Peddinti2024}.
-\end{itemize}
+An MPS is useful because it can be manipulated without ever being expanded.
+Each operation, however, enlarges the bond dimension, and the format stays
+compact only if the result is compressed again. Compression is optimal only in a
+particular gauge, so we begin there.
 
-\paragraph{Where the field is now.}
-\margintext{Our own route through the subject: the 2024 framework fixed the
-encoding and the projection loop; the 2026 turbulence study asked how far the
-ranks stretch in 3D; the 2025 space--time paper removed the time loop
-altogether. Parts~\partref{3} and~\partref{4} follow that order.}
-\begin{itemize}
-  \item \textbf{3D turbulence} --- compression, simulation and synthesis at
-    $\mathrm{Re}_\lambda = 315$ on a $1024^3$ grid~\cite{Pisoni2026}.
-  \item \textbf{Compressible flow} --- a 2D Euler solver, finalist in the
-    Airbus--BMW Quantum Computing Challenge 2024~\cite{Peddinti2025}.
-  \item \textbf{Space--time and data-driven} --- space and time in a single MPS,
-    together with MPS-DMD~\cite{Peddinti2025a}.
-  \item \textbf{Tooling} --- mature cross-interpolation libraries, \texttt{xfac}
-    (C++) and \texttt{Tensor\-Cross\-Inter\-polation.jl}
-    (Julia)~\cite{Nunez2025}.
-\end{itemize}
+\paragraph{Canonical forms.}
+\margintext{Gauge freedom is not a nuisance to tolerate; fixing it is what makes
+truncation optimal and inner products cheap. In practice the orthogonality
+centre is carried along with the state.}
+The factorization~\eqref{eq:mps} is not unique: inserting $G G^{-1}$ on any
+bond changes nothing. Fixing this \textbf{gauge freedom} gives the canonical
+forms. A tensor is \textbf{left-orthogonal} when
+$\sum_{i} A^{(i)\dagger} A^{(i)} = \mathbb{1}$, and right-orthogonal under the
+mirror condition; the $U_k$ produced by TT-SVD are exactly left-orthogonal.
+Sweeping QR decompositions from the left and from the right produces left,
+right and \textbf{mixed} canonical form, the last with a single
+non-orthogonal tensor called the orthogonality centre. In mixed canonical form
+the environment on either side of the centre is the identity, so truncating the
+centre by SVD is optimal for that bond.
+
+\paragraph{Rounding.}
+\textbf{Rounding} recompresses an MPS to a prescribed $(\chi,\varepsilon)$ by
+moving the orthogonality centre along the chain and truncating each bond in
+turn, at cost $O(n\chi^3)$. It is the workhorse of the subject. Every primitive
+below inflates the bond dimension, so in any algorithm that iterates, rounding
+is applied once per step, every step.
+
+\paragraph{Primitives and their rank bills.}
+The basic operations, each with the bond dimension of its result, are the
+following.
+\begin{enumerate}
+  \item \textbf{Sum.} The cores are stacked block-diagonally, so
+    $\chi_{a+b} \le \chi_a + \chi_b$.
+  \item \textbf{Element-wise product.} The bond dimensions multiply,
+    $\chi_{a\odot b} \le \chi_a\chi_b$; recursive sketching algorithms avoid
+    forming the product in full.
+  \item \textbf{Inner product.} The two chains are zipped together from one
+    end, absorbing one pair of cores at a time into a $\chi\times\chi$
+    environment, at cost $O(n d\chi^3)$. The inner product of two vectors with a
+    \emph{trillion} entries each ($n=40$ cores with $d=2$) takes about
+    $10\,$ms at $\chi = 100$.
+  \item \textbf{Perfect sampling} of configurations with probability
+    $\propto |v_{i_1\cdots i_n}|^2$.
+\end{enumerate}
+
+\begin{definition}[Matrix product operator]
+  The operator analogue of an MPS (a TT operator): a chain in which each tensor
+  carries two physical legs, one incoming and one outgoing, in addition to its
+  two virtual bonds. Its bond dimension is written $\chi_A$.
+\end{definition}
+
+Contracting an MPO with an MPS leg by leg (the \textbf{MPO--MPS product})
+returns an MPS of bond dimension $\chi\chi_A$, at cost
+$O(n d^2 \chi^2 \chi_A^2)$. The dense matrix is never formed, and the product is
+always followed by rounding.
+
+\begin{remark}[Order is cost]
+  A diagram fixes \emph{what} is computed, not \emph{in which order}, and the
+  order sets the cost. Contracting the same three-tensor network pairwise in two
+  different orders can cost $O(\chi^4)+O(\chi^4)$ or $O(\chi^5)+O(\chi^4)$ for
+  bond dimension $\chi$; for $A_{ij}B_{jk}C_{kl}v_l$ the order $((AB)C)v$ costs
+  $O(\chi^3)$ while $A(B(Cv))$ costs $O(\chi^2)$. For the chain~\eqref{eq:mps}
+  of $n$ order-3 tensors of bond dimension $\chi$ and physical dimension $d$,
+  sequential contraction costs $O(n \chi^3)$, whereas first forming the full
+  $d^{\,n}$-component vector costs $O(d^{\,n})$. The diagram and the result are
+  the same; the bills differ exponentially. Finding the optimal order for a
+  \emph{general} network is NP-hard~\cite{Gray2021}; for a chain it is obvious.
+\end{remark}
 
 % ---------------------------------------------------------------------------
 \subsection{Quantics Tensor Trains: Functions and Operators}
 \label{subsec:qtt-functions-operators}
-% Keywords: binary/quantics encoding, amplitude encoding, analytic QTT of
+% Keywords: binary/quantics encoding, scales as legs, analytic QTT of
 % exp, sin, polynomials, x; functional class; bit ordering in 2D/3D;
 % Laplacian as an explicit rank-3 MPO; Fourier and Laplace transforms.
 
 So far an MPS is a way of factorizing a tensor that is given to us with many
-legs. The quantics trick manufactures those legs out of a one-dimensional grid,
-and turns the factorization into a statement about \emph{physics}. The key
-idea: \textbf{the tensor cores label spatial scales in a dyadic fashion}. The
-physical indices of the TT label the discretization of the domain, and the
-values of the function are encoded in the contraction of the matrices.
+legs. The quantics construction manufactures those legs out of a
+one-dimensional grid, and in doing so gives the bond dimension a physical
+meaning. That meaning is the thesis of this part: \textbf{in a quantics tensor
+train each core is one length scale, and the bond between two cores measures
+how strongly the coarser scales are coupled to the finer ones. Low rank is low
+inter-scale coupling.}
+
+\subsubsection{Scales become legs}
 
 \begin{definition}[Quantics encoding]
   Let $f : [0,1) \to \mathbb{R}$ be sampled on $N = 2^n$ points. Index a grid
@@ -469,27 +334,40 @@ values of the function are encoded in the contraction of the matrices.
   tensor $f_{x_1 \cdots x_n}$ of physical dimension $d = 2$, which is then
   written as an MPS. The result is a \textbf{quantics tensor train} (QTT).
 \end{definition}
+\margintext{In quantum-computing language the reshape is \emph{amplitude
+encoding} on $n$ qubits, $|f\rangle = \sum f_{x_1\cdots x_n}\,
+|x_1\rangle\otimes\cdots\otimes|x_n\rangle$ up to normalization; each binary
+digit is one qubit.}
 
-\begin{itemize}
-  \item In quantum language this is (up to normalization) \emph{amplitude
-    encoding} on $n$ qubits,
-    $|f\rangle = \sum_{x_1,\dots,x_n \in\{0,1\}} f_{x_1\cdots x_n}\,
-    |x_1\rangle\otimes\cdots\otimes|x_n\rangle$.
-  \item Digit $x_1$ selects which half of the domain the point lies in, $x_2$
-    which quarter, and so on: $x_1$ is the \textbf{coarsest} scale, $x_n$ the
-    \textbf{finest}. A value such as $f(0,1,1) = f(3/8)$ is read off by fixing
-    the three legs and contracting the chain.
-  \item The bond between legs $m$ and $m+1$ measures the coupling
-    \emph{between} scales $2^{-m}$ and finer. Low rank is the same thing as low
-    inter-scale correlation.
-  \item The mesh size scales exponentially in $n$, but limited correlations
-    (low $\chi$) keep the memory cost \emph{linear} in $n$.
-\end{itemize}
+Digit $x_1$ selects which half of the domain a point lies in, $x_2$ which
+quarter, and so on: $x_1$ is the \textbf{coarsest} scale and $x_n$ the
+\textbf{finest}. A value such as $f(0,1,1) = f(3/8)$ is read off by fixing the
+three legs and contracting the chain. The grid size grows exponentially in $n$,
+but if the coupling between scales stays limited (low $\chi$), the memory cost
+grows only \emph{linearly} in $n$.
+
+\paragraph{Why an MPS can work at all.}
+Cut the chain at bond $m$. The bond dimension needed there equals the rank of
+the tensor reshaped into a matrix across that cut, with the digits
+$x_1,\dots,x_m$ as row index and $x_{m+1},\dots,x_n$ as column index, and that
+rank is governed by the \textbf{decay of the singular values} of the reshaped
+matrix. In the quantics encoding the row index says in which cell of width
+$2^{-m}$ a point lies and the column index says where inside that cell it lies,
+so the reshaped matrix has one row per coarse cell and one column per fine-scale
+offset. Its rank is small exactly when the fine-scale behaviour inside a cell
+varies little from one coarse cell to the next, that is, when the coarse and
+fine scales are weakly coupled. Smooth, multiscale functions have this property.
+Noise and random data do not: their singular values decay slowly or not at all.
+\margintext{The physics precedent: for ground states of gapped one-dimensional
+local Hamiltonians an \emph{area law} bounds the entanglement across any cut
+independently of system size~\cite{Hastings2007}, hence $\chi$ independent of
+the chain length. Entanglement across a cut is singular-value decay across a
+reshaping.}
 
 \paragraph{Analytical construction of 1D functions.}
 Several elementary families have exact QTT ranks that are independent of the
-number of scales (qubits) $n$~\cite{Oseledets2013}. The exponential factorizes
-over the binary digits,
+number of scales $n$~\cite{Oseledets2013}. The exponential factorizes over the
+binary digits,
 \begin{equation}
   e^{x} = e^{x_1/2 + x_2/4 + \dots + x_n/2^n}
   = \big(e^{1/2}\big)^{x_1}\big(e^{1/4}\big)^{x_2}\cdots\big(e^{1/2^n}\big)^{x_n}
@@ -529,18 +407,17 @@ bond, and each core is a $2\times2$ matrix of vectors.
   \end{tabular}
 \end{center}
 
-\begin{itemize}
-  \item Sums and products of low-rank functions stay low-rank: ranks add and
-    multiply, and then you round.
-  \item \textbf{Rank tracks smoothness and scale separation, not resolution.}
-    Doubling the resolution adds one tensor, costing $O(n)$ extra parameters
-    rather than $O(2^n)$. Measured on $e^{-3x}+\sin(4\pi x)$ at tolerance
-    $10^{-10}$: $\chi = 3$ at every $n$ from 6 to 20, so the parameter count
-    goes from 58 to 310 while the grid goes from $64$ to $10^6$ points.
-\end{itemize}
+Sums and products of low-rank functions stay low-rank: their ranks add and
+multiply as in \cref{subsec:tt-computing}, and rounding then brings them back
+down. The table also shows that \textbf{rank tracks smoothness and scale
+separation, not resolution}. Doubling the resolution adds one core, so the
+parameter count grows as $O(n)$ rather than $O(2^n)$. On
+$e^{-3x}+\sin(4\pi x)$ at tolerance $10^{-10}$ the measured rank is $\chi = 3$
+at every $n$ from 6 to 20, so the parameter count goes from 58 to 310 while the
+grid goes from $64$ to $10^6$ points.
 
-\paragraph{What functional class?}
-Tree tensor networks --- QTTs are a subclass --- achieve the optimal
+\paragraph{The functional class.}
+Tree tensor networks, of which QTTs are a subclass, achieve the optimal
 approximation order for smooth functions in Sobolev or Besov spaces of any
 smoothness order~\cite{Ali2023,Ali2021}. The multiscale interpolative
 construction~\cite{Lindsey2023} gives constructive proofs together with
@@ -552,19 +429,17 @@ not sufficient. The multiscale reading of tensor networks has a precise
 counterpart in the connection between MERA and wavelets~\cite{Evenbly2016}.
 
 \begin{remark}[Sharpness is not the enemy]
-  \margintext{Stated as a warning because the wrong intuition here is both
-  natural and actively misleading: it sends you looking for a fix to a problem
-  you do not have, and past the one you do.}
   Ask a numerical analyst what a step function costs and the answer is
-  \enquote{a lot} --- discontinuities are the classical enemy of spectral
+  \enquote{a lot}: discontinuities are the classical enemy of spectral
   accuracy. In the quantics encoding the answer is $\chi = 2$, at any
   resolution and wherever the jump sits.
 
   The reason is that quantics never sees a jump. The indicator
   $\mathbb{1}[i > m]$ is decided digit by digit, most significant first, by an
   automaton with two states: \emph{still equal to $m$ so far}, and
-  \emph{already decided}. Two states, bond dimension~2 --- the same counting
-  argument that gives the shift operator its rank below.
+  \emph{already decided}. Two states give bond dimension~2, by the same
+  counting argument that gives the shift operator its rank in
+  \cref{subsec:qtt-operators}.
 
   What is expensive is a feature that is not aligned with the binary index: an
   oscillation the coarse cores cannot resolve ($\sin(1/(x+10^{-2}))$ costs
@@ -575,16 +450,18 @@ counterpart in the connection between MERA and wavelets~\cite{Evenbly2016}.
   that bill.
 \end{remark}
 
-\paragraph{Higher dimensions: bit ordering in 2D, 3D and D+T.}
-With more than one coordinate there is the freedom to choose the bit ordering,
-and the choice should be physically motivated. For a field $u(x_i, y_j, z_k)$:
+\subsubsection{Bit ordering in several dimensions}
+\label{subsec:qtt-ordering}
 
+With more than one coordinate the bits can be placed along the chain in
+different orders, and the choice should be physically motivated. For a field
+$u(x_i, y_j, z_k)$ there are three standard choices.
 \begin{itemize}
   \item \textbf{Stacked} --- $i_1 \cdots i_{n}\, j_1 \cdots j_{n}\, k_1 \cdots
     k_{n}$: all $x$ scales, then all $y$ scales, then all $z$ scales.
   \item \textbf{Interleaved} --- $i_1 j_1 k_1\, i_2 j_2 k_2 \cdots$: the
     coarsest scale of every coordinate, then the next, and so on. In 2D this is
-    the Morton or Z-ordering of the pixels: quadrants, then quadrants of
+    the Morton or Z-ordering of the grid points: quadrants, then quadrants of
     quadrants~\cite{Latorre2005,Markeeva2020}.
   \item \textbf{Concatenated} --- an extra leading leg $p \mapsto \{u, v, w\}$
     labels the components of a vector field, followed by the spatial bits.
@@ -596,14 +473,14 @@ $x_n$ and $y_1$ that every $x$--$y$ correlation must cross, at every scale at
 once.
 
 \begin{remark}[Which ordering wins depends on what you measure]
-  \margintext{The lesson generalises: a compression claim is meaningless until
+  \margintext{The lesson generalizes: a compression claim is meaningless until
   you say whether the tolerance or the rank was held fixed.}
   There is no universally better ordering, and the folklore in either direction
   comes from testing on too narrow a class of fields.
 
   A product $f(x)g(y)$ has rank exactly~1 across the stacked cut, \emph{by
   definition of a product}. Stacking is therefore optimal for anything
-  separable --- and a great many textbook test functions, including the
+  separable, and a great many textbook test functions, including the
   isotropic Gaussian $e^{-a(x-\frac12)^2}e^{-a(y-\frac12)^2}$, are separable
   without looking it.
 
@@ -617,25 +494,27 @@ once.
 
 The choice is not cosmetic. In three dimensions it decides whether non-Gaussian
 turbulence statistics survive compression~\cite{Pisoni2026}, and the diagnostic
-that separates the orderings is not the $\ell_2$ error at all --- it is the
+that separates the orderings is not the $\ell_2$ error at all but the
 probability distribution of velocity increments. The evidence is in
 \cref{subsec:expressivity}.
 
-\paragraph{Finite-difference operators as MPOs.}
-Finite-difference shift, first-derivative and Laplacian operators have
-\textbf{exact} QTT (MPO) representations of rank
-$\chi_{\mathrm{MPO}} = 2\text{--}4$, independent of
-$n$~\cite{Kazeev2012,Kazeev2013}. The cores are written down in closed form;
-nothing is fitted or truncated. The Laplacian is the example of the slides.
-Take the (positive) second-difference matrix
-$\Delta_{2^n} = \mathrm{tridiag}(-1, 2, -1)$ and define
+\subsubsection{Operators as MPOs}
+\label{subsec:qtt-operators}
+
+\paragraph{Finite-difference operators.}
+Operators inherit the same economy. Finite-difference shift, first-derivative
+and Laplacian operators have \textbf{exact} QTT (MPO) representations of rank
+$\chi_A = 2\text{--}4$, independent of $n$~\cite{Kazeev2012,Kazeev2013}. The
+cores are written down in closed form; nothing is fitted or truncated. Take the
+Laplacian. With the (positive) second-difference matrix
+$\Delta_{2^n} = \mathrm{tridiag}(-1, 2, -1)$, define
 \begin{equation*}
   \mathbb{1}_2 = \begin{pmatrix} 1 & 0 \\ 0 & 1 \end{pmatrix}, \qquad
   J = \begin{pmatrix} 0 & 1 \\ 0 & 0 \end{pmatrix}, \qquad
   \Delta_2 = \begin{pmatrix} 2 & -1 \\ -1 & 2 \end{pmatrix}
            = 2\,\mathbb{1}_2 - (J + J^{T}).
 \end{equation*}
-Splitting $\Delta_4$ into $2\times2$ blocks indexed by the coarse bit,
+Splitting $\Delta_4$ into $2\times2$ blocks indexed by the coarse bit gives
 \begin{equation*}
   \Delta_4 = \mathbb{1}_2 \otimes \Delta_2 - \big(J \otimes J^{T} + J^{T}\otimes J\big)
   = \begin{pmatrix} \mathbb{1}_2 & -J & -J^{T} \end{pmatrix} \bowtie
@@ -655,129 +534,233 @@ where $\bowtie$ is the matrix product over the bond index with the entries
   \begin{pmatrix} \Delta_2 \\ J^{T} \\ J \end{pmatrix},
   \label{eq:qtt-laplacian}
 \end{equation}%
-an MPO of bond dimension $\chi = 3$. The middle core propagates the corner
+an MPO of bond dimension $\chi_A = 3$. The middle core propagates the corner
 coupling $E_{2^{n-1},1} = J^{T}\otimes\cdots\otimes J^{T}$ between the two
-halves of the domain, one bit at a time. Boundary conditions can be included at
-small cost, by changing the edge cores only. The same object has a low-rank
-explicit inverse~\cite{Kazeev2012}.
+halves of the domain, one bit at a time. Applying it to an MPS is the MPO--MPS
+product of \cref{subsec:tt-computing}; the dense $2^n \times 2^n$ matrix never
+exists in memory.
 
-\begin{itemize}
-  \item Applying an MPO to an MPS costs
-    $O(n \chi^2 \chi_{\mathrm{MPO}}^2)$ and returns a state of bond dimension
-    $\chi \chi_{\mathrm{MPO}}$, so it is always followed by rounding.
-  \item The dense $2^n \times 2^n$ matrix is never formed. It never exists in
-    memory at any point.
-\end{itemize}
-
-\begin{remark}
+\begin{remark}[Why rank three]
   Rank~3 for a second derivative is not a coincidence. A three-point stencil is
   a sum of three shifts, and a shift by one grid point is a carry operation on
-  the binary digits --- a finite automaton with a two-state carry register.
-  Small automaton, small bond dimension. Adding the three shift MPOs gives
-  rank $2+2+1 = 5$, and rounding brings it to the $3$
+  the binary digits: a finite automaton with a two-state carry register.
+  A small automaton means a small bond dimension. Adding the three shift MPOs
+  gives rank $2+2+1 = 5$, and rounding brings it to the $3$
   of~\eqref{eq:qtt-laplacian}.
 \end{remark}
 
-\paragraph{Beyond finite differences: Fourier and Laplace transforms.}
-Spectral operators are low rank too. The quantum Fourier transform has small
-entanglement, so the discrete Fourier transform is a QTT operator of modest
-bond dimension that saturates as the number of qubits grows~\cite{Chen2023},
-and it can be built directly by interpolation~\cite{Chen2025}; the same holds
-for the (non-unitary) Laplace transform~\cite{Jaseem2026}. This
-\enquote{dequantization} of the QFT is what puts FFT-based solvers within reach
-of the QTT format. García-Ripoll~\cite{GarciaRipoll2021} tabulates the cost of
-the resulting quantum-inspired algorithms --- expected values, Fourier
-transforms, interpolation, PDE evolution, state construction --- against their
-classical and quantum counterparts; in every case the exponential $2^{Nm}$ of
-the classical method becomes a polynomial in the number of bits times the cost
-of MPS simplification, $O(T_{\mathrm{sweeps}}\,Nm\,d^3\chi^3)$.
+\paragraph{Fourier and Laplace transforms.}
+Spectral operators are low rank too. The discrete Fourier transform is a QTT
+operator of modest bond dimension that saturates as the number of bits
+grows~\cite{Chen2023}, and it can be built directly by
+interpolation~\cite{Chen2025}; the same holds for the (non-unitary) Laplace
+transform~\cite{Jaseem2026}. This puts FFT-based solvers within reach of the
+QTT format.
+\margintext{In quantum-computing terms: the quantum Fourier transform generates
+little entanglement, so it can be run classically as an MPO. This is called
+its \emph{dequantization}.}
+García-Ripoll~\cite{GarciaRipoll2021} tabulates the cost of the resulting
+quantum-inspired algorithms --- expected values, Fourier transforms,
+interpolation, PDE evolution, state construction --- against their classical
+and quantum counterparts. In every case a cost exponential in the number of bits
+becomes a polynomial in the number of bits times the cost of MPS
+simplification.
 
 % ---------------------------------------------------------------------------
-\subsection{Heat Equation (Explicit Time Stepping)}
+\subsection{The Heat Equation: One Pass Through the Pipeline}
 \label{subsec:heat-explicit-euler}
 % Keywords: 1D heat equation, explicit Euler, MPO-MPS product + rounding,
-% cost and memory, stability (CFL), rank behaviour, sources of error.
+% cost and memory, stability (CFL), rank behaviour, sources of error,
+% implicit Euler as Ax=b.
 
-We now have enough to solve a PDE. The heat equation is deliberately the easiest
-possible choice --- diffusion smooths, so the ranks ought to behave --- which
-makes it the right place to watch the machinery work and to isolate what can go
-wrong.
+We now have enough to solve a PDE, and we do so by walking once through the
+five stages of the pipeline. The heat equation is deliberately the easiest
+possible choice: diffusion smooths, so the ranks ought to behave. That makes it
+the right place to watch the machinery work and to isolate what can go wrong.
 
-\paragraph{The setup.}
-Take
+\paragraph{Stage 1: equation.}
+The problem is the one-dimensional heat equation with diffusivity $\alpha$,
 \begin{equation}
   \partial_t u = \alpha\, \partial_x^2 u,
   \qquad x \in [0,1],
-  \qquad N = 2^n \text{ points},
+  \qquad N = 2^n \text{ points}.
   \label{eq:heat}
 \end{equation}%
-with $\Delta x = 2^{-n}$. Three ingredients suffice, and there is nothing else:
 
-\begin{itemize}
-  \item the initial condition $u_0$ as an MPS/QTT;
-  \item the discrete Laplacian $L$ as an MPO of rank~3,
-    $L = -\Delta_{2^n}/\Delta x^2$ with $\Delta_{2^n}$
-    from~\eqref{eq:qtt-laplacian};
-  \item one scalar, the diffusion number $\alpha \Delta t / \Delta x^2$.
-\end{itemize}
+\paragraph{Stage 2: problem formulation.}
+A uniform grid with $\Delta x = 2^{-n}$, the three-point finite-difference
+Laplacian, and explicit Euler in time with step $\Delta t$. The only free
+scalar is the diffusion number $\mu = \alpha \Delta t / \Delta x^2$.
 
-\paragraph{One timestep.}
+\paragraph{Stage 3: TN encoding.}
+The initial condition $u_0$ is a QTT, built analytically or by TT-SVD as in
+\cref{subsec:qtt-functions-operators}. The discrete Laplacian is the rank-3
+MPO $L = -\Delta_{2^n}/\Delta x^2$, with $\Delta_{2^n}$
+from~\eqref{eq:qtt-laplacian}. Boundary conditions are included at small cost
+by changing the edge cores only.
+
+\paragraph{Stage 4: time evolution.}
 Explicit Euler is a single line of tensor arithmetic,
 \begin{equation}
   u^{k+1} = \left(\mathbb{1} + \alpha \Delta t\, L\right) u^{k},
   \label{eq:heat-explicit}
 \end{equation}%
 consisting of exactly two operations: an \textbf{MPO--MPS product}, and then
-\textbf{rounding} $(\chi,\epsilon)$.
+\textbf{rounding} to $(\chi,\varepsilon)$. The cost is $O(n\chi^3)$ per step
+with $O(n\chi^2)$ memory, both \textbf{logarithmic in the number of grid
+points} $N = 2^n$.
 
-\begin{itemize}
-  \item Cost is $O(n\chi^3)$ per step with $O(n\chi^2)$ memory. Both are
-    \textbf{logarithmic in the mesh size} $N = 2^n$.
-\end{itemize}
+\paragraph{Stage 5: solution retrieval.}
+The solution is never expanded. A point value $u^k(x)$ is read off by fixing the
+$n$ legs to the binary digits of $x$ and contracting the chain, and integrals
+and norms are inner products (\cref{subsec:tt-computing}); both cost a
+polynomial in $\chi$ times $n$.
 
-\paragraph{Rank remark.}
-The diffusive dynamics smooths the solution, so the bond dimension should stay
-flat or fall. If it climbs, suspect the encoding, the boundary treatment, or too
-loose a rounding tolerance. But if we do not truncate at each step, the rank
-grows like $3^k\chi_0$: each step multiplies the bond dimension by
-$\chi_{\mathrm{MPO}} = 3$, the memory grows like $9^k$, and you are back to
-storing $2^n$ numbers within about twenty steps. Skipping the rounding is the
-classic first mistake.
+\paragraph{Rank behaviour.}
+Diffusion smooths the solution, so the bond dimension should stay flat or fall.
+If it climbs, the likely causes are the encoding, the boundary treatment, or too
+loose a rounding tolerance. Rounding itself is not optional. Each step
+multiplies the bond dimension by $\chi_A = 3$, so without truncation the rank
+grows like $3^k\chi_0$ and the memory like $9^k$, and within about twenty steps
+the state costs as much as storing all $2^n$ numbers. Skipping the rounding is
+the classic first mistake.
 
-\paragraph{Stability remark.}
+\paragraph{Stability.}
 \textbf{Compression does not rescue stability.} The amplification factor of a
-Fourier mode with grid angle $\theta$ is $G(\theta) = 1 - 4\mu\sin^2(\theta/2)$
-with $\mu = \alpha \Delta t / \Delta x^2$, so the condition is still
+Fourier mode with grid angle $\theta$ is $G(\theta) = 1 - 4\mu\sin^2(\theta/2)$,
+so the stability condition is still
 \begin{equation}
   \frac{\alpha \Delta t}{\Delta x^2} \le \frac12 .
   \label{eq:heat-cfl}
 \end{equation}%
-But with $\Delta x = 2^{-n}$ this forces $\Delta t \sim 4^{-n}$: the step count
+With $\Delta x = 2^{-n}$ this forces $\Delta t \sim 4^{-n}$: the number of steps
 grows exponentially in $n$, while the memory grows only linearly. Compression
-buys resolution and then the explicit scheme charges for it in time. This is
-exactly the motivation for \cref{subsec:heat-implicit-euler}.
+buys resolution, and the explicit scheme then charges for it in time.
 
 \paragraph{Two sources of error.}
 \margintext{Monitor both, and always know which one dominates before tightening
 either.}
-\begin{itemize}
-  \item \textbf{Discretization} --- $O(\Delta t, \Delta x^2)$, present in the
-    dense scheme too.
-  \item \textbf{Truncation} --- $O(\epsilon)$ per step, from rounding.
-\end{itemize}
+The computed solution carries two errors. The \textbf{discretization} error,
+$O(\Delta t, \Delta x^2)$, is present in the dense scheme too. The
+\textbf{truncation} error, $O(\varepsilon)$ per step, comes from rounding.
 Comparing the QTT solution with the \emph{same} Euler scheme run densely
 isolates the second; comparing that dense run with the exact solution isolates
-the first. Beyond first order, tensor-train time integrators based on projection
-onto the tangent space of the fixed-rank manifold give higher order with rank
-adaptivity~\cite{Lubich2015}; Part~\partref{3} takes this up.
+the first. Beyond first order, tensor-train time integrators based on
+projection onto the tangent space of the fixed-rank manifold give higher order
+with rank adaptivity~\cite{Lubich2015}; Part~\partref{3} takes this up.
+
+\paragraph{The implicit step as a linear system.}
+The way around~\eqref{eq:heat-cfl} is standard: evaluate the Laplacian at the
+new time level. Implicit Euler is unconditionally stable for the heat
+equation, so $\Delta t$ is set by accuracy rather than by $\Delta x$. Each step
+then reads
+\begin{equation}
+  \left(\mathbb{1} - \alpha \Delta t\, L\right) u^{k+1} = u^{k},
+  \label{eq:heat-implicit-axb}
+\end{equation}%
+a linear system $Au = b$ with the MPO $A = \mathbb{1} - \alpha\Delta t\, L$ of
+bond dimension at most $1 + \chi_A$, the known MPS $b = u^k$, and the unknown
+MPS $u^{k+1}$. Nothing in this part solves it. Every tool developed so far
+--- TT-SVD, rounding, MPO--MPS products --- computes a known tensor from known
+tensors; none of them finds an unknown one, and there is no SVD shortcut that
+does. For the Laplacian alone a low-rank explicit inverse is
+known~\cite{Kazeev2012}, but that is a property of one operator, not a method
+for every MPO. Solving~\eqref{eq:heat-implicit-axb} on the low-rank manifold is
+the subject of Part~\partref{2} (\cref{subsec:heat-implicit-euler}).
 
 \paragraph{Further material.}
-The notebook \texttt{01-heat-equation-qtmps-quimb.ipynb} runs the same scheme in
-\texttt{quimb} on $2^{20}$ points in 1D and $1024^2$ in 2D, with an instructive
-comparison of stacked and interleaved orderings in two dimensions. The lecture
-notes of Waintal \emph{et al.}~\cite{Waintal2026} (pp.~60--61) solve the heat
-equation on a $2^{30}$-point grid with TCI and an FFT-based MPO, from an initial
-condition containing both Heaviside steps and rapid oscillations.
+The companion notebook \texttt{01-representations.ipynb} runs this scheme with
+the course's NumPy code. As an optional extra, the notebook
+\texttt{01-heat-equation-qtmps-quimb.ipynb} runs the same scheme in
+\texttt{quimb}, the library used from Part~\partref{3} on, on $2^{20}$ points in
+1D and $1024^2$ in 2D, with an instructive comparison of stacked and
+interleaved orderings in two dimensions. The lecture notes of Waintal \emph{et
+al.}~\cite{Waintal2026} (pp.~60--61) solve the heat equation on a
+$2^{30}$-point grid with TCI and an FFT-based MPO, from an initial condition
+containing both Heaviside steps and rapid oscillations.
+
+% ---------------------------------------------------------------------------
+\subsection{Context and Further Reading}
+\label{subsec:literature-survey}
+% Keywords: transfer matrices, finitely correlated states, DMRG, MPS
+% formalism, tensor-train rediscovery, other TNs (TTN, PEPS, MERA),
+% applications, libraries, TNs for fluids.
+
+\paragraph{Two origins.}
+The matrix product state emerged in quantum many-body physics, as a tool for
+one-dimensional spin chains, and was later reinvented in numerical analysis;
+this is why both vocabularies of the table in \cref{subsec:mps} remain in use.
+On the physics side the precursors go back to Kramers and Wannier (1941), whose
+transfer matrices for the two-dimensional Ising model are early matrix product
+operators, and to Baxter (1968, 1981), whose corner transfer matrices and
+variational wavefunctions resemble MPS. Fannes, Nachtergaele and Werner (1992)
+defined the finitely correlated states of quantum spin chains, establishing
+mathematically what are now called MPS~\cite{Fannes1992}. In the same year
+White introduced the density matrix renormalization group
+(DMRG)~\cite{White1992}, a variational algorithm in the MPS manifold and a
+numerical breakthrough for ground states of one-dimensional local gapped
+Hamiltonians. Östlund and Rommer (1995) showed that DMRG implicitly assumes the
+ground state to be an MPS~\cite{Ostlund1995}, and in the 2000s Vidal,
+Verstraete and Cirac made the MPS a standard language for one-dimensional
+many-body systems and their time evolution~\cite{Vidal2003,Vidal2004,Verstraete2008}. The standard reference for canonical forms and sweeping
+is~\cite{Schollwoeck2011}.
+
+\margintext{Note the nineteen-year gap between White (1992) and Oseledets
+(2011). The numerical-analysis rediscovery was independent; the dictionaries
+were matched up only afterwards.}
+Oseledets and Tyrtyshnikov independently rediscovered the same structure in
+numerical linear algebra and named it the tensor train
+decomposition~\cite{Oseledets2011}; the quantics variant~\cite{Khoromskij2011}
+and cross approximation~\cite{Oseledets2010} followed, and applied mathematics
+carried the tools into data science, machine learning and high-dimensional
+differential equations.
+
+\paragraph{Other tensor networks.}
+The MPS is the simplest member of a family organized by a trade-off between
+expressivity and cost. The MPS has no loops, so it has a canonical form; it
+captures exponentially decaying correlations, and its algorithms cost
+$O(\chi^3)$. Tree tensor networks, or hierarchical Tucker formats, are also
+loop-free and have a canonical form; they capture critical correlations at cost
+$O(\chi^4)$, and are a natural next step for multivariate
+functions~\cite{Tindall2024a}. PEPS and MERA capture critical correlations as
+well, but a loopy network has no canonical form obtainable by single-tensor
+operations, costs up to $O(\chi^8)$, and its contraction becomes a hard
+optimization problem in its own right~\cite{Gray2021}. The MPS has by far the
+largest toolbox of efficient algorithms and known MPOs, which is why this
+course uses it throughout.
+
+\paragraph{Applications and libraries.}
+Tensor networks are used for functions of continuous variables (the
+\enquote{quantum-inspired} numerics of this course), in machine learning
+(compressing models, parametrizing networks), in probability and statistics, in
+quantum physics (simulation, error mitigation, process tensors), and in
+out-of-equilibrium statistical physics and stochastic chemical kinetics.
+Mature libraries include ITensor, TeNPy, TensorNetwork, \texttt{quimb} (used
+from Part~\partref{3} on) and \texttt{cotengra} for contraction-order
+optimization~\cite{Gray2021}.
+
+\paragraph{Tensor networks for fluids.}
+The application closest to this course rests on the observation that scale
+correlations in turbulence are weak, so that $\chi$ stays
+modest~\cite{Gourianov2022}. Since then the Vlasov--Poisson equations of
+kinetic plasmas have been solved in MPS form~\cite{Ye2022}; reduced-order
+models of wall-bounded flows have been built at a few percent of the DNS
+variable count~\cite{Kiffner2023}; turbulence probability distributions have
+been computed directly in tensor-network form, without sampling the full
+field~\cite{Gourianov2025}; and incompressible flow around arbitrary immersed
+geometry has been solved end to end~\cite{Peddinti2024}.
+
+\paragraph{Summary and hand-off.}
+Part~\partref{1} has shown that a field on $2^n$ grid points can be stored as a
+chain of $n$ small tensors, that the SVD finds such a chain and rounding keeps
+it small, and that in the quantics encoding the bond dimension measures the
+coupling between scales, which is weak for the smooth and multiscale fields of
+physics. Finite-difference operators are exact MPOs of rank three or less, so an
+explicit time step costs $O(n\chi^3)$. Two debts remain. Explicit stepping is
+bound by~\eqref{eq:heat-cfl}, and the stable alternative is the linear
+system~\eqref{eq:heat-implicit-axb}, which nothing in this part can solve; and
+every initial condition here was either written down analytically or compressed
+from a dense vector. Part~\partref{2} pays both debts.
 
 \begin{exercise}[Companion notebook]
   \texttt{01-representations.ipynb} follows this part section by section and
@@ -793,10 +776,10 @@ condition containing both Heaviside steps and rapid oscillations.
     \item Predict the quantics rank of nine functions, then measure. At least
       one will not do what you expect.
     \item Sweep the width of a Gaussian bump from wider than the domain to
-      narrower than a grid cell and plot $\chi$. The curve is not monotone ---
-      explain both ends.
+      narrower than the grid spacing and plot $\chi$. The curve is not
+      monotone; explain both ends.
     \item Compare stacked and interleaved orderings on a separable field, a disc
-      indicator and synthetic turbulence --- at matched tolerance \emph{and} at
+      indicator and synthetic turbulence, at matched tolerance \emph{and} at
       matched bond dimension. The two comparisons disagree.
     \item Build the Laplacian MPO~\eqref{eq:qtt-laplacian} from $\mathbb{1}_2$
       and $J$, and the \emph{periodic} shift by changing only the edge cores
