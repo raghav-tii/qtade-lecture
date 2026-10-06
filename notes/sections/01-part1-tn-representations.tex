@@ -32,7 +32,7 @@ stepping.
 
 \paragraph{The cost of a grid.}
 Grid-based PDE solvers store one number per grid point. Discretizing a field
-with $N = 2^n$ points per coordinate gives $2^{nd}$ unknowns in $d$ dimensions,
+with $N = 2^n$ points per coordinate gives $2^{nD}$ unknowns in $D$ dimensions,
 so a $1024^3$ mesh already holds $2^{30} \approx 10^9$ unknowns --- \emph{per
 field, per timestep}. The physics can demand far more. Three-dimensional direct
 numerical simulation needs $\sim\!\mathrm{Re}^{9/4}$ degrees of freedom
@@ -658,9 +658,9 @@ then reads
   \left(\mathbb{1} - \alpha \Delta t\, L\right) u^{k+1} = u^{k},
   \label{eq:heat-implicit-axb}
 \end{equation}%
-a linear system $Ax = b$ with the MPO $A = \mathbb{1} - \alpha\Delta t\, L$ of
+a linear system $Au = b$ with the MPO $A = \mathbb{1} - \alpha\Delta t\, L$ of
 bond dimension at most $1 + \chi_A$, the known MPS $b = u^k$, and the unknown
-MPS $x = u^{k+1}$. Nothing in this part solves it. Every tool developed so far
+MPS $u^{k+1}$. Nothing in this part solves it. Every tool developed so far
 --- TT-SVD, rounding, MPO--MPS products --- computes a known tensor from known
 tensors; none of them finds an unknown one, and there is no SVD shortcut that
 does. For the Laplacian alone a low-rank explicit inverse is

@@ -47,12 +47,8 @@ makes the explicit scheme four times more expensive in time. Compression pays
 off only in combination with an implicit scheme.
 
 \paragraph{Implicit Euler.}
-Backward Euler replaces the explicit update by a linear system,
-\begin{equation}
-  \left(\mathbb{1} - \alpha \Delta t\, L\right) u^{k+1} = u^{k}.
-  \label{eq:heat-implicit}
-\end{equation}
-The scheme is A-stable: the amplification factor is
+Backward Euler replaces the explicit update by the linear
+system~\eqref{eq:heat-implicit-axb} of Part~\partref{1}. The scheme is A-stable: the amplification factor is
 $(1 + \alpha \Delta t\, \lambda)^{-1}$ for every eigenvalue $\lambda \ge 0$ of
 $-L$, so it never exceeds one, whatever $\Delta t$ is. The choice of $\Delta t$
 therefore affects only accuracy, not stability, and the step is set by the error
@@ -205,7 +201,8 @@ the rank cap and, above all, the starting guess. A good schedule starts with a
 loose tolerance and a low rank cap and tightens both over successive sweeps. In
 a time-stepping context a \textbf{warm start} from the previous time step
 matters more than any other setting, because consecutive solutions are close;
-from a warm start two or three sweeps usually suffice. Because the SVD in the
+from a warm start a few sweeps usually suffice, and for the small steps of the
+heat equation one or two (\cref{subsec:heat-implicit-results}). Because the SVD in the
 two-site split may return a larger rank than it started with, it is the
 tolerance $\varepsilon$, not $\chi$, that becomes the control parameter.
 
@@ -370,7 +367,7 @@ of~\eqref{eq:matrix-ci} is within a factor $(\chi+1)$ of the best rank-$\chi$
 approximation in the Chebyshev (entrywise maximum) norm. Finding the true
 maximum-volume submatrix is NP-hard. The practical algorithm swaps rows greedily
 until no single swap increases $\abs{\det}$; it lands within a controlled factor
-of the maximum and costs $O(N\chi^2)$ per sweep for $N$ rows.
+of the maximum and costs $O(M\chi^2)$ per sweep for $M$ rows.
 
 \paragraph{Extension to tensor trains.}
 Cross interpolation is applied recursively down the chain. Unfold the tensor as
@@ -498,7 +495,7 @@ For $u(0) = g_0$ and $u(1) = g_1$, standard practice moves the known boundary
 values to the right-hand side. Writing $L$ for the discrete Laplacian with
 homogeneous conditions, the discrete operator applied to $u$ becomes
 $L u + (g_0\, e_1 + g_1\, e_N)/\Delta x^2$, and implicit
-Euler~\eqref{eq:heat-implicit} becomes
+Euler~\eqref{eq:heat-implicit-axb} becomes
 \begin{equation*}
   \left(\mathbb{1} - \alpha \Delta t\, L\right) u^{k+1}
   = u^{k} + \frac{\alpha \Delta t}{\Delta x^2}\left(g_0\, e_1 + g_1\, e_N\right).

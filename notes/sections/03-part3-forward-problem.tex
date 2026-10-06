@@ -260,7 +260,7 @@ The \textbf{predictor}~\eqref{eq:chorin-predictor} ignores pressure, and its
 result is in general not divergence-free. The \textbf{pressure
 Poisson equation}~\eqref{eq:chorin-poisson} is a linear solve. The
 \textbf{projection}~\eqref{eq:chorin-projection} subtracts the pressure gradient
-to return to the divergence-free fields. The mask is applied after each step,
+to restore a divergence-free field. The mask is applied after each step,
 and the loop is repeated for $K$ steps.
 
 The predictor is explicit, which needs a word after Part~\partref{2}'s case for
@@ -268,7 +268,8 @@ implicit time stepping (\cref{subsec:heat-implicit-euler}). That case rested on
 the diffusive stability bound $\Delta t \lesssim \Delta x^2$, which with
 $\Delta x = 2^{-n}$ demands $4^n$ steps. In the predictor the viscous term
 imposes $\Delta t \lesssim \Delta x^2/\nu$ and the advective term
-$\Delta t \lesssim \Delta x/\abs{\mathbf{v}}$. While the grid spacing stays above
+$\Delta t \lesssim \Delta x/\abs{\mathbf{v}}$, the latter for a stable (for
+example upwind) discretization of advection. While the grid spacing stays above
 $\nu/\abs{\mathbf{v}}$, the advective bound is the tighter of the two, and it
 requires only $2^n$ steps, not $4^n$. On finer grids the viscous bound takes
 over again, and with it the case for treating the viscous term implicitly. The stiffest part of the
@@ -720,7 +721,8 @@ grows with the width of the inertial range, and no theory yet says how fast.
 The same tensor-train encoding is also the natural interface to future quantum
 CFD algorithms. Part~\partref{4} turns from equations to data: it asks how to
 recover dynamics from snapshots when no equation is given, and it reuses the
-solver of this part as a source of such snapshots.
+solver of this part in two places: as an alternative to its space--time solve,
+and as the physical prior of hybrid methods.
 
 \begin{exercise}[Companion notebook]
   \texttt{03-forward-problem.ipynb} follows this part section by section, with

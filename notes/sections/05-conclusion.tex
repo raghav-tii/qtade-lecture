@@ -21,17 +21,19 @@ Part~\partref{3}, and the unknown itself in Part~\partref{4}. The
 \textbf{formulation} was finite differences on dyadic grids throughout, with a
 projection method for the pressure in Part~\partref{3} and a discretization of
 time as well as space in Part~\partref{4}. The \textbf{TN encoding} was TT-SVD
-and the quantics map in Part~\partref{1}, TT-cross for functions, boundary
-conditions and masks in Part~\partref{2}, and the space--time train of measured
+and the quantics map in Part~\partref{1}, TT-cross for functions and masks
+and the edge cores of the operator for boundary conditions in
+Part~\partref{2}, and the space--time train of measured
 or computed data in Part~\partref{4}. \textbf{Time evolution} was an MPO--MPS
 product followed by rounding in Part~\partref{1}, a sweeping linear solve per
 implicit step in Part~\partref{2} (\cref{subsec:linear-solvers}), the projection
 loop of Part~\partref{3}, and the diagonal power $\Lambda^k$ of MPS-DMD in
 Part~\partref{4}. \textbf{Solution retrieval} was point evaluation by
 contracting the chain against the digits of an index in Part~\partref{1},
-coarse-grained evaluation and pixel sampling in Part~\partref{3}, and modes,
-eigenvalues and sparse equations in Part~\partref{4}. At no stage was the dense
-$2^n$ vector formed.
+coarse-grained evaluation and sampling of grid points in Part~\partref{3}, and modes,
+eigenvalues and sparse equations in Part~\partref{4}. Apart from the one-off
+TT-SVD of Part~\partref{1} and the loading of measured snapshots in
+Part~\partref{4}, no stage formed the dense $2^n$ vector.
 
 \paragraph{Where $\chi$ stayed small, grew, or broke.}
 The table collects the rank measurements stated in the notes. It is not a
